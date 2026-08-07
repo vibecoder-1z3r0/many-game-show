@@ -13,24 +13,31 @@ verify against the live site directly.
 
 ## Statement used for this project
 
-This is the **abbreviated** statement, as issued by the project owner's AIA
-badge:
+Full statement, as issued by the project owner's AIA badge:
+
+```
+AIA Primarily AI, Stylistic edits, Content edits, New content, Human-initiated, Reviewed, Claude Code Web Sonnet 5 Medium v1.0
+```
+
+Abbreviated form (used in commit messages, where space is tighter):
 
 ```
 AIA PAI SeCeNc Hin R Claude Code Web Sonnet 5 Medium v1.0
 ```
 
-| Segment | Meaning |
-|---|---|
-| `AIA` | AI Attribution tag prefix |
-| `PAI` | Collaboration type for this project (as issued by the project owner's AIA badge) |
-| `SeCeNc` | Contribution flags: **S**tylistic **e**dits, **C**ontent **e**dits, **N**ew **c**ontent — all present, since AI both drafts and edits |
-| `Hin` | **H**uman-**in**itiated — work starts from a human request/prompt |
-| `R` | **R**eviewed — a human reviews the AI's output before it's committed |
-| `Claude Code Web` | Interface used |
-| `Sonnet 5` | Model used |
-| `Medium` | Effort/capability tier used for the session |
-| `v1.0` | AIA spec version |
+| Segment | Abbrev. | Meaning |
+|---|---|---|
+| `AIA` | `AIA` | AI Attribution tag prefix |
+| Primarily AI | `PAI` | Collaboration type — AI produced most of the content |
+| Stylistic edits | `Se` | AI made wording/formatting-level edits |
+| Content edits | `Ce` | AI made substantive edits to existing content |
+| New content | `Nc` | AI generated new content from scratch |
+| Human-initiated | `Hin` | Work started from a human request/prompt |
+| Reviewed | `R` | A human reviewed the AI's output before it was committed |
+| `Claude Code Web` | — | Interface used |
+| `Sonnet 5` | — | Model used |
+| `Medium` | — | Effort/capability tier used for the session |
+| `v1.0` | — | AIA spec version |
 
 Swap `Sonnet 5` / `Medium` / `Claude Code Web` if a future commit is made
 with a different model, effort tier, or interface — keep the rest of the
