@@ -48,12 +48,14 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 37 | update the session md file one more time and commit it please | 21:16:21 | 13s | 32s |
 | 38 | If this works out.... from idea to working application in 50 minutes, … | 21:17:06 | 18s | 1m 12s |
 | 39 | you didn't update the README with how to run this and with some sample… | 21:18:36 | 48s | 4m 37s |
-| 40 | can you create a preflight make target to check for a bunch of things?… | 21:24:02 | 1m 25s | — |
+| 40 | can you create a preflight make target to check for a bunch of things?… | 21:24:02 | 1m 40s | 2m 7s |
+| 41 | yeah, fix the dependency | 21:27:48 | 2m 7s | 2m 26s |
+| 42 | you didn't update session md did you.... | 21:32:21 | 6s | — |
 
-**Total turns:** 40  
-**Total agent time spent (excl. flagged):** 48m 40s  
-**Total human think time (excl. outliers):** 55m 45s  
-**Average human think time (excl. outliers):** 1m 33s  
+**Total turns:** 42  
+**Total agent time spent (excl. flagged):** 51m 8s  
+**Total human think time (excl. outliers):** 1h 0m  
+**Average human think time (excl. outliers):** 1m 35s  
 **Think-time outliers (> 15 min):** 3
 
 ⏳ Turn(s) 11, 13, 14 had a 'human think time' over 15 min (total 645h 27m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
