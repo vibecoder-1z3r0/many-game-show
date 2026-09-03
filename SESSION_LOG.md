@@ -45,12 +45,14 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 34 | you can draft a starter set for testing, but I'll be making up my own … | 20:57:08 | 14m 24s | 32s |
 | 35 | looking at the session logs and seeing this turn for you is taking ove… | 21:12:04 | 1m 13s | 18s |
 | 36 | so, is this ready to test? | 21:13:35 | 1m 40s | 1m 6s |
-| 37 | update the session md file one more time and commit it please | 21:16:21 | 4s | — |
+| 37 | update the session md file one more time and commit it please | 21:16:21 | 13s | 32s |
+| 38 | If this works out.... from idea to working application in 50 minutes, … | 21:17:06 | 18s | 1m 12s |
+| 39 | you didn't update the README with how to run this and with some sample… | 21:18:36 | 33s | — |
 
-**Total turns:** 37  
-**Total agent time spent (excl. flagged):** 46m 0s  
-**Total human think time (excl. outliers):** 49m 24s  
-**Average human think time (excl. outliers):** 1m 30s  
+**Total turns:** 39  
+**Total agent time spent (excl. flagged):** 46m 59s  
+**Total human think time (excl. outliers):** 51m 8s  
+**Average human think time (excl. outliers):** 1m 28s  
 **Think-time outliers (> 15 min):** 3
 
 ⏳ Turn(s) 11, 13, 14 had a 'human think time' over 15 min (total 645h 27m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
