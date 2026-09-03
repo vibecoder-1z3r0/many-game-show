@@ -1,0 +1,38 @@
+{
+  "_comment": "Sample/test question bank for Squad Squabble. NOT the real conference content — the presenter is authoring their own 'we asked 100 developers at TechBash 2026' question set separately. This file exists so tests and local dev have realistic data to run against.",
+  "questions": [
+    {
+      "id": "desk-drawer",
+      "prompt": "We asked 100 developers: name something you'd find in their desk drawer.",
+      "answers": [
+        { "text": "Tangled cables", "points": 32 },
+        { "text": "Snacks", "points": 27 },
+        { "text": "Old company swag stickers", "points": 18 },
+        { "text": "A spare mechanical keyboard switch", "points": 13 },
+        { "text": "Expired conference badge", "points": 10 }
+      ]
+    },
+    {
+      "id": "standup-excuse",
+      "prompt": "We asked 100 developers: name an excuse for why the build is still red.",
+      "answers": [
+        { "text": "Works on my machine", "points": 35 },
+        { "text": "Flaky test", "points": 25 },
+        { "text": "It's a caching issue", "points": 20 },
+        { "text": "Someone force-pushed", "points": 12 },
+        { "text": "DNS", "points": 8 }
+      ]
+    },
+    {
+      "id": "meeting-word",
+      "prompt": "We asked 100 developers: name a word you never want to hear in a meeting invite.",
+      "answers": [
+        { "text": "Sync", "points": 30 },
+        { "text": "Mandatory", "points": 26 },
+        { "text": "Quick", "points": 22 },
+        { "text": "Recurring", "points": 14 },
+        { "text": "Icebreaker", "points": 8 }
+      ]
+    }
+  ]
+}

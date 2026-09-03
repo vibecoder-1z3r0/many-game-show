@@ -9,7 +9,7 @@ run:
 test: test-backend test-ui
 
 test-backend:
-	uv run pytest tests/test_api --cov=manygameshow --cov-report=term-missing
+	uv run pytest tests/test_api tests/test_models --cov=manygameshow --cov-report=term-missing
 
 test-ui:
 	uv run playwright install --with-deps chromium

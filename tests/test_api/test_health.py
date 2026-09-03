@@ -1,10 +1,7 @@
 from fastapi.testclient import TestClient
 
-from manygameshow.main import app
 
-
-def test_health() -> None:
-    client = TestClient(app)
+def test_health(client: TestClient) -> None:
     resp = client.get("/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}

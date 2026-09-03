@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Squad Squabble</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap"
+          rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #131c2e;
+        --panel-2: #1a2540;
+        --text: #f5f7fa;
+        --text-dim: #9aa5b8;
+        --accent: #ffcc00;
+        --border: #263252;
+      }
+
+      [data-theme="stage"] {
+        --bg: #05060a;
+        --panel: #12141c;
+        --panel-2: #1b1f2b;
+        --text: #f2f2f5;
+        --text-dim: #8b8f9c;
+        --accent: #00e5ff;
+        --border: #2a2f3d;
+      }
+
+      [data-theme="bright"] {
+        --bg: #fef6e4;
+        --panel: #ffffff;
+        --panel-2: #fff1d6;
+        --text: #1b1b1b;
+        --text-dim: #6b6b6b;
+        --accent: #ff5a3c;
+        --border: #f0d9b5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, sans-serif;
+      }
+
+      .display-num {
+        font-family: "Orbitron", system-ui, sans-serif;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+
+      header h1 {
+        font-size: 1rem;
+        margin: 0;
+        margin-right: auto;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      .tabs button {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      .tabs button.active {
+        background: var(--accent);
+        color: #10131a;
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+
+      select {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .conn-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+
+      .conn-badge.ok {
+        background: #1e4d2b;
+        color: #7cf29c;
+      }
+
+      .conn-badge.lost {
+        background: #4d1e1e;
+        color: #f29c7c;
+      }
+
+      main {
+        padding: 1rem;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      /* ---------- Display view ---------- */
+
+      #view-display {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(0.75rem, 2vw, 1.5rem);
+      }
+
+      .prompt-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: clamp(0.75rem, 2vw, 1.5rem);
+        text-align: center;
+        font-size: clamp(1rem, 2.4vw, 1.7rem);
+        font-weight: 600;
+      }
+
+      .board {
+        display: grid;
+        gap: clamp(0.4rem, 1vw, 0.75rem);
+      }
+
+      .board-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
+        font-size: clamp(1rem, 2.6vw, 1.8rem);
+      }
+
+      .board-row .answer-text {
+        letter-spacing: 0.02em;
+      }
+
+      .board-row.hidden-row .answer-text {
+        color: var(--text-dim);
+      }
+
+      .board-row .points {
+        font-family: "Orbitron", system-ui, sans-serif;
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .scoreboard {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: clamp(0.5rem, 2vw, 1.5rem);
+      }
+
+      .team-card {
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 0.75rem;
+        padding: clamp(0.6rem, 1.5vw, 1.2rem);
+        text-align: center;
+      }
+
+      .team-card.controlling {
+        border-color: var(--accent);
+      }
+
+      .team-name {
+        font-size: clamp(0.9rem, 2vw, 1.3rem);
+        color: var(--text-dim);
+      }
+
+      .team-score {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.8rem, 5vw, 3.2rem);
+        font-weight: 800;
+      }
+
+      .mid-stats {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .multiplier-badge {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1rem, 2.5vw, 1.6rem);
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .strikes {
+        display: flex;
+        gap: 0.3rem;
+      }
+
+      .strike-x {
+        width: clamp(1.5rem, 3.5vw, 2.4rem);
+        height: clamp(1.5rem, 3.5vw, 2.4rem);
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-weight: 800;
+        color: var(--text-dim);
+      }
+
+      .strike-x.on {
+        border-color: #ff4d4d;
+        color: #ff4d4d;
+        background: rgba(255, 77, 77, 0.15);
+      }
+
+      /* ---------- Control view ---------- */
+
+      #view-control {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 640px;
+      }
+
+      fieldset {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      legend {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0 0.3rem;
+      }
+
+      .row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 0.5rem;
+      }
+
+      .row:last-child {
+        margin-bottom: 0;
+      }
+
+      input[type="text"] {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.9rem;
+        flex: 1;
+        min-width: 100px;
+      }
+
+      button {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.45rem 0.8rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: var(--accent);
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #10131a;
+        font-weight: 700;
+        border-color: var(--accent);
+      }
+
+      button.danger {
+        border-color: #ff4d4d;
+        color: #ff4d4d;
+      }
+
+      .answer-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.5rem;
+        border-radius: 0.4rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .answer-row.revealed {
+        background: var(--panel-2);
+        opacity: 0.6;
+      }
+
+      .answer-row .label {
+        flex: 1;
+      }
+
+      .status-line {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Squad Squabble</h1>
+      <div class="tabs">
+        <button id="tab-display" onclick="switchView('display')">Display</button>
+        <button id="tab-control" onclick="switchView('control')">Control</button>
+      </div>
+      <select id="theme-select" onchange="applyTheme(this.value)">
+        <option value="default">Default</option>
+        <option value="stage">Stage</option>
+        <option value="bright">Bright</option>
+      </select>
+      <span id="conn-badge" class="conn-badge ok">Connected</span>
+    </header>
+    <main>
+      <section id="view-display">
+        <div class="prompt-card" id="prompt-card">Loading…</div>
+        <div class="board" id="board"></div>
+        <div class="scoreboard">
+          <div class="team-card" id="team1-card">
+            <div class="team-name" id="team1-name-display">Team 1</div>
+            <div class="team-score display-num" id="team1-score-display">0</div>
+          </div>
+          <div class="mid-stats">
+            <div class="multiplier-badge" id="multiplier-display">1x</div>
+            <div class="strikes" id="strikes-display"></div>
+          </div>
+          <div class="team-card" id="team2-card">
+            <div class="team-name" id="team2-name-display">Team 2</div>
+            <div class="team-score display-num" id="team2-score-display">0</div>
+          </div>
+        </div>
+      </section>
+      <section id="view-control" hidden>
+        <fieldset>
+          <legend>Teams</legend>
+          <div class="row">
+            <input type="text" id="team1-input" placeholder="Team 1 name" />
+            <button onclick="updateTeamName(1)">Save</button>
+          </div>
+          <div class="row">
+            <input type="text" id="team2-input" placeholder="Team 2 name" />
+            <button onclick="updateTeamName(2)">Save</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Load Question</legend>
+          <div class="row">
+            <select id="question-select"></select>
+            <select id="multiplier-select">
+              <option value="1">1x</option>
+              <option value="2">2x</option>
+              <option value="3">3x</option>
+            </select>
+            <button class="primary" onclick="loadQuestion()">Load</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Face-off (who controls the board)</legend>
+          <div class="row">
+            <button onclick="faceOff('team1')">Team 1 controls</button>
+            <button onclick="faceOff('team2')">Team 2 controls</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Answers — tap as contestants give them</legend>
+          <div id="answer-list"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Strikes &amp; Steal</legend>
+          <div class="row">
+            <button onclick="strike()" id="strike-btn">Add strike</button>
+            <button onclick="resetStrikes()">Reset strikes</button>
+          </div>
+          <div class="row">
+            <button class="danger" onclick="stealAction('team1')">Team 1 steals remaining</button>
+            <button class="danger" onclick="stealAction('team2')">Team 2 steals remaining</button>
+          </div>
+        </fieldset>
+        <div class="status-line" id="status-line"></div>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const gameId = params.get("id");
+      let currentView = params.get("view") || "display";
+      let state = null;
+      let failCount = 0;
+
+      if (!gameId) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#f29c7c">No game id in URL. Create a game from the lobby first.</p>';
+        throw new Error("missing game id");
+      }
+
+      function applyTheme(t) {
+        document.documentElement.setAttribute("data-theme", t);
+        localStorage.setItem("mgsTheme", t);
+        document.getElementById("theme-select").value = t;
+      }
+      applyTheme(localStorage.getItem("mgsTheme") || "default");
+
+      function switchView(v) {
+        currentView = v;
+        document.getElementById("view-display").hidden = v !== "display";
+        document.getElementById("view-control").hidden = v !== "control";
+        document.getElementById("tab-display").classList.toggle("active", v === "display");
+        document.getElementById("tab-control").classList.toggle("active", v === "control");
+        const url = new URL(location.href);
+        url.searchParams.set("view", v);
+        history.replaceState(null, "", url);
+      }
+      switchView(currentView);
+
+      function setConnStatus(ok) {
+        const badge = document.getElementById("conn-badge");
+        badge.textContent = ok ? "Connected" : "Signal Lost";
+        badge.className = "conn-badge " + (ok ? "ok" : "lost");
+      }
+
+      async function api(path, options) {
+        const resp = await fetch(`/api/squad-squabble/games/${gameId}${path}`, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${resp.status}`);
+        }
+        return resp.json();
+      }
+
+      async function patch(path, body) {
+        try {
+          state = await api(path, { method: "PATCH", body: JSON.stringify(body || {}) });
+          render();
+          setStatus("");
+        } catch (e) {
+          setStatus(String(e.message || e));
+        }
+      }
+
+      function setStatus(msg) {
+        document.getElementById("status-line").textContent = msg;
+      }
+
+      async function poll() {
+        try {
+          const resp = await fetch(`/api/squad-squabble/games/${gameId}`);
+          if (!resp.ok) {
+            failCount++;
+            if (failCount >= 3) setConnStatus(false);
+            return;
+          }
+          state = await resp.json();
+          failCount = 0;
+          setConnStatus(true);
+          render();
+        } catch (e) {
+          failCount++;
+          if (failCount >= 3) setConnStatus(false);
+        }
+      }
+
+      let questionBank = [];
+      async function loadQuestionBank() {
+        questionBank = await api("/questions", { method: "GET" });
+        const sel = document.getElementById("question-select");
+        sel.innerHTML = questionBank
+          .map((q) => `<option value="${q.id}">${q.prompt}</option>`)
+          .join("");
+      }
+
+      function loadQuestion() {
+        const question_id = document.getElementById("question-select").value;
+        const multiplier = Number(document.getElementById("multiplier-select").value);
+        patch("/load-question", { question_id, multiplier });
+      }
+
+      function faceOff(team) {
+        patch("/face-off", { team });
+      }
+
+      function revealAnswer(index) {
+        patch("/reveal", { answer_index: index });
+      }
+
+      function strike() {
+        patch("/strike", {});
+      }
+
+      function resetStrikes() {
+        patch("/strike/reset", {});
+      }
+
+      function stealAction(team) {
+        patch("/steal", { team });
+      }
+
+      function updateTeamName(n) {
+        const value = document.getElementById(`team${n}-input`).value.trim();
+        if (!value) return;
+        patch("/teams", n === 1 ? { team1_name: value } : { team2_name: value });
+      }
+
+      function render() {
+        if (!state) return;
+
+        // ----- Display -----
+        const q = state.current_question;
+        document.getElementById("prompt-card").textContent = q
+          ? q.prompt
+          : "Waiting for the next question…";
+
+        const board = document.getElementById("board");
+        board.innerHTML = "";
+        if (q) {
+          q.answers.forEach((a) => {
+            const row = document.createElement("div");
+            row.className = "board-row" + (a.revealed ? "" : " hidden-row");
+            row.innerHTML = a.revealed
+              ? `<span class="answer-text">${a.text}</span><span class="points">${a.points}</span>`
+              : `<span class="answer-text">?????</span><span class="points">&nbsp;</span>`;
+            board.appendChild(row);
+          });
+        }
+
+        document.getElementById("team1-name-display").textContent = state.team1_name;
+        document.getElementById("team2-name-display").textContent = state.team2_name;
+        document.getElementById("team1-score-display").textContent = state.team1_score;
+        document.getElementById("team2-score-display").textContent = state.team2_score;
+        document
+          .getElementById("team1-card")
+          .classList.toggle("controlling", state.controlling_team === "team1");
+        document
+          .getElementById("team2-card")
+          .classList.toggle("controlling", state.controlling_team === "team2");
+        document.getElementById("multiplier-display").textContent = `${state.multiplier}x`;
+
+        const strikesEl = document.getElementById("strikes-display");
+        strikesEl.innerHTML = "";
+        for (let i = 0; i < 3; i++) {
+          const x = document.createElement("div");
+          x.className = "strike-x" + (i < state.strikes ? " on" : "");
+          x.textContent = "X";
+          strikesEl.appendChild(x);
+        }
+
+        // ----- Control -----
+        if (document.activeElement.id !== "team1-input") {
+          document.getElementById("team1-input").placeholder = state.team1_name;
+        }
+        if (document.activeElement.id !== "team2-input") {
+          document.getElementById("team2-input").placeholder = state.team2_name;
+        }
+
+        const answerList = document.getElementById("answer-list");
+        answerList.innerHTML = "";
+        if (q) {
+          q.answers.forEach((a, i) => {
+            const row = document.createElement("div");
+            row.className = "answer-row" + (a.revealed ? " revealed" : "");
+            const btn = a.revealed
+              ? `<span>&#10003; revealed</span>`
+              : `<button onclick="revealAnswer(${i})" ${
+                  state.controlling_team ? "" : "disabled"
+                }>Reveal (+${a.points * state.multiplier})</button>`;
+            row.innerHTML = `<span class="label">${a.text} <em>(${a.points} pts)</em></span>${btn}`;
+            answerList.appendChild(row);
+          });
+        } else {
+          answerList.innerHTML = '<p class="status-line">Load a question first.</p>';
+        }
+
+        document.getElementById("strike-btn").disabled = state.strikes >= 3;
+      }
+
+      loadQuestionBank();
+      poll();
+      setInterval(poll, 200);
+    </script>
+  </body>
+</html>

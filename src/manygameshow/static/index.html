@@ -8,37 +8,122 @@
       :root {
         --bg: #0b1220;
         --panel: #131c2e;
+        --panel-2: #1a2540;
         --text: #f5f7fa;
+        --text-dim: #9aa5b8;
         --accent: #ffcc00;
+        --border: #263252;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
         margin: 0;
+        min-height: 100vh;
         background: var(--bg);
         color: var(--text);
         font-family: system-ui, sans-serif;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        height: 100vh;
-      }
-
-      main {
-        background: var(--panel);
         padding: clamp(1rem, 4vw, 3rem);
-        border-radius: 0.5rem;
-        text-align: center;
       }
 
       h1 {
         color: var(--accent);
       }
+
+      .games {
+        width: min(600px, 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .game-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .game-card .meta {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      .links a {
+        color: var(--accent);
+        text-decoration: none;
+        margin-left: 0.75rem;
+        font-size: 0.85rem;
+      }
+
+      button {
+        background: var(--accent);
+        color: #10131a;
+        border: none;
+        border-radius: 0.4rem;
+        padding: 0.6rem 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+
+      .empty {
+        color: var(--text-dim);
+        text-align: center;
+      }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Many Game Show</h1>
-      <p>Lobby placeholder — games will be listed here.</p>
-    </main>
+    <h1>Many Game Show</h1>
+    <button onclick="createGame()">New Squad Squabble Game</button>
+    <div class="games" id="games"></div>
+    <script>
+      async function createGame() {
+        const resp = await fetch("/api/squad-squabble/games/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const game = await resp.json();
+        location.href = `/squad-squabble.html?id=${game.id}&view=control`;
+      }
+
+      async function loadGames() {
+        const resp = await fetch("/api/squad-squabble/games/");
+        const games = await resp.json();
+        const el = document.getElementById("games");
+        if (games.length === 0) {
+          el.innerHTML = '<p class="empty">No games yet — start one above.</p>';
+          return;
+        }
+        el.innerHTML = games
+          .map(
+            (g) => `
+          <div class="game-card">
+            <div>
+              <strong>${g.team1_name} vs ${g.team2_name}</strong>
+              <div class="meta">${g.team1_score} – ${g.team2_score} · ${g.status}</div>
+            </div>
+            <div class="links">
+              <a href="/squad-squabble.html?id=${g.id}&view=display">Display</a>
+              <a href="/squad-squabble.html?id=${g.id}&view=control">Control</a>
+            </div>
+          </div>`
+          )
+          .join("");
+      }
+
+      loadGames();
+      setInterval(loadGames, 1000);
+    </script>
   </body>
 </html>

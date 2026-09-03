@@ -192,7 +192,9 @@ def main() -> None:
                 avg_cycle_seconds += cycle_seconds
                 avg_cycle_count += 1
 
-            cycle_str = fmt_duration(cycle_seconds) + (" ⏳" if is_think_outlier else "")
+            cycle_str = fmt_duration(cycle_seconds) + (
+                " ⏳" if is_think_outlier else ""
+            )
         else:
             cycle_str = "—"  # last turn has no "next message" yet
 
@@ -213,7 +215,8 @@ def main() -> None:
         f"{fmt_duration(total_cycle_seconds)}  \n"
         f"**Average time to next message (excl. think-time outliers):** "
         f"{fmt_duration(avg_cycle)}  \n"
-        f"**Think-time outliers (> {THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min):** "
+        f"**Think-time outliers (> "
+        f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min):** "
         f"{len(think_outlier_turns)}"
     )
     if flagged_turns:
