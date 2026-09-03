@@ -53,8 +53,6 @@ check_url() {
 check_url "https://pypi.org" "PyPI" required "uv sync (fetching Python packages)"
 check_url "https://astral.sh" "astral.sh (uv releases)" optional \
   "only needed if uv itself isn't installed yet"
-check_url "https://fonts.googleapis.com" "Google Fonts" optional \
-  "squad-squabble.html loads Orbitron from here live; falls back to a system font if unreachable, just looks plainer"
 
 echo
 echo "-- Local environment --"

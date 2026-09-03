@@ -63,9 +63,14 @@ color, daytime/outdoor).
 
 ## Typography
 
-- A distinct display font (reference app uses Orbitron from Google Fonts)
-  for scores/numbers/big countdown text — anything meant to be read from
-  a distance.
+- A distinct display font (Orbitron) for scores/numbers/big countdown
+  text — anything meant to be read from a distance. **Self-host the font
+  file** (serve it from `/fonts/`, `@font-face` with a local `src`)
+  rather than loading it live from Google Fonts or any other CDN — this
+  app is explicitly designed to survive flaky conference wifi, and a
+  live font fetch is exactly the kind of dependency that undermines
+  that. Squad Squabble ships `orbitron-600.ttf` / `orbitron-800.ttf`
+  under `static/fonts/`; follow the same pattern for any new game.
 - Body/UI text uses a plain system font stack for legibility in dense
   control views.
 

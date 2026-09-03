@@ -4,10 +4,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Squad Squabble</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap"
-          rel="stylesheet" />
     <style>
+      /* Self-hosted (not Google Fonts CDN) so the display font still loads
+         on flaky/offline conference wifi — see UI_LOOK_AND_FEEL.md. */
+      @font-face {
+        font-family: "Orbitron";
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+        src: url("/fonts/orbitron-600.ttf") format("truetype");
+      }
+
+      @font-face {
+        font-family: "Orbitron";
+        font-weight: 800;
+        font-style: normal;
+        font-display: swap;
+        src: url("/fonts/orbitron-800.ttf") format("truetype");
+      }
+
       :root {
         --bg: #0b1220;
         --panel: #131c2e;
