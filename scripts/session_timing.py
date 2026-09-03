@@ -51,6 +51,25 @@ def is_human_turn(entry: dict) -> bool:
     return entry.get("origin", {}).get("kind") == "human"
 
 
+def is_agent_activity(entry: dict) -> bool:
+    """True for events that represent real agent work.
+
+    Only `assistant` entries (actual model output) and non-human `user`
+    entries (tool results feeding back into the agent's own loop) count.
+    Everything else — `queue-operation`, `attachment`, `system`, etc. — is
+    session/harness bookkeeping that can be logged on either side of a
+    turn boundary (e.g. system-reminders bundled with the *next* human
+    message), so none of it should be treated as "the agent was still
+    working" if left in.
+    """
+    entry_type = entry.get("type")
+    if entry_type == "assistant":
+        return True
+    if entry_type == "user" and not is_human_turn(entry):
+        return True
+    return False
+
+
 def first_text(entry: dict) -> str:
     content = entry.get("message", {}).get("content")
     if isinstance(content, str):
@@ -102,15 +121,13 @@ def main() -> None:
     timestamped = [e for e in entries if e.get("timestamp")]
     timestamped.sort(key=lambda e: e["timestamp"])
 
-    # "queue-operation" entries are the harness's own message-send
-    # bookkeeping, logged ~10ms before *every* human message — not agent
-    # work. Left in, they silently stretch every turn's last_activity right
-    # up to the next human message, making "agent time spent" collapse to
-    # the same value as "time to next message" for every single row.
-    timestamped = [e for e in timestamped if e.get("type") != "queue-operation"]
-
     # Build turns: each starts at a human message, ends (agent-time-wise) at
-    # the last event timestamp before the next human message.
+    # the last *agent-activity* event timestamp before the next human
+    # message (see is_agent_activity — bookkeeping types like
+    # queue-operation/attachment/system are excluded since they can be
+    # logged on either side of a turn boundary, e.g. reminders bundled with
+    # the *next* human message, which would otherwise falsely stretch this
+    # turn's end).
     turns = []
     current = None
     for entry in timestamped:
@@ -122,7 +139,7 @@ def main() -> None:
                 "start": entry["timestamp"],
                 "last_activity": entry["timestamp"],
             }
-        elif current is not None:
+        elif current is not None and is_agent_activity(entry):
             current["last_activity"] = entry["timestamp"]
     if current is not None:
         turns.append(current)
