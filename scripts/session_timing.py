@@ -102,6 +102,13 @@ def main() -> None:
     timestamped = [e for e in entries if e.get("timestamp")]
     timestamped.sort(key=lambda e: e["timestamp"])
 
+    # "queue-operation" entries are the harness's own message-send
+    # bookkeeping, logged ~10ms before *every* human message — not agent
+    # work. Left in, they silently stretch every turn's last_activity right
+    # up to the next human message, making "agent time spent" collapse to
+    # the same value as "time to next message" for every single row.
+    timestamped = [e for e in timestamped if e.get("type") != "queue-operation"]
+
     # Build turns: each starts at a human message, ends (agent-time-wise) at
     # the last event timestamp before the next human message.
     turns = []
