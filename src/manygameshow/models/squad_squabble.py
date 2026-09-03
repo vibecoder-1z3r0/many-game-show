@@ -1,0 +1,94 @@
+"""Squad Squabble — Family-Feud-style survey game state."""
+
+import json
+import uuid
+from datetime import UTC, datetime
+from enum import StrEnum
+
+from sqlmodel import Field, SQLModel
+
+from manygameshow.questions import Question, get_question
+
+
+def _utcnow() -> datetime:
+    """Naive UTC timestamp for SQLite compatibility."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+class Team(StrEnum):
+    TEAM1 = "team1"
+    TEAM2 = "team2"
+
+
+def _default_revealed_json() -> str:
+    return json.dumps([])
+
+
+class SquadSquabbleGame(SQLModel, table=True):
+    __tablename__ = "squad_squabble_games"
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    team1_name: str = Field(default="Team 1")
+    team2_name: str = Field(default="Team 2")
+    team1_score: int = Field(default=0, ge=0)
+    team2_score: int = Field(default=0, ge=0)
+
+    current_question_id: str | None = Field(default=None)
+    multiplier: int = Field(default=1, ge=1, le=3)
+    controlling_team: Team | None = Field(default=None)
+    strikes: int = Field(default=0, ge=0, le=3)
+
+    # JSON string: list of revealed answer indices (into the current
+    # question's answers array), e.g. "[0, 2]"
+    revealed_answer_indices_json: str = Field(default_factory=_default_revealed_json)
+
+    status: str = Field(default="active")
+
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
+
+
+class SquadSquabbleGameCreate(SQLModel):
+    team1_name: str = "Team 1"
+    team2_name: str = "Team 2"
+
+
+class AnswerRead(SQLModel):
+    text: str
+    points: int
+    revealed: bool
+
+
+class QuestionRead(SQLModel):
+    id: str
+    prompt: str
+    answers: list[AnswerRead]
+
+
+class SquadSquabbleGameRead(SQLModel):
+    """Response schema — replaces the raw question id/revealed-indices with
+    the fully resolved question and per-answer revealed state."""
+
+    id: str
+    team1_name: str
+    team2_name: str
+    team1_score: int
+    team2_score: int
+    current_question: QuestionRead | None
+    multiplier: int
+    controlling_team: Team | None
+    strikes: int
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+def revealed_indices(game: SquadSquabbleGame) -> list[int]:
+    result: list[int] = json.loads(game.revealed_answer_indices_json)
+    return result
+
+
+def current_question(game: SquadSquabbleGame) -> Question | None:
+    if game.current_question_id is None:
+        return None
+    return get_question(game.current_question_id)
