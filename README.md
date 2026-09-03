@@ -23,8 +23,19 @@ Currently implements **Squad Squabble** — a Family-Feud-style survey game.
 
 ## Running it
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.13+ (uv will fetch
-3.13 automatically if it's not already installed).
+Requires [uv](https://docs.astral.sh/uv/) — everything else (Python 3.13,
+all Python dependencies) lives inside uv's auto-created `.venv` and needs
+nothing pre-installed. On a new machine, check first:
+
+```bash
+make preflight
+```
+
+This checks for `uv`, `git`, network reachability (PyPI is required;
+astral.sh and Google Fonts are optional — see script comments for why),
+a free port 8000, and whether Playwright's browser is installed (only
+needed for `make test-ui`, not for just running the app). It exits
+non-zero with fix instructions if anything required is missing.
 
 ```bash
 # Install dependencies
