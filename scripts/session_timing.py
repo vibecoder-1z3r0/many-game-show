@@ -102,6 +102,12 @@ def fmt_duration(seconds: float) -> str:
 # report it as if it were real agent compute time.
 AGENT_TIME_SANITY_THRESHOLD_SECONDS = 30 * 60
 
+# "Time to next message" over this is treated as an outlier — the human
+# stepped away (reading, a break, a resumed session days later) rather
+# than genuinely "thinking" between turns. Excluded from the average so a
+# handful of long gaps don't dominate it; still shown per-row and counted.
+THINK_TIME_OUTLIER_THRESHOLD_SECONDS = 15 * 60
+
 
 def main() -> None:
     session_id = sys.argv[1] if len(sys.argv) > 1 else None
@@ -155,7 +161,11 @@ def main() -> None:
     flagged_agent_seconds = 0.0
     total_cycle_seconds = 0.0
     cycle_count = 0
+    avg_cycle_seconds = 0.0  # excludes think-time outliers
+    avg_cycle_count = 0
     flagged_turns = []
+    think_outlier_turns = []
+    think_outlier_seconds = 0.0
     for i, t in enumerate(turns, 1):
         start = parse_ts(t["start"])
         last_activity = parse_ts(t["last_activity"])
@@ -173,7 +183,16 @@ def main() -> None:
             cycle_seconds = (next_start - start).total_seconds()
             total_cycle_seconds += cycle_seconds
             cycle_count += 1
-            cycle_str = fmt_duration(cycle_seconds)
+
+            is_think_outlier = cycle_seconds > THINK_TIME_OUTLIER_THRESHOLD_SECONDS
+            if is_think_outlier:
+                think_outlier_turns.append(i)
+                think_outlier_seconds += cycle_seconds
+            else:
+                avg_cycle_seconds += cycle_seconds
+                avg_cycle_count += 1
+
+            cycle_str = fmt_duration(cycle_seconds) + (" ⏳" if is_think_outlier else "")
         else:
             cycle_str = "—"  # last turn has no "next message" yet
 
@@ -185,14 +204,17 @@ def main() -> None:
             f"| {agent_str} | {cycle_str} |"
         )
 
-    avg_cycle = total_cycle_seconds / cycle_count if cycle_count else 0.0
+    avg_cycle = avg_cycle_seconds / avg_cycle_count if avg_cycle_count else 0.0
     print(
         f"\n**Total turns:** {len(turns)}  \n"
         f"**Total agent time spent (excl. flagged):** "
         f"{fmt_duration(total_agent_seconds)}  \n"
         f"**Total time to next message (excl. last turn):** "
         f"{fmt_duration(total_cycle_seconds)}  \n"
-        f"**Average time to next message:** {fmt_duration(avg_cycle)}"
+        f"**Average time to next message (excl. think-time outliers):** "
+        f"{fmt_duration(avg_cycle)}  \n"
+        f"**Think-time outliers (> {THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min):** "
+        f"{len(think_outlier_turns)}"
     )
     if flagged_turns:
         print(
@@ -205,6 +227,16 @@ def main() -> None:
             f"ran. Excluded from the agent-time total above; 'time to next "
             f"message' is unaffected since that metric is expected to "
             f"include idle gaps."
+        )
+    if think_outlier_turns:
+        print(
+            f"\n⏳ Turn(s) {', '.join(str(n) for n in think_outlier_turns)} had a "
+            f"'time to next message' over "
+            f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min "
+            f"(total {fmt_duration(think_outlier_seconds)}) — likely a break, "
+            f"a resumed session, or time reading a long response rather than "
+            f"active back-and-forth. Excluded from the average above (still "
+            f"included in the raw total and shown per-row)."
         )
 
 
