@@ -32,10 +32,10 @@ make preflight
 ```
 
 This checks for `uv`, `git`, network reachability (PyPI is required;
-astral.sh and Google Fonts are optional — see script comments for why),
-a free port 8000, and whether Playwright's browser is installed (only
-needed for `make test-ui`, not for just running the app). It exits
-non-zero with fix instructions if anything required is missing.
+astral.sh is optional — see script comments for why), a free port 8000,
+and whether Playwright's browser is installed (only needed for
+`make test-ui`, not for just running the app). It exits non-zero with fix
+instructions if anything required is missing.
 
 ```bash
 # Install dependencies
