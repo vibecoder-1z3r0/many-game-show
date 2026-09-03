@@ -43,12 +43,14 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 32 | Family Feud - I think this will be a great game to implement and then … | 20:52:01 | 8s | 29s |
 | 33 | Squad Squabble - I'm in for it | 20:52:38 | 2m 55s | 1m 34s |
 | 34 | you can draft a starter set for testing, but I'll be making up my own … | 20:57:08 | 14m 24s | 32s |
-| 35 | looking at the session logs and seeing this turn for you is taking ove… | 21:12:04 | 1m 0s | — |
+| 35 | looking at the session logs and seeing this turn for you is taking ove… | 21:12:04 | 1m 13s | 18s |
+| 36 | so, is this ready to test? | 21:13:35 | 1m 40s | 1m 6s |
+| 37 | update the session md file one more time and commit it please | 21:16:21 | 4s | — |
 
-**Total turns:** 35  
-**Total agent time spent (excl. flagged):** 44m 3s  
-**Total human think time (excl. outliers):** 47m 59s  
-**Average human think time (excl. outliers):** 1m 33s  
+**Total turns:** 37  
+**Total agent time spent (excl. flagged):** 46m 0s  
+**Total human think time (excl. outliers):** 49m 24s  
+**Average human think time (excl. outliers):** 1m 30s  
 **Think-time outliers (> 15 min):** 3
 
 ⏳ Turn(s) 11, 13, 14 had a 'human think time' over 15 min (total 645h 27m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
