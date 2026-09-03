@@ -5,12 +5,13 @@ Reads the session transcript the harness keeps under
 ~/.claude/projects/<project-slug>/<session-id>.jsonl and prints a markdown
 table of each human turn with two separate timing metrics:
 
-- "Time to next message": wall-clock from this human message to the *next*
-  human message. Includes any gap while the human is reading/thinking/typing
-  (and can be huge if the conversation was resumed after a long break).
 - "Agent time spent": wall-clock from this human message to the *last*
   assistant/tool event before the next human message — i.e. how long the
-  agent was actually working on this turn, excluding the trailing gap.
+  agent was actually working on this turn.
+- "Human think time": wall-clock from the *end* of agent activity to the
+  *next* human message — i.e. how long the human took to read/think/type
+  before replying, with the agent's own working time subtracted out (a
+  slow agent response no longer inflates this number).
 
 Usage:
     python3 scripts/session_timing.py [session_id]
@@ -102,10 +103,11 @@ def fmt_duration(seconds: float) -> str:
 # report it as if it were real agent compute time.
 AGENT_TIME_SANITY_THRESHOLD_SECONDS = 30 * 60
 
-# "Time to next message" over this is treated as an outlier — the human
+# "Human think time" over this is treated as an outlier — the human
 # stepped away (reading, a break, a resumed session days later) rather
-# than genuinely "thinking" between turns. Excluded from the average so a
-# handful of long gaps don't dominate it; still shown per-row and counted.
+# than genuinely "thinking" between turns. Excluded from BOTH the total
+# and the average so a handful of long gaps don't dominate either; still
+# shown per-row and counted.
 THINK_TIME_OUTLIER_THRESHOLD_SECONDS = 15 * 60
 
 
@@ -153,16 +155,14 @@ def main() -> None:
     print(f"# Session Timing Report\n\nSource: `{path}`\n")
     print(
         "| # | Prompt (truncated) | Started (UTC) | Agent time spent | "
-        "Time to next message |"
+        "Human think time |"
     )
     print("|---|---|---|---|---|")
 
     total_agent_seconds = 0.0
     flagged_agent_seconds = 0.0
-    total_cycle_seconds = 0.0
-    cycle_count = 0
-    avg_cycle_seconds = 0.0  # excludes think-time outliers
-    avg_cycle_count = 0
+    total_think_seconds = 0.0  # excludes think-time outliers
+    think_count = 0
     flagged_turns = []
     think_outlier_turns = []
     think_outlier_seconds = 0.0
@@ -180,41 +180,42 @@ def main() -> None:
 
         if i < len(turns):
             next_start = parse_ts(turns[i]["start"])
-            cycle_seconds = (next_start - start).total_seconds()
-            total_cycle_seconds += cycle_seconds
-            cycle_count += 1
+            # Human think time = gap between messages MINUS the agent's own
+            # working time — a slow agent response should never count
+            # against the human's pacing.
+            think_seconds = (next_start - last_activity).total_seconds()
 
-            is_think_outlier = cycle_seconds > THINK_TIME_OUTLIER_THRESHOLD_SECONDS
+            is_think_outlier = think_seconds > THINK_TIME_OUTLIER_THRESHOLD_SECONDS
             if is_think_outlier:
                 think_outlier_turns.append(i)
-                think_outlier_seconds += cycle_seconds
+                think_outlier_seconds += think_seconds
             else:
-                avg_cycle_seconds += cycle_seconds
-                avg_cycle_count += 1
+                total_think_seconds += think_seconds
+                think_count += 1
 
-            cycle_str = fmt_duration(cycle_seconds) + (
+            think_str = fmt_duration(think_seconds) + (
                 " ⏳" if is_think_outlier else ""
             )
         else:
-            cycle_str = "—"  # last turn has no "next message" yet
+            think_str = "—"  # last turn has no "next message" yet
 
         prompt = t["prompt"][:70] + ("…" if len(t["prompt"]) > 70 else "")
         prompt = prompt.replace("|", "\\|")
         agent_str = fmt_duration(agent_seconds) + (" ⚠" if suspicious else "")
         print(
             f"| {i} | {prompt} | {start.strftime('%H:%M:%S')} "
-            f"| {agent_str} | {cycle_str} |"
+            f"| {agent_str} | {think_str} |"
         )
 
-    avg_cycle = avg_cycle_seconds / avg_cycle_count if avg_cycle_count else 0.0
+    avg_think = total_think_seconds / think_count if think_count else 0.0
     print(
         f"\n**Total turns:** {len(turns)}  \n"
         f"**Total agent time spent (excl. flagged):** "
         f"{fmt_duration(total_agent_seconds)}  \n"
-        f"**Total time to next message (excl. last turn):** "
-        f"{fmt_duration(total_cycle_seconds)}  \n"
-        f"**Average time to next message (excl. think-time outliers):** "
-        f"{fmt_duration(avg_cycle)}  \n"
+        f"**Total human think time (excl. outliers):** "
+        f"{fmt_duration(total_think_seconds)}  \n"
+        f"**Average human think time (excl. outliers):** "
+        f"{fmt_duration(avg_think)}  \n"
         f"**Think-time outliers (> "
         f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min):** "
         f"{len(think_outlier_turns)}"
@@ -227,19 +228,17 @@ def main() -> None:
             f"(total {fmt_duration(flagged_agent_seconds)}), which is "
             f"implausible as real agent work — likely a transcript entry "
             f"logged near session-resume time rather than when it actually "
-            f"ran. Excluded from the agent-time total above; 'time to next "
-            f"message' is unaffected since that metric is expected to "
-            f"include idle gaps."
+            f"ran. Excluded from the agent-time total above."
         )
     if think_outlier_turns:
         print(
             f"\n⏳ Turn(s) {', '.join(str(n) for n in think_outlier_turns)} had a "
-            f"'time to next message' over "
+            f"'human think time' over "
             f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min "
             f"(total {fmt_duration(think_outlier_seconds)}) — likely a break, "
             f"a resumed session, or time reading a long response rather than "
-            f"active back-and-forth. Excluded from the average above (still "
-            f"included in the raw total and shown per-row)."
+            f"active back-and-forth. Excluded from BOTH the total and the "
+            f"average above (still shown per-row)."
         )
 
 
