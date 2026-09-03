@@ -12,15 +12,63 @@ point before we start building — update it if we deviate.
 |---|---|
 | Backend | Python 3.13+, FastAPI, SQLModel (SQLite), Pydantic v2 |
 | Package mgr | uv |
-| Lint / format | ruff |
+| Lint / format | ruff (lint + format — no black; `ruff format` is a compatible superset) |
 | Type check | mypy |
-| Tests | pytest |
+| Backend tests | pytest + pytest-cov |
+| UI tests | pytest-playwright (Python bindings, not the Node/JS runner) |
+| HTML lint/format | djlint |
 | Frontend | Vanilla HTML + CSS + JS — no build step, no framework |
 | Server | uvicorn |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) |
 
 Same stack as the reference app. Chosen for: zero build tooling (nothing to
 break mid-demo), fast to reason about, easy to extend live, runs anywhere
 (including a laptop with no internet once dependencies are installed).
+
+---
+
+## CI & Testing
+
+GitHub Actions (`.github/workflows/ci.yml`) runs three jobs on every push
+and PR: `lint-and-typecheck`, `backend-tests`, `ui-tests`. Local equivalents
+are in the `Makefile` (`make check` runs all of it).
+
+### Why these tools
+
+- **ruff only, no black.** `ruff format` is a fast, black-compatible
+  formatter; running both would just mean two configs that can disagree
+  with each other for no benefit.
+- **djlint, not a Node toolchain.** The frontend is deliberately
+  framework-free with no build step (see UI_LOOK_AND_FEEL.md). Pulling in
+  ESLint/Prettier just to lint inline `<script>`/`<style>` blocks would
+  add a second language toolchain purely for CI — against the spirit of
+  the "nothing to break mid-demo" design goal. djlint is a pure-Python
+  HTML formatter/linter with no Node dependency, so it's the one frontend
+  lint tool we do use.
+- **pytest-playwright, not the JS Playwright Test runner.** Keeps CI (and
+  test authoring) to a single language — Python — end to end. Browser
+  tests live in `tests/test_ui/` as ordinary pytest files, using the
+  `page` fixture from `pytest-playwright`.
+- **Real browser tests, not JS unit tests, are the frontend safety net.**
+  Since there's no JS linter, correctness of the polling/render/theme
+  logic in each game's `.html` file is verified by actually loading the
+  page in Chromium and asserting on rendered state — this also matches
+  how the app will really be used (a phone/tablet loading a page).
+
+### Test layout
+
+```
+tests/
+  test_api/      # pytest — FastAPI TestClient, one file per game's router
+  test_models/   # pytest — model defaults, enums, ID generation (added as models are added)
+  test_ui/       # pytest-playwright — loads real pages in Chromium, asserts on rendered DOM
+```
+
+### Coverage target
+
+No hard threshold enforced yet — `pytest-cov` reports coverage in CI output
+so gaps are visible, but a numeric gate can be added once there's enough
+real game logic to make one meaningful.
 
 ---
 
