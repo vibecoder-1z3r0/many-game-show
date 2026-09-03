@@ -2,8 +2,8 @@
 
 Regenerate with: `python3 scripts/session_timing.py <session_id>`
 (see `scripts/session_timing.py` for what "agent time spent" vs.
-"time to next message" mean, and how flagged outliers/excluded events
-are handled).
+"time to next message" mean, and how flagged/outlier events are
+handled).
 
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
 
@@ -19,10 +19,10 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 8 | why are you using tyraziel and not my https://github.com/vibecoder-1z3… | 22:32:50 | 40s | 2m 17s |
 | 9 | and I'm a chump - we should use these as the AIA since this is primari… | 22:35:07 | 5s | 39s |
 | 10 | the link in the commit is saying Hab.... not PAI | 22:35:46 | 28s | 5m 34s |
-| 11 | ok great so what's the architecture we're using, can you send that to … | 22:41:20 | 9s | 16m 35s |
+| 11 | ok great so what's the architecture we're using, can you send that to … | 22:41:20 | 9s | 16m 35s ⏳ |
 | 12 | Have you documented all this in the proper markdown files? | 22:57:54 | 7s | 39s |
-| 13 | What’s our context window looking like? | 22:58:34 | 4m 11s | 644h 56m |
-| 14 | I think we should get some CI stuff in place before we start coding an… | 19:54:46 | 3m 55s | 22m 39s |
+| 13 | What’s our context window looking like? | 22:58:34 | 4m 11s | 644h 56m ⏳ |
+| 14 | I think we should get some CI stuff in place before we start coding an… | 19:54:46 | 3m 55s | 22m 39s ⏳ |
 | 15 | no black or flake? | 20:17:26 | 9s | 38s |
 | 16 | no this is fine - will you run these checks before committing or are w… | 20:18:03 | 6s | 33s |
 | 17 | that's fine, we can rely on the CI for playwright still?  like you'll … | 20:18:36 | 6s | 29s |
@@ -37,9 +37,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 26 | quick question / test - can you upload the jsonl file to artifacts so … | 20:35:46 | 2m 9s | 3m 45s |
 | 27 | that looked terrible - I'm not sure it's worth it right now.... let's … | 20:39:31 | 21s | 1m 16s |
 | 28 | ugh agent time spent is the same as time to next message - so you're n… | 20:40:47 | 1m 43s | 2m 29s |
-| 29 | some look better but turn 13 still looks fairly sus | 20:43:16 | 1m 16s | — |
+| 29 | some look better but turn 13 still looks fairly sus | 20:43:16 | 1m 42s | 3m 8s |
+| 30 | ok we should probably avoid any of the outlier "over 15 minutes" of "u… | 20:46:24 | 47s | — |
 
-**Total turns:** 29  
-**Total agent time spent (excl. flagged):** 24m 15s  
-**Total time to next message (excl. last turn):** 646h 29m  
-**Average time to next message:** 23h 5m
+**Total turns:** 30  
+**Total agent time spent (excl. flagged):** 25m 27s  
+**Total time to next message (excl. last turn):** 646h 32m  
+**Average time to next message (excl. think-time outliers):** 2m 12s  
+**Think-time outliers (> 15 min):** 3
+
+⏳ Turn(s) 11, 13, 14 had a 'time to next message' over 15 min (total 645h 35m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from the average above (still included in the raw total and shown per-row).
