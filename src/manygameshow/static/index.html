@@ -37,6 +37,7 @@
 
       .games {
         width: min(600px, 100%);
+        margin-top: 2rem;
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
@@ -51,6 +52,15 @@
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
+      }
+
+      .game-type {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--accent);
+        font-weight: 700;
+        margin-bottom: 0.2rem;
       }
 
       .game-card .meta {
@@ -97,6 +107,12 @@
         location.href = `/squad-squabble.html?id=${game.id}&view=control`;
       }
 
+      function controllingLabel(g) {
+        if (g.controlling_team === "team1") return g.team1_name;
+        if (g.controlling_team === "team2") return g.team2_name;
+        return "None";
+      }
+
       async function loadGames() {
         const resp = await fetch("/api/squad-squabble/games/");
         const games = await resp.json();
@@ -110,8 +126,12 @@
             (g) => `
           <div class="game-card">
             <div>
+              <div class="game-type">Squad Squabble</div>
               <strong>${g.team1_name} vs ${g.team2_name}</strong>
               <div class="meta">${g.team1_score} – ${g.team2_score} · ${g.status}</div>
+              <div class="meta">
+                Round ${g.current_round} · Control: ${controllingLabel(g)} · Strikes: ${g.strikes}/3
+              </div>
             </div>
             <div class="links">
               <a href="/squad-squabble.html?id=${g.id}&view=display">Display</a>
