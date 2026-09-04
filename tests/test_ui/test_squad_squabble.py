@@ -255,3 +255,22 @@ def test_reset_game_button_requires_confirmation_and_clears_state(
     expect(page.locator("#round-value")).to_have_text("1")
     expect(page.locator("#team1-score-input")).to_have_value("0")
     expect(page.locator("#answer-list")).to_contain_text("Load a question first")
+
+
+def test_strike_animation_timing_configurable_and_persisted(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+
+    expect(page.locator("#strike-hold-input")).to_have_value("500")
+    expect(page.locator("#strike-duration-input")).to_have_value("600")
+
+    page.fill("#strike-hold-input", "1200")
+    page.fill("#strike-duration-input", "900")
+    page.get_by_role("button", name="Set timing", exact=True).click()
+
+    # Reload to prove it's server-persisted, not just left in the input
+    page.reload()
+    expect(page.locator("#strike-hold-input")).to_have_value("1200")
+    expect(page.locator("#strike-duration-input")).to_have_value("900")

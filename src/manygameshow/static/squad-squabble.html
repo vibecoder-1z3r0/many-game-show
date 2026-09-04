@@ -439,7 +439,7 @@
       .strike-overlay-x {
         font-family: "Orbitron", system-ui, sans-serif;
         font-weight: 800;
-        font-size: 8rem;
+        font-size: clamp(9rem, 22vw, 16rem);
         line-height: 1;
         color: var(--strike-red);
         text-shadow: 0 0 40px rgba(255, 77, 77, 0.85);
@@ -710,6 +710,20 @@
           </div>
           <div class="row">
             <button class="danger" onclick="revealRemaining()">Reveal remaining answers</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Strike Animation (Display)</legend>
+          <div class="row">
+            <label for="strike-hold-input">Hold (ms)</label>
+            <input type="number" id="strike-hold-input" value="500" min="0" max="5000" />
+            <label for="strike-duration-input">Shrink (ms)</label>
+            <input type="number"
+                   id="strike-duration-input"
+                   value="600"
+                   min="100"
+                   max="5000" />
+            <button onclick="setStrikeAnimation()">Set timing</button>
           </div>
         </fieldset>
         <fieldset>
@@ -996,6 +1010,14 @@
         patch("/round", { round_number });
       }
 
+      function setStrikeAnimation() {
+        const hold_ms = Number(document.getElementById("strike-hold-input").value);
+        const duration_ms = Number(
+          document.getElementById("strike-duration-input").value
+        );
+        patch("/strike-animation", { hold_ms, duration_ms });
+      }
+
       function updateTeamName(n) {
         const value = document.getElementById(`team${n}-input`).value.trim();
         if (!value) return;
@@ -1006,7 +1028,7 @@
       // screen, then animate each to the real (already-lit) indicator dot's
       // position/size and fade out, so the "landing" reads as the big X
       // shrinking into place.
-      function triggerStrikeAnimation(count) {
+      function triggerStrikeAnimation(count, holdMs, durationMs) {
         const targets = document.querySelectorAll("#strikes-display .strike-x");
         if (!targets.length || !count) return;
 
@@ -1022,7 +1044,11 @@
         }
         document.body.appendChild(overlay);
 
-        requestAnimationFrame(() => {
+        // Hold at full size for holdMs before shrinking into place — the
+        // Xs spawn immediately (so they're visible right away) but don't
+        // start moving/shrinking until the hold elapses.
+        setTimeout(() => {
+          const durationSec = durationMs / 1000;
           items.forEach((el, i) => {
             const target = targets[i];
             if (!target) {
@@ -1035,12 +1061,13 @@
             const dx = tRect.left + tRect.width / 2 - (eRect.left + eRect.width / 2);
             const dy = tRect.top + tRect.height / 2 - (eRect.top + eRect.height / 2);
             el.style.transition =
-              "transform 0.6s cubic-bezier(.2,.8,.2,1), opacity 0.6s ease-in";
+              `transform ${durationSec}s cubic-bezier(.2,.8,.2,1), ` +
+              `opacity ${durationSec}s ease-in`;
             el.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
             el.style.opacity = "0";
           });
-          setTimeout(() => overlay.remove(), 650);
-        });
+          setTimeout(() => overlay.remove(), durationMs + 50);
+        }, holdMs);
       }
 
       function render() {
@@ -1087,7 +1114,11 @@
           lastStrikesForAnim !== null &&
           state.strikes > lastStrikesForAnim
         ) {
-          triggerStrikeAnimation(state.strikes);
+          triggerStrikeAnimation(
+            state.strikes,
+            state.strike_anim_hold_ms,
+            state.strike_anim_duration_ms
+          );
         }
         lastStrikesForAnim = state.strikes;
 
@@ -1106,6 +1137,13 @@
         }
         if (document.activeElement.id !== "round-input") {
           document.getElementById("round-input").value = state.current_round;
+        }
+        if (document.activeElement.id !== "strike-hold-input") {
+          document.getElementById("strike-hold-input").value = state.strike_anim_hold_ms;
+        }
+        if (document.activeElement.id !== "strike-duration-input") {
+          document.getElementById("strike-duration-input").value =
+            state.strike_anim_duration_ms;
         }
 
         document.getElementById("round-value").textContent = state.current_round;

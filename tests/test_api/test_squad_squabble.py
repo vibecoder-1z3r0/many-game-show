@@ -360,3 +360,32 @@ def test_reset_game_clears_state_but_keeps_team_names(client: TestClient) -> Non
     assert body["controlling_team"] is None
     assert body["strikes"] == 0
     assert body["round_points"] == 0
+
+
+def test_strike_animation_defaults(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = client.get(f"/api/squad-squabble/games/{game_id}")
+    body = resp.json()
+    assert body["strike_anim_hold_ms"] == 500
+    assert body["strike_anim_duration_ms"] == 600
+
+
+def test_set_strike_animation_timing(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = client.patch(
+        f"/api/squad-squabble/games/{game_id}/strike-animation",
+        json={"hold_ms": 1200, "duration_ms": 900},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["strike_anim_hold_ms"] == 1200
+    assert body["strike_anim_duration_ms"] == 900
+
+
+def test_set_strike_animation_timing_rejects_out_of_range(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = client.patch(
+        f"/api/squad-squabble/games/{game_id}/strike-animation",
+        json={"hold_ms": -1, "duration_ms": 600},
+    )
+    assert resp.status_code == 422
