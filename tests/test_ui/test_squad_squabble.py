@@ -29,6 +29,16 @@ def test_lobby_create_game_button_navigates_to_control(
     expect(page.locator("#tab-control")).to_have_class("active")
 
 
+def test_breadcrumb_links_back_to_lobby(live_server: str, page: Page) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+
+    expect(page.get_by_role("link", name="Many Game Show")).to_be_visible()
+    page.get_by_role("link", name="Many Game Show").click()
+    page.wait_for_url(f"{live_server}/")
+    expect(page.locator("h1")).to_have_text("Many Game Show")
+
+
 def test_reveal_active_without_control_and_no_score_until_awarded(
     live_server: str, page: Page
 ) -> None:
@@ -52,17 +62,11 @@ def test_clear_control_resets_to_no_one(live_server: str, page: Page) -> None:
     game_id = _create_game(live_server, page)
     _goto_control(live_server, page, game_id)
     page.get_by_role("button", name="Team 1 controls", exact=True).click()
-    expect(page.locator("#team1-controls-btn")).to_have_class(
-        "control-btn active"
-    )
+    expect(page.locator("#team1-controls-btn")).to_have_class("control-btn active")
 
     page.get_by_role("button", name="Clear control", exact=True).click()
-    expect(page.locator("#team1-controls-btn")).not_to_have_class(
-        "control-btn active"
-    )
-    expect(page.locator("#team2-controls-btn")).not_to_have_class(
-        "control-btn active"
-    )
+    expect(page.locator("#team1-controls-btn")).not_to_have_class("control-btn active")
+    expect(page.locator("#team2-controls-btn")).not_to_have_class("control-btn active")
 
 
 def test_unreveal_button_hides_answer_again(live_server: str, page: Page) -> None:
