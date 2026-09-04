@@ -39,6 +39,36 @@ def test_breadcrumb_links_back_to_lobby(live_server: str, page: Page) -> None:
     expect(page.locator("h1")).to_have_text("Many Game Show")
 
 
+def test_display_header_collapses_to_led_and_expands_back(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+
+    header = page.locator("header")
+    mini_header = page.locator("#mini-header")
+    expect(header).to_be_visible()
+    expect(mini_header).to_be_hidden()
+
+    page.get_by_role("button", name="Hide header", exact=True).click()
+    expect(header).to_be_hidden()
+    expect(mini_header).to_be_visible()
+    expect(page.locator("#mini-led")).to_have_class("mini-led ok")
+
+    page.get_by_role("button", name="Show header", exact=True).click()
+    expect(header).to_be_visible()
+    expect(mini_header).to_be_hidden()
+
+
+def test_control_view_always_shows_full_header(live_server: str, page: Page) -> None:
+    """The collapse feature is a Display-only affordance — Control always
+    needs its tabs/theme select visible to operate the game."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    expect(page.get_by_role("button", name="Hide header", exact=True)).to_be_hidden()
+    expect(page.locator("header")).to_be_visible()
+
+
 def test_reveal_active_without_control_and_no_score_until_awarded(
     live_server: str, page: Page
 ) -> None:
