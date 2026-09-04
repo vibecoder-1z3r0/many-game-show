@@ -59,12 +59,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 48 | There should also be Many Board > Game Type instead of just Game Type … | 02:16:41 | 8m 23s | 26s |
 | 49 | For display can we make it where the header is hide-able and then show… | 02:25:30 | 19m 32s | 2s |
 | 50 | for the load question in the drop down can we have the number of answe… | 02:45:04 | 1m 24s | 13s |
-| 51 | it would be nice on the main page for the strikes to be shaded x's or … | 02:46:41 | 1m 10s | — |
+| 51 | it would be nice on the main page for the strikes to be shaded x's or … | 02:46:41 | 1m 15s | 3m 6s |
+| 52 | can you make a few other questions and give them variable answers, fro… | 02:51:02 | 2m 2s | — |
 
-**Total turns:** 51  
-**Total agent time spent (excl. flagged):** 1h 37m  
-**Total human think time (excl. outliers):** 1h 20m  
-**Average human think time (excl. outliers):** 1m 45s  
+**Total turns:** 52  
+**Total agent time spent (excl. flagged):** 1h 39m  
+**Total human think time (excl. outliers):** 1h 23m  
+**Average human think time (excl. outliers):** 1m 47s  
 **Think-time outliers (> 15 min):** 4
 
 ⏳ Turn(s) 11, 13, 14, 42 had a 'human think time' over 15 min (total 649h 36m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
