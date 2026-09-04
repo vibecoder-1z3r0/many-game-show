@@ -20,3 +20,21 @@ and AI attribution respectively.
   with `python3 scripts/session_timing.py <session_id>` (see that script
   for what it reports) before pushing, so the log stays current rather
   than needing to be asked each time.
+
+## Running Playwright tests in Claude Code's remote sandbox
+
+`make test-ui` runs `playwright install --with-deps chromium` first, but
+in Claude Code's remote execution environment a Chromium build is
+already preinstalled and `pytest tests/test_ui` will fail with "Looks
+like Playwright was just installed or updated" if run directly. Point
+it at the preinstalled browser instead:
+
+```
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome \
+  uv run pytest tests/test_ui
+```
+
+(`tests/test_ui/conftest.py` already reads this env var — see
+`browser_type_launch_args`.) The exact `chromium-1194` build number may
+drift; if the path 404s, `ls /opt/pw-browsers/` to find the current one.
+This is sandbox-specific — not needed on a normal local dev machine.

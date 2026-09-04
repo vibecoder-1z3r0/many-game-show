@@ -63,12 +63,14 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 57 | once points are awarded, future reveals should not add to the round sc… | 03:22:45 | 1m 50s | 1m 26s |
 | 58 | if you make database changes remind me to remove the database before t… | 03:26:01 | 36s | 5m 41s |
 | 59 | I think for the survey answers with the ?????, can we put ?? in gold b… | 03:32:18 | 1m 13s | 7s |
-| 60 | no, the question should still be ????? gray, but the points so like al… | 03:33:38 | 53s | — |
+| 60 | no, the question should still be ????? gray, but the points so like al… | 03:33:38 | 56s | 10s |
+| 61 | how could I have said that differently, I thought what I sent was corr… | 03:34:45 | 11s | 42m 10s ⏳ |
+| 62 | is there anything that we need to add back into the CLAUDE.md file so … | 04:17:06 | 45s | — |
 
-**Total turns:** 60  
-**Total agent time spent (excl. flagged):** 1h 48m  
+**Total turns:** 62  
+**Total agent time spent (excl. flagged):** 1h 49m  
 **Total human think time (excl. outliers):** 1h 55m  
-**Average human think time (excl. outliers):** 2m 6s  
-**Think-time outliers (> 15 min):** 4
+**Average human think time (excl. outliers):** 2m 4s  
+**Think-time outliers (> 15 min):** 5
 
-⏳ Turn(s) 11, 13, 14, 42 had a 'human think time' over 15 min (total 649h 36m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 11, 13, 14, 42, 61 had a 'human think time' over 15 min (total 650h 18m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
