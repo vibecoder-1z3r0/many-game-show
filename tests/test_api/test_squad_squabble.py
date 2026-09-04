@@ -325,3 +325,38 @@ def test_set_status(client: TestClient) -> None:
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "final"
+
+
+def test_reset_game_clears_state_but_keeps_team_names(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _load(client, game_id, multiplier=3)
+    client.patch(
+        f"/api/squad-squabble/games/{game_id}/face-off", json={"team": "team1"}
+    )
+    client.patch(
+        f"/api/squad-squabble/games/{game_id}/reveal", json={"answer_index": 0}
+    )
+    client.patch(
+        f"/api/squad-squabble/games/{game_id}/award-round", json={"team": "team1"}
+    )
+    client.patch(f"/api/squad-squabble/games/{game_id}/round/increment")
+    client.patch(
+        f"/api/squad-squabble/games/{game_id}/score",
+        json={"team": "team2", "value": 500},
+    )
+
+    resp = client.patch(f"/api/squad-squabble/games/{game_id}/reset")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["team1_name"] == "Ravens"  # unchanged
+    assert body["team2_name"] == "Otters"  # unchanged
+    assert body["team1_score"] == 0
+    assert body["team2_score"] == 0
+    assert body["current_round"] == 1
+    assert body["current_question"] is None
+    assert body["question_visible"] is False
+    assert body["multiplier"] == 1
+    assert body["controlling_team"] is None
+    assert body["strikes"] == 0
+    assert body["round_points"] == 0

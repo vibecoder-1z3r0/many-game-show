@@ -366,3 +366,18 @@ def set_status(
     game = _get_game(game_id, session)
     game.status = body.status
     return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/reset", response_model=SquadSquabbleGameRead)
+def reset_game(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
+    """Reset scores, round, and board state for a fresh game — team names
+    are kept since the same teams are presumably about to play again."""
+    game = _get_game(game_id, session)
+    game.team1_score = 0
+    game.team2_score = 0
+    game.current_round = 1
+    game.current_question_id = None
+    game.question_visible = False
+    game.multiplier = 1
+    _reset_round_state(game)
+    return _to_read(_save(game, session))

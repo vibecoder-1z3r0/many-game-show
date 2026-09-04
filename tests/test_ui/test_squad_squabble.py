@@ -232,3 +232,26 @@ def test_display_view_reveal_remaining_shows_all_answers(
 
     page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
     expect(page.locator("#board .board-row.hidden-row")).to_have_count(0)
+
+
+def test_reset_game_button_requires_confirmation_and_clears_state(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    page.get_by_role("button", name="Round +", exact=True).click()
+    page.fill("#team1-score-input", "250")
+    page.get_by_role("button", name="Set score", exact=True).first.click()
+
+    # Dismissing the confirm dialog should leave everything untouched
+    page.once("dialog", lambda dialog: dialog.dismiss())
+    page.get_by_role("button", name="Reset Game", exact=True).click()
+    expect(page.locator("#round-value")).to_have_text("2")
+
+    # Accepting it resets round/score/board but keeps team names
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.get_by_role("button", name="Reset Game", exact=True).click()
+    expect(page.locator("#round-value")).to_have_text("1")
+    expect(page.locator("#team1-score-input")).to_have_value("0")
+    expect(page.locator("#answer-list")).to_contain_text("Load a question first")
