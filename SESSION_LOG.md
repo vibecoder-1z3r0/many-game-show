@@ -57,12 +57,14 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 51 | it would be nice on the main page for the strikes to be shaded x's or … | 02:46:41 | 1m 15s | 3m 6s |
 | 52 | can you make a few other questions and give them variable answers, fro… | 02:51:02 | 2m 7s | 3m 42s |
 | 53 | can the X's start in the middle of the survey answer area in the verti… | 02:56:51 | 1m 47s | 10m 18s |
-| 54 | strike Xs should be about 1.5 larger, agree? | 03:08:57 | 1m 21s | — |
+| 54 | strike Xs should be about 1.5 larger, agree? | 03:08:57 | 1m 30s | 1m 10s |
+| 55 | if there are more than 5 answers, should we have the survey results on… | 03:11:37 | 11s | 1m 44s |
+| 56 | yes - is this going to be too complex?  also, did the context just col… | 03:13:32 | 1m 4s | — |
 
-**Total turns:** 54  
-**Total agent time spent (excl. flagged):** 1h 42m  
-**Total human think time (excl. outliers):** 1h 37m  
-**Average human think time (excl. outliers):** 1m 60s  
+**Total turns:** 56  
+**Total agent time spent (excl. flagged):** 1h 44m  
+**Total human think time (excl. outliers):** 1h 40m  
+**Average human think time (excl. outliers):** 1m 58s  
 **Think-time outliers (> 15 min):** 4
 
 ⏳ Turn(s) 11, 13, 14, 42 had a 'human think time' over 15 min (total 649h 36m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).

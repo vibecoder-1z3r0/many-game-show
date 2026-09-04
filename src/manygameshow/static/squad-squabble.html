@@ -272,6 +272,10 @@
         gap: clamp(0.4rem, 1vw, 0.75rem);
       }
 
+      .board-two-col {
+        column-gap: clamp(1rem, 2.5vw, 2rem);
+      }
+
       /* Each answer is a flip-card — vertical (rotateX), as opposed to the
          question card's horizontal (rotateY) flip — so revealing an answer
          reads as a distinct motion from revealing the question. */
@@ -767,6 +771,20 @@
 
         if (boardQuestionId !== q.id) {
           board.innerHTML = "";
+          // More than 5 answers: split into 2 columns (filled top-to-bottom,
+          // left column first) so rows don't get squeezed too short.
+          const twoCol = q.answers.length > 5;
+          board.classList.toggle("board-two-col", twoCol);
+          if (twoCol) {
+            const rows = Math.ceil(q.answers.length / 2);
+            board.style.gridTemplateColumns = "repeat(2, 1fr)";
+            board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            board.style.gridAutoFlow = "column";
+          } else {
+            board.style.gridTemplateColumns = "";
+            board.style.gridTemplateRows = "";
+            board.style.gridAutoFlow = "";
+          }
           boardRowEls = q.answers.map(() => {
             const outer = document.createElement("div");
             outer.className = "board-flip-outer";
