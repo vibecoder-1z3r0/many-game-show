@@ -927,7 +927,10 @@
         questionBank = await api("/questions", { method: "GET" });
         const sel = document.getElementById("question-select");
         sel.innerHTML = questionBank
-          .map((q) => `<option value="${q.id}">${q.prompt}</option>`)
+          .map(
+            (q) =>
+              `<option value="${q.id}">${q.prompt} (${q.answers.length})</option>`
+          )
           .join("");
       }
 
