@@ -66,12 +66,18 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 60 | no, the question should still be ????? gray, but the points so like al… | 03:33:38 | 56s | 10s |
 | 61 | how could I have said that differently, I thought what I sent was corr… | 03:34:45 | 11s | 42m 10s ⏳ |
 | 62 | is there anything that we need to add back into the CLAUDE.md file so … | 04:17:06 | 50s | 11s |
-| 63 | yeah that's what I'm saying - is there anything we need to add into th… | 04:18:06 | 1m 18s | — |
+| 63 | yeah that's what I'm saying - is there anything we need to add into th… | 04:18:06 | 1m 23s | 17s |
+| 64 | you have the never add in the claude session ID in any commit, there a… | 04:19:47 | 7s | 2m 32s |
+| 65 | ok thanks! | 04:22:26 | 2s | 2m 9s |
+| 66 | are we in a good place to implement another game?  or should we work o… | 04:24:37 | 12s | 17s |
+| 67 | wire up removal | 04:25:06 | 7s | 0s |
+| 68 | TDD first, right? | 04:25:14 | 0s | 1m 5s |
+| 69 | Try again | 04:26:19 | 1m 38s | — |
 
-**Total turns:** 63  
-**Total agent time spent (excl. flagged):** 1h 51m  
-**Total human think time (excl. outliers):** 1h 56m  
-**Average human think time (excl. outliers):** 2m 2s  
+**Total turns:** 69  
+**Total agent time spent (excl. flagged):** 1h 53m  
+**Total human think time (excl. outliers):** 2h 2m  
+**Average human think time (excl. outliers):** 1m 57s  
 **Think-time outliers (> 15 min):** 5
 
 ⏳ Turn(s) 11, 13, 14, 42, 61 had a 'human think time' over 15 min (total 650h 18m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
