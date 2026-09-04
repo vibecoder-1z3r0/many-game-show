@@ -59,12 +59,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 53 | can the X's start in the middle of the survey answer area in the verti… | 02:56:51 | 1m 47s | 10m 18s |
 | 54 | strike Xs should be about 1.5 larger, agree? | 03:08:57 | 1m 30s | 1m 10s |
 | 55 | if there are more than 5 answers, should we have the survey results on… | 03:11:37 | 11s | 1m 44s |
-| 56 | yes - is this going to be too complex?  also, did the context just col… | 03:13:32 | 1m 4s | — |
+| 56 | yes - is this going to be too complex?  also, did the context just col… | 03:13:32 | 1m 12s | 8m 1s |
+| 57 | once points are awarded, future reveals should not add to the round sc… | 03:22:45 | 1m 40s | — |
 
-**Total turns:** 56  
-**Total agent time spent (excl. flagged):** 1h 44m  
-**Total human think time (excl. outliers):** 1h 40m  
-**Average human think time (excl. outliers):** 1m 58s  
+**Total turns:** 57  
+**Total agent time spent (excl. flagged):** 1h 45m  
+**Total human think time (excl. outliers):** 1h 48m  
+**Average human think time (excl. outliers):** 2m 5s  
 **Think-time outliers (> 15 min):** 4
 
 ⏳ Turn(s) 11, 13, 14, 42 had a 'human think time' over 15 min (total 649h 36m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).

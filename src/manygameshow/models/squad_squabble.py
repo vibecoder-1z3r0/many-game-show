@@ -47,6 +47,12 @@ class SquadSquabbleGame(SQLModel, table=True):
     # credited to a team's score until the host explicitly awards the round.
     revealed_answer_indices_json: str = Field(default_factory=_default_revealed_json)
 
+    # Once a round's pot has been awarded to a team, further reveals (e.g.
+    # the host revealing the rest of the board for show) must not keep
+    # adding to round_points — it stays frozen until a new question is
+    # loaded or the round/game is reset.
+    round_awarded: bool = Field(default=False)
+
     status: str = Field(default="active")
 
     # Display-view strike callout timing — kept server-side (not a
@@ -113,7 +119,11 @@ def current_question(game: SquadSquabbleGame) -> Question | None:
 
 def round_points(game: SquadSquabbleGame) -> int:
     """Sum of revealed answers' points, times the round multiplier — the
-    pot accumulated so far this round, not yet attributed to a team."""
+    pot accumulated so far this round, not yet attributed to a team.
+    Once the round has been awarded, this freezes at 0 (already paid out)
+    regardless of further reveals, until the round/game resets."""
+    if game.round_awarded:
+        return 0
     question = current_question(game)
     if question is None:
         return 0

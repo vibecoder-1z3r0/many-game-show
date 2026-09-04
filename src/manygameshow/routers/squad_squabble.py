@@ -130,6 +130,7 @@ def _reset_round_state(game: SquadSquabbleGame) -> None:
     game.controlling_team = None
     game.strikes = 0
     game.revealed_answer_indices_json = json.dumps([])
+    game.round_awarded = False
 
 
 @router.patch("/{game_id}/load-question", response_model=SquadSquabbleGameRead)
@@ -263,6 +264,7 @@ def award_round(
         game.team2_score += points
     game.strikes = 0
     game.controlling_team = None
+    game.round_awarded = True
     return _to_read(_save(game, session))
 
 

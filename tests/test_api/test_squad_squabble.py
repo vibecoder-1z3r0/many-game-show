@@ -245,6 +245,44 @@ def test_award_round_credits_team_and_resets_round(client: TestClient) -> None:
     assert body["current_question"]["answers"][0]["revealed"] is True
 
 
+def test_reveals_after_award_do_not_add_to_round_score(client: TestClient) -> None:
+    """Once a round's pot is credited, further reveals must not keep
+    inflating round_points — it freezes until the round/game resets or a
+    new question is loaded."""
+    game_id = _create_game(client)
+    _load(client, game_id, multiplier=1)
+    client.patch(
+        f"/api/squad-squabble/games/{game_id}/reveal", json={"answer_index": 0}
+    )
+
+    resp = client.patch(
+        f"/api/squad-squabble/games/{game_id}/award-round", json={"team": "team1"}
+    )
+    assert resp.json()["team1_score"] == 32
+    assert resp.json()["round_points"] == 0
+
+    # Revealing the rest of the board for show shouldn't add to the pot,
+    # and re-awarding shouldn't double-credit the team.
+    resp = client.patch(f"/api/squad-squabble/games/{game_id}/reveal-remaining")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["round_points"] == 0
+    assert body["team1_score"] == 32
+
+    resp = client.patch(
+        f"/api/squad-squabble/games/{game_id}/award-round", json={"team": "team1"}
+    )
+    assert resp.json()["team1_score"] == 32
+
+    # Loading a new question resets the freeze so points accumulate again.
+    body = _load(client, game_id, multiplier=1)
+    assert body["round_points"] == 0
+    resp = client.patch(
+        f"/api/squad-squabble/games/{game_id}/reveal", json={"answer_index": 0}
+    )
+    assert resp.json()["round_points"] == 32
+
+
 def test_set_score_arbitrary_and_reset(client: TestClient) -> None:
     """Item 3."""
     game_id = _create_game(client)
