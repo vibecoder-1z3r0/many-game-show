@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import Field, Session, SQLModel, select
 
 from manygameshow.database import get_session
 from manygameshow.models.squad_squabble import (
@@ -68,6 +68,8 @@ def _to_read(game: SquadSquabbleGame) -> SquadSquabbleGameRead:
         strikes=game.strikes,
         round_points=compute_round_points(game),
         status=game.status,
+        strike_anim_hold_ms=game.strike_anim_hold_ms,
+        strike_anim_duration_ms=game.strike_anim_duration_ms,
         created_at=game.created_at,
         updated_at=game.updated_at,
     )
@@ -286,6 +288,24 @@ def set_max_strikes(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
 def reset_strikes(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
     game = _get_game(game_id, session)
     game.strikes = 0
+    return _to_read(_save(game, session))
+
+
+class StrikeAnimationBody(SQLModel):
+    hold_ms: int = Field(ge=0, le=5000)
+    duration_ms: int = Field(ge=100, le=5000)
+
+
+@router.patch("/{game_id}/strike-animation", response_model=SquadSquabbleGameRead)
+def set_strike_animation(
+    game_id: str, body: StrikeAnimationBody, session: SessionDep
+) -> SquadSquabbleGameRead:
+    """Tune the Display view's big-red-X strike callout: how long it holds
+    at full size before shrinking into place, and how long that shrink
+    takes. Server-side so Control and Display agree regardless of device."""
+    game = _get_game(game_id, session)
+    game.strike_anim_hold_ms = body.hold_ms
+    game.strike_anim_duration_ms = body.duration_ms
     return _to_read(_save(game, session))
 
 
