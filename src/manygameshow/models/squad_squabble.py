@@ -33,13 +33,18 @@ class SquadSquabbleGame(SQLModel, table=True):
     team1_score: int = Field(default=0, ge=0)
     team2_score: int = Field(default=0, ge=0)
 
+    current_round: int = Field(default=1, ge=1)
+
     current_question_id: str | None = Field(default=None)
+    question_visible: bool = Field(default=False)
     multiplier: int = Field(default=1, ge=1, le=3)
     controlling_team: Team | None = Field(default=None)
     strikes: int = Field(default=0, ge=0, le=3)
 
     # JSON string: list of revealed answer indices (into the current
-    # question's answers array), e.g. "[0, 2]"
+    # question's answers array), e.g. "[0, 2]". Points for revealed answers
+    # accumulate into a round pot (see round_points below) — they are NOT
+    # credited to a team's score until the host explicitly awards the round.
     revealed_answer_indices_json: str = Field(default_factory=_default_revealed_json)
 
     status: str = Field(default="active")
@@ -74,10 +79,13 @@ class SquadSquabbleGameRead(SQLModel):
     team2_name: str
     team1_score: int
     team2_score: int
+    current_round: int
     current_question: QuestionRead | None
+    question_visible: bool
     multiplier: int
     controlling_team: Team | None
     strikes: int
+    round_points: int
     status: str
     created_at: datetime
     updated_at: datetime
@@ -92,3 +100,16 @@ def current_question(game: SquadSquabbleGame) -> Question | None:
     if game.current_question_id is None:
         return None
     return get_question(game.current_question_id)
+
+
+def round_points(game: SquadSquabbleGame) -> int:
+    """Sum of revealed answers' points, times the round multiplier — the
+    pot accumulated so far this round, not yet attributed to a team."""
+    question = current_question(game)
+    if question is None:
+        return 0
+    revealed = revealed_indices(game)
+    total = sum(
+        question.answers[i].points for i in revealed if 0 <= i < len(question.answers)
+    )
+    return total * game.multiplier

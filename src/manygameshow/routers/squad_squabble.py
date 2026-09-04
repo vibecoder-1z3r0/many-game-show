@@ -18,6 +18,7 @@ from manygameshow.models.squad_squabble import (
     current_question,
     revealed_indices,
 )
+from manygameshow.models.squad_squabble import round_points as compute_round_points
 from manygameshow.questions import get_question, list_questions
 
 router = APIRouter(prefix="/api/squad-squabble/games", tags=["squad-squabble"])
@@ -59,10 +60,13 @@ def _to_read(game: SquadSquabbleGame) -> SquadSquabbleGameRead:
         team2_name=game.team2_name,
         team1_score=game.team1_score,
         team2_score=game.team2_score,
+        current_round=game.current_round,
         current_question=question_read,
+        question_visible=game.question_visible,
         multiplier=game.multiplier,
         controlling_team=game.controlling_team,
         strikes=game.strikes,
+        round_points=compute_round_points(game),
         status=game.status,
         created_at=game.created_at,
         updated_at=game.updated_at,
@@ -120,6 +124,12 @@ class LoadQuestionBody(SQLModel):
     multiplier: int = 1
 
 
+def _reset_round_state(game: SquadSquabbleGame) -> None:
+    game.controlling_team = None
+    game.strikes = 0
+    game.revealed_answer_indices_json = json.dumps([])
+
+
 @router.patch("/{game_id}/load-question", response_model=SquadSquabbleGameRead)
 def load_question(
     game_id: str, body: LoadQuestionBody, session: SessionDep
@@ -131,31 +141,46 @@ def load_question(
         raise HTTPException(status_code=422, detail="multiplier must be 1, 2, or 3")
 
     game.current_question_id = body.question_id
+    game.question_visible = False  # hidden by default until the host reveals it
     game.multiplier = body.multiplier
-    game.controlling_team = None
-    game.strikes = 0
-    game.revealed_answer_indices_json = json.dumps([])
+    _reset_round_state(game)
+    return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/unload-question", response_model=SquadSquabbleGameRead)
+def unload_question(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
+    game = _get_game(game_id, session)
+    game.current_question_id = None
+    game.question_visible = False
+    _reset_round_state(game)
+    return _to_read(_save(game, session))
+
+
+class QuestionVisibilityBody(SQLModel):
+    visible: bool
+
+
+@router.patch("/{game_id}/question-visibility", response_model=SquadSquabbleGameRead)
+def set_question_visibility(
+    game_id: str, body: QuestionVisibilityBody, session: SessionDep
+) -> SquadSquabbleGameRead:
+    game = _get_game(game_id, session)
+    game.question_visible = body.visible
     return _to_read(_save(game, session))
 
 
 class FaceOffBody(SQLModel):
-    team: Team
+    team: Team | None = None
 
 
 @router.patch("/{game_id}/face-off", response_model=SquadSquabbleGameRead)
 def set_face_off(
     game_id: str, body: FaceOffBody, session: SessionDep
 ) -> SquadSquabbleGameRead:
+    """Set which team controls the board, or clear control with team: null."""
     game = _get_game(game_id, session)
     game.controlling_team = body.team
     return _to_read(_save(game, session))
-
-
-def _award(game: SquadSquabbleGame, team: Team, points: int) -> None:
-    if team == Team.TEAM1:
-        game.team1_score += points
-    else:
-        game.team2_score += points
 
 
 class RevealBody(SQLModel):
@@ -166,14 +191,12 @@ class RevealBody(SQLModel):
 def reveal_answer(
     game_id: str, body: RevealBody, session: SessionDep
 ) -> SquadSquabbleGameRead:
+    """Mark an answer revealed. Its points join the round pot (round_points)
+    — nothing is credited to a team's score until /award-round is called."""
     game = _get_game(game_id, session)
     question = current_question(game)
     if question is None:
         raise HTTPException(status_code=400, detail="No question loaded")
-    if game.controlling_team is None:
-        raise HTTPException(
-            status_code=400, detail="No team has control yet — run face-off first"
-        )
     if not (0 <= body.answer_index < len(question.answers)):
         raise HTTPException(status_code=422, detail="answer_index out of range")
 
@@ -184,9 +207,60 @@ def reveal_answer(
     revealed.append(body.answer_index)
     game.revealed_answer_indices_json = json.dumps(revealed)
 
-    answer = question.answers[body.answer_index]
-    _award(game, game.controlling_team, answer.points * game.multiplier)
+    return _to_read(_save(game, session))
 
+
+@router.patch("/{game_id}/unreveal", response_model=SquadSquabbleGameRead)
+def unreveal_answer(
+    game_id: str, body: RevealBody, session: SessionDep
+) -> SquadSquabbleGameRead:
+    """Undo an accidental reveal — puts an answer back to hidden."""
+    game = _get_game(game_id, session)
+    question = current_question(game)
+    if question is None:
+        raise HTTPException(status_code=400, detail="No question loaded")
+
+    revealed = revealed_indices(game)
+    if body.answer_index not in revealed:
+        raise HTTPException(status_code=400, detail="Answer is not revealed")
+
+    revealed.remove(body.answer_index)
+    game.revealed_answer_indices_json = json.dumps(revealed)
+
+    return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/reveal-remaining", response_model=SquadSquabbleGameRead)
+def reveal_remaining(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
+    """Reveal every still-hidden answer — e.g. after a successful steal
+    guess. Points join the round pot same as any other reveal."""
+    game = _get_game(game_id, session)
+    question = current_question(game)
+    if question is None:
+        raise HTTPException(status_code=400, detail="No question loaded")
+
+    game.revealed_answer_indices_json = json.dumps(list(range(len(question.answers))))
+    return _to_read(_save(game, session))
+
+
+class AwardRoundBody(SQLModel):
+    team: Team
+
+
+@router.patch("/{game_id}/award-round", response_model=SquadSquabbleGameRead)
+def award_round(
+    game_id: str, body: AwardRoundBody, session: SessionDep
+) -> SquadSquabbleGameRead:
+    """Credit the accumulated round pot to a team's score, then reset
+    strikes/control so the board is ready for the next question."""
+    game = _get_game(game_id, session)
+    points = compute_round_points(game)
+    if body.team == Team.TEAM1:
+        game.team1_score += points
+    else:
+        game.team2_score += points
+    game.strikes = 0
+    game.controlling_team = None
     return _to_read(_save(game, session))
 
 
@@ -199,6 +273,15 @@ def add_strike(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
     return _to_read(_save(game, session))
 
 
+@router.patch("/{game_id}/strike/max", response_model=SquadSquabbleGameRead)
+def set_max_strikes(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
+    """Jump straight to 3 strikes — the opposing team gets one steal
+    attempt; if they miss it, the round ends in strikes with no steal."""
+    game = _get_game(game_id, session)
+    game.strikes = 3
+    return _to_read(_save(game, session))
+
+
 @router.patch("/{game_id}/strike/reset", response_model=SquadSquabbleGameRead)
 def reset_strikes(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
     game = _get_game(game_id, session)
@@ -206,26 +289,52 @@ def reset_strikes(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
     return _to_read(_save(game, session))
 
 
-class StealBody(SQLModel):
+class ScoreBody(SQLModel):
     team: Team
+    value: int
 
 
-@router.patch("/{game_id}/steal", response_model=SquadSquabbleGameRead)
-def steal(game_id: str, body: StealBody, session: SessionDep) -> SquadSquabbleGameRead:
-    """Reveal all remaining hidden answers and award their points (with the
-    round's multiplier) to the stealing team — classic Family Feud steal."""
+@router.patch("/{game_id}/score", response_model=SquadSquabbleGameRead)
+def set_score(
+    game_id: str, body: ScoreBody, session: SessionDep
+) -> SquadSquabbleGameRead:
+    """Set a team's score to any arbitrary value (including 0, to reset it)."""
     game = _get_game(game_id, session)
-    question = current_question(game)
-    if question is None:
-        raise HTTPException(status_code=400, detail="No question loaded")
+    if body.value < 0:
+        raise HTTPException(status_code=422, detail="value must be >= 0")
+    if body.team == Team.TEAM1:
+        game.team1_score = body.value
+    else:
+        game.team2_score = body.value
+    return _to_read(_save(game, session))
 
-    revealed = set(revealed_indices(game))
-    remaining = [i for i in range(len(question.answers)) if i not in revealed]
-    total_points = sum(question.answers[i].points for i in remaining) * game.multiplier
 
-    _award(game, body.team, total_points)
-    game.revealed_answer_indices_json = json.dumps(list(range(len(question.answers))))
+class RoundBody(SQLModel):
+    round_number: int
 
+
+@router.patch("/{game_id}/round", response_model=SquadSquabbleGameRead)
+def set_round(
+    game_id: str, body: RoundBody, session: SessionDep
+) -> SquadSquabbleGameRead:
+    game = _get_game(game_id, session)
+    if body.round_number < 1:
+        raise HTTPException(status_code=422, detail="round_number must be >= 1")
+    game.current_round = body.round_number
+    return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/round/increment", response_model=SquadSquabbleGameRead)
+def increment_round(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
+    game = _get_game(game_id, session)
+    game.current_round += 1
+    return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/round/decrement", response_model=SquadSquabbleGameRead)
+def decrement_round(game_id: str, session: SessionDep) -> SquadSquabbleGameRead:
+    game = _get_game(game_id, session)
+    game.current_round = max(1, game.current_round - 1)
     return _to_read(_save(game, session))
 
 

@@ -11,6 +11,15 @@ def _create_game(live_server: str, page: Page) -> str:
     return game_id
 
 
+def _goto_control(live_server: str, page: Page, game_id: str) -> None:
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=control")
+
+
+def _load_question(page: Page, question_id: str = "desk-drawer") -> None:
+    page.select_option("#question-select", question_id)
+    page.get_by_role("button", name="Load", exact=True).click()
+
+
 def test_lobby_create_game_button_navigates_to_control(
     live_server: str, page: Page
 ) -> None:
@@ -20,68 +29,172 @@ def test_lobby_create_game_button_navigates_to_control(
     expect(page.locator("#tab-control")).to_have_class("active")
 
 
-def test_control_view_load_question_face_off_reveal(
+def test_reveal_active_without_control_and_no_score_until_awarded(
     live_server: str, page: Page
 ) -> None:
+    """Items 6 and 8: reveal works with no team in control, and points sit
+    in the round pot rather than crediting a team immediately."""
     game_id = _create_game(live_server, page)
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=control")
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
 
-    # Question bank populated from the API
-    expect(page.locator("#question-select option")).to_have_count(3)
-
-    page.select_option("#multiplier-select", "2")
-    page.get_by_role("button", name="Load", exact=True).click()
-
-    # Reveal buttons should be disabled until a team has control
-    first_reveal = page.locator("#answer-list button").first
-    expect(first_reveal).to_be_disabled()
-
-    page.get_by_role("button", name="Team 1 controls", exact=True).click()
-    expect(first_reveal).to_be_enabled()
-
+    first_reveal = page.locator("#answer-list button.reveal-btn").first
+    expect(first_reveal).to_be_enabled()  # no control needed (item 8)
     first_reveal.click()
 
-    # That answer row should now show "revealed" instead of a button
-    expect(page.locator("#answer-list .answer-row").first).to_contain_text("revealed")
-    expect(page.locator("#answer-list button")).to_have_count(4)  # 4 left, 1 revealed
+    expect(page.locator("#round-score-value")).to_have_text("32")
+    expect(page.locator("#team1-score-input")).to_have_value("0")
+    expect(page.locator("#team2-score-input")).to_have_value("0")
 
 
-def test_display_view_shows_revealed_answer_and_score(
-    live_server: str, page: Page
-) -> None:
+def test_clear_control_resets_to_no_one(live_server: str, page: Page) -> None:
+    """Item 8: control can be reset back to 'no one'."""
     game_id = _create_game(live_server, page)
-
-    control = f"{live_server}/squad-squabble.html?id={game_id}&view=control"
-    page.goto(control)
-    page.select_option("#question-select", "desk-drawer")
-    page.get_by_role("button", name="Load", exact=True).click()
+    _goto_control(live_server, page, game_id)
     page.get_by_role("button", name="Team 1 controls", exact=True).click()
-    page.locator("#answer-list button").first.click()
+    expect(page.locator("#team1-controls-btn")).to_have_class(
+        "control-btn active"
+    )
 
-    # Now check the Display view reflects the reveal + score
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
-    expect(page.locator("#board .board-row").first).not_to_have_class("hidden-row")
-    expect(page.locator("#board .board-row").first).to_contain_text("Tangled cables")
-    expect(page.locator("#team1-score-display")).to_have_text("32")
-    # Untouched answers still stay hidden on the big board
-    expect(page.locator("#board .board-row").nth(1)).to_have_class(
-        "board-row hidden-row"
+    page.get_by_role("button", name="Clear control", exact=True).click()
+    expect(page.locator("#team1-controls-btn")).not_to_have_class(
+        "control-btn active"
+    )
+    expect(page.locator("#team2-controls-btn")).not_to_have_class(
+        "control-btn active"
     )
 
 
-def test_strikes_and_steal_flow(live_server: str, page: Page) -> None:
+def test_unreveal_button_hides_answer_again(live_server: str, page: Page) -> None:
+    """Item 9."""
     game_id = _create_game(live_server, page)
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=control")
-    page.select_option("#question-select", "desk-drawer")
-    page.get_by_role("button", name="Load", exact=True).click()
-    page.get_by_role("button", name="Team 1 controls", exact=True).click()
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    page.locator("#answer-list button.reveal-btn").first.click()
 
-    page.get_by_role("button", name="Add strike", exact=True).click()
-    page.get_by_role("button", name="Add strike", exact=True).click()
-    page.get_by_role("button", name="Add strike", exact=True).click()
+    expect(page.locator("#answer-list .answer-row").first).to_have_class(
+        "answer-row revealed"
+    )
+    page.get_by_role("button", name="Unreveal", exact=True).first.click()
+    expect(page.locator("#answer-list button.reveal-btn")).to_have_count(5)
+
+
+def test_three_strikes_button_jumps_to_three(live_server: str, page: Page) -> None:
+    """Item 1."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+
+    page.get_by_role("button", name="3 Strikes", exact=True).click()
     expect(page.locator("#strike-btn")).to_be_disabled()
+    expect(page.locator(".strike-x.on")).to_have_count(3)
 
-    page.get_by_role("button", name="Team 2 steals remaining", exact=True).click()
 
-    # All answers revealed after a steal, and team2 got the full board's points
-    expect(page.locator("#answer-list .answer-row.revealed")).to_have_count(5)
+def test_award_round_credits_team_and_resets_round_score(
+    live_server: str, page: Page
+) -> None:
+    """Item 6."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    page.locator("#answer-list button.reveal-btn").first.click()
+    expect(page.locator("#round-score-value")).to_have_text("32")
+
+    page.get_by_role("button", name="Award to Team 1", exact=True).click()
+    expect(page.locator("#team1-score-input")).to_have_value("32")
+
+
+def test_set_arbitrary_score_and_reset(live_server: str, page: Page) -> None:
+    """Item 3."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+
+    page.fill("#team2-score-input", "250")
+    page.get_by_role("button", name="Set score", exact=True).nth(1).click()
+    expect(page.locator("#team2-score-input")).to_have_value("250")
+
+    page.get_by_role("button", name="Reset to 0", exact=True).nth(1).click()
+    expect(page.locator("#team2-score-input")).to_have_value("0")
+
+
+def test_unload_question_clears_board(live_server: str, page: Page) -> None:
+    """Item 4."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    expect(page.locator("#answer-list button.reveal-btn")).to_have_count(5)
+
+    page.get_by_role("button", name="Unload Question", exact=True).click()
+    expect(page.locator("#answer-list")).to_contain_text("Load a question first")
+
+
+def test_round_number_controls(live_server: str, page: Page) -> None:
+    """Item 7."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+
+    expect(page.locator("#round-value")).to_have_text("1")
+    page.get_by_role("button", name="Round +", exact=True).click()
+    expect(page.locator("#round-value")).to_have_text("2")
+    page.get_by_role("button", name="Round -", exact=True).click()
+    expect(page.locator("#round-value")).to_have_text("1")
+
+    page.fill("#round-input", "5")
+    page.get_by_role("button", name="Set round", exact=True).click()
+    expect(page.locator("#round-value")).to_have_text("5")
+
+
+def test_question_visibility_defaults_hidden_and_can_toggle(
+    live_server: str, page: Page
+) -> None:
+    """Item 10."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+
+    expect(page.get_by_role("button", name="Show Question", exact=True)).to_be_visible()
+
+    page.get_by_role("button", name="Show Question", exact=True).click()
+    expect(page.get_by_role("button", name="Hide Question", exact=True)).to_be_visible()
+
+
+def test_display_view_round_number_and_hidden_question(
+    live_server: str, page: Page
+) -> None:
+    """Items 7 and 10."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    page.get_by_role("button", name="Round +", exact=True).click()
+
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+    expect(page.locator("#round-display")).to_contain_text("ROUND 2")
+    # Hidden by default (item 10) — the real prompt text shouldn't be visible
+    expect(page.locator("#question-back")).not_to_be_visible()
+
+
+def test_display_view_question_reveals_on_visibility_toggle(
+    live_server: str, page: Page
+) -> None:
+    """Item 5 (flip trigger) + item 10."""
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    page.get_by_role("button", name="Show Question", exact=True).click()
+
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+    expect(page.locator("#question-card")).to_have_class("flipped")
+    expect(page.locator("#question-back")).to_contain_text(
+        "name something you'd find in their desk drawer"
+    )
+
+
+def test_display_view_reveal_remaining_shows_all_answers(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_control(live_server, page, game_id)
+    _load_question(page)
+    page.get_by_role("button", name="Reveal remaining answers", exact=True).click()
+
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+    expect(page.locator("#board .board-row.hidden-row")).to_have_count(0)
