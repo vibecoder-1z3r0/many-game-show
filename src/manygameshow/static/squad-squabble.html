@@ -427,7 +427,6 @@
          real indicator's position (a FLIP-technique animation). */
       .strike-overlay {
         position: fixed;
-        inset: 0;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1037,6 +1036,23 @@
 
         const overlay = document.createElement("div");
         overlay.className = "strike-overlay";
+        // Center the spawn point on the answer board's vertical space
+        // instead of the whole viewport, so the Xs start right where the
+        // action is. Falls back to the full viewport if the board isn't
+        // present/measurable for some reason.
+        const boardEl = document.getElementById("board");
+        const boardRect = boardEl ? boardEl.getBoundingClientRect() : null;
+        if (boardRect && boardRect.width > 0 && boardRect.height > 0) {
+          overlay.style.top = `${boardRect.top}px`;
+          overlay.style.left = `${boardRect.left}px`;
+          overlay.style.width = `${boardRect.width}px`;
+          overlay.style.height = `${boardRect.height}px`;
+        } else {
+          overlay.style.top = "0";
+          overlay.style.left = "0";
+          overlay.style.width = "100vw";
+          overlay.style.height = "100vh";
+        }
         const items = [];
         for (let i = 0; i < count; i++) {
           const el = document.createElement("div");
