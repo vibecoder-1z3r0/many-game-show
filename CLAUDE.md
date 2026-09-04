@@ -21,6 +21,21 @@ and AI attribution respectively.
   for what it reports) before pushing, so the log stays current rather
   than needing to be asked each time.
 
+## Before committing
+
+- **Run lint, typecheck, and backend tests before every commit** — `make
+  lint && make typecheck && make test-backend` (equivalent to `make
+  check` minus the UI-test browser-install step). Don't rely on CI to
+  catch what these would've caught locally.
+- **Write a Playwright UI test for every new/changed control+display
+  behavior**, same as backend tests get one per behavior.
+- **Run the UI suite locally before pushing, not just in CI.** This
+  sandbox has a Chromium build preinstalled (see the section below) —
+  use it. Earlier guidance in this project was to lean on CI for
+  Playwright because the sandbox's network proxy blocked the Chromium
+  *download*; that's no longer the constraint once you point at the
+  preinstalled build instead of trying to install one.
+
 ## Running Playwright tests in Claude Code's remote sandbox
 
 `make test-ui` runs `playwright install --with-deps chromium` first, but

@@ -65,12 +65,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 59 | I think for the survey answers with the ?????, can we put ?? in gold b… | 03:32:18 | 1m 13s | 7s |
 | 60 | no, the question should still be ????? gray, but the points so like al… | 03:33:38 | 56s | 10s |
 | 61 | how could I have said that differently, I thought what I sent was corr… | 03:34:45 | 11s | 42m 10s ⏳ |
-| 62 | is there anything that we need to add back into the CLAUDE.md file so … | 04:17:06 | 45s | — |
+| 62 | is there anything that we need to add back into the CLAUDE.md file so … | 04:17:06 | 50s | 11s |
+| 63 | yeah that's what I'm saying - is there anything we need to add into th… | 04:18:06 | 1m 18s | — |
 
-**Total turns:** 62  
-**Total agent time spent (excl. flagged):** 1h 49m  
-**Total human think time (excl. outliers):** 1h 55m  
-**Average human think time (excl. outliers):** 2m 4s  
+**Total turns:** 63  
+**Total agent time spent (excl. flagged):** 1h 51m  
+**Total human think time (excl. outliers):** 1h 56m  
+**Average human think time (excl. outliers):** 2m 2s  
 **Think-time outliers (> 15 min):** 5
 
 ⏳ Turn(s) 11, 13, 14, 42, 61 had a 'human think time' over 15 min (total 650h 18m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
