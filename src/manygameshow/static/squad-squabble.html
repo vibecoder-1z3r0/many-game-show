@@ -154,10 +154,10 @@
       #round-display {
         text-align: center;
         font-family: "Orbitron", system-ui, sans-serif;
-        font-size: clamp(1rem, 2.2vw, 1.4rem);
+        font-size: clamp(2rem, 5vw, 3.4rem);
         color: var(--accent);
         letter-spacing: 0.06em;
-        font-weight: 700;
+        font-weight: 800;
       }
 
       .question-flip-outer {
@@ -246,15 +246,20 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: clamp(0.3rem, 1vw, 0.6rem);
+        gap: clamp(0.75rem, 2.5vw, 1.5rem);
       }
 
       .round-score-row {
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 0.75rem;
+        padding: clamp(0.6rem, 1.5vw, 1.2rem) clamp(1.2rem, 4vw, 2.5rem);
+        width: fit-content;
         text-align: center;
       }
 
       .round-score-label {
-        font-size: clamp(0.75rem, 1.6vw, 1rem);
+        font-size: clamp(0.9rem, 2vw, 1.3rem);
         color: var(--text-dim);
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -262,8 +267,8 @@
 
       .round-score-value {
         font-family: "Orbitron", system-ui, sans-serif;
-        font-size: clamp(1.3rem, 3.5vw, 2.2rem);
-        font-weight: 700;
+        font-size: clamp(1.8rem, 5vw, 3.2rem);
+        font-weight: 800;
         color: var(--accent);
       }
 
@@ -271,7 +276,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.4rem;
+        gap: clamp(0.6rem, 2vw, 1.2rem);
       }
 
       .multiplier-badge {
