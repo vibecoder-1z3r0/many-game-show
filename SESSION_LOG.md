@@ -57,12 +57,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 46 | I liked the original spacing between the scores from the prior screens… | 02:13:21 | 1m 31s | 11s |
 | 47 | from here on out refresh the session log each time you commit and push | 02:15:02 | 34s | 1m 5s |
 | 48 | There should also be Many Board > Game Type instead of just Game Type … | 02:16:41 | 8m 23s | 26s |
-| 49 | For display can we make it where the header is hide-able and then show… | 02:25:30 | 13m 8s | — |
+| 49 | For display can we make it where the header is hide-able and then show… | 02:25:30 | 19m 32s | 2s |
+| 50 | for the load question in the drop down can we have the number of answe… | 02:45:04 | 1m 19s | — |
 
-**Total turns:** 49  
-**Total agent time spent (excl. flagged):** 1h 28m  
+**Total turns:** 50  
+**Total agent time spent (excl. flagged):** 1h 36m  
 **Total human think time (excl. outliers):** 1h 20m  
-**Average human think time (excl. outliers):** 1m 49s  
+**Average human think time (excl. outliers):** 1m 47s  
 **Think-time outliers (> 15 min):** 4
 
 ⏳ Turn(s) 11, 13, 14, 42 had a 'human think time' over 15 min (total 649h 36m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
