@@ -31,6 +31,7 @@
         --text-dim: #9aa5b8;
         --accent: #ffcc00;
         --border: #263252;
+        --strike-red: #ff4d4d;
       }
 
       [data-theme="stage"] {
@@ -147,17 +148,68 @@
       #view-display {
         display: flex;
         flex-direction: column;
-        gap: clamp(0.75rem, 2vw, 1.5rem);
+        gap: clamp(0.6rem, 1.5vw, 1rem);
       }
 
-      .prompt-card {
+      #round-display {
+        text-align: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1rem, 2.2vw, 1.4rem);
+        color: var(--accent);
+        letter-spacing: 0.06em;
+        font-weight: 700;
+      }
+
+      .question-flip-outer {
+        perspective: 1400px;
+        min-height: clamp(4rem, 10vw, 7rem);
+      }
+
+      #question-card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: clamp(4rem, 10vw, 7rem);
+        transform-style: preserve-3d;
+        transition: transform 0.6s ease;
+      }
+
+      #question-card.flipped {
+        transform: rotateY(180deg);
+      }
+
+      .question-face {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
         background: var(--panel);
         border: 1px solid var(--border);
         border-radius: 0.75rem;
         padding: clamp(0.75rem, 2vw, 1.5rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         font-size: clamp(1rem, 2.4vw, 1.7rem);
         font-weight: 600;
+      }
+
+      #question-front {
+        color: var(--text-dim);
+        visibility: visible;
+      }
+
+      #question-card.flipped #question-front {
+        visibility: hidden;
+      }
+
+      #question-back {
+        transform: rotateY(180deg);
+        visibility: hidden;
+      }
+
+      #question-card.flipped #question-back {
+        visibility: visible;
       }
 
       .board {
@@ -191,33 +243,28 @@
       }
 
       .scoreboard {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: clamp(0.5rem, 2vw, 1.5rem);
+        gap: clamp(0.3rem, 1vw, 0.6rem);
       }
 
-      .team-card {
-        background: var(--panel);
-        border: 2px solid var(--border);
-        border-radius: 0.75rem;
-        padding: clamp(0.6rem, 1.5vw, 1.2rem);
+      .round-score-row {
         text-align: center;
       }
 
-      .team-card.controlling {
-        border-color: var(--accent);
-      }
-
-      .team-name {
-        font-size: clamp(0.9rem, 2vw, 1.3rem);
+      .round-score-label {
+        font-size: clamp(0.75rem, 1.6vw, 1rem);
         color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
       }
 
-      .team-score {
+      .round-score-value {
         font-family: "Orbitron", system-ui, sans-serif;
-        font-size: clamp(1.8rem, 5vw, 3.2rem);
-        font-weight: 800;
+        font-size: clamp(1.3rem, 3.5vw, 2.2rem);
+        font-weight: 700;
+        color: var(--accent);
       }
 
       .mid-stats {
@@ -253,9 +300,61 @@
       }
 
       .strike-x.on {
-        border-color: #ff4d4d;
-        color: #ff4d4d;
+        border-color: var(--strike-red);
+        color: var(--strike-red);
         background: rgba(255, 77, 77, 0.15);
+      }
+
+      .team-scores-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        gap: clamp(0.5rem, 2vw, 1.5rem);
+      }
+
+      .team-card {
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 0.75rem;
+        padding: clamp(0.6rem, 1.5vw, 1.2rem);
+        text-align: center;
+      }
+
+      .team-card.controlling {
+        border-color: var(--accent);
+      }
+
+      .team-name {
+        font-size: clamp(0.9rem, 2vw, 1.3rem);
+        color: var(--text-dim);
+      }
+
+      .team-score {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.8rem, 5vw, 3.2rem);
+        font-weight: 800;
+      }
+
+      /* Strike overlay: big red Xs that shrink from center-screen to their
+         real indicator's position (a FLIP-technique animation). */
+      .strike-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        pointer-events: none;
+        z-index: 999;
+      }
+
+      .strike-overlay-x {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-weight: 800;
+        font-size: 8rem;
+        line-height: 1;
+        color: var(--strike-red);
+        text-shadow: 0 0 40px rgba(255, 77, 77, 0.85);
       }
 
       /* ---------- Control view ---------- */
@@ -293,7 +392,8 @@
         margin-bottom: 0;
       }
 
-      input[type="text"] {
+      input[type="text"],
+      input[type="number"] {
         background: var(--panel-2);
         color: var(--text);
         border: 1px solid var(--border);
@@ -301,7 +401,7 @@
         padding: 0.4rem 0.6rem;
         font-size: 0.9rem;
         flex: 1;
-        min-width: 100px;
+        min-width: 90px;
       }
 
       button {
@@ -331,8 +431,15 @@
       }
 
       button.danger {
-        border-color: #ff4d4d;
-        color: #ff4d4d;
+        border-color: var(--strike-red);
+        color: var(--strike-red);
+      }
+
+      button.control-btn.active {
+        background: var(--accent);
+        color: #10131a;
+        border-color: var(--accent);
+        font-weight: 700;
       }
 
       .answer-row {
@@ -346,11 +453,17 @@
 
       .answer-row.revealed {
         background: var(--panel-2);
-        opacity: 0.6;
       }
 
       .answer-row .label {
         flex: 1;
+      }
+
+      .round-label {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 1.1rem;
+        min-width: 2ch;
+        text-align: center;
       }
 
       .status-line {
@@ -375,20 +488,32 @@
     </header>
     <main>
       <section id="view-display">
-        <div class="prompt-card" id="prompt-card">Loading…</div>
+        <div id="round-display">ROUND 1</div>
+        <div class="question-flip-outer">
+          <div id="question-card">
+            <div class="question-face" id="question-front">Round in progress…</div>
+            <div class="question-face" id="question-back"></div>
+          </div>
+        </div>
         <div class="board" id="board"></div>
         <div class="scoreboard">
-          <div class="team-card" id="team1-card">
-            <div class="team-name" id="team1-name-display">Team 1</div>
-            <div class="team-score display-num" id="team1-score-display">0</div>
+          <div class="round-score-row">
+            <div class="round-score-label">Round Score</div>
+            <div class="round-score-value display-num" id="round-score-display">0</div>
           </div>
           <div class="mid-stats">
             <div class="multiplier-badge" id="multiplier-display">1x</div>
             <div class="strikes" id="strikes-display"></div>
           </div>
-          <div class="team-card" id="team2-card">
-            <div class="team-name" id="team2-name-display">Team 2</div>
-            <div class="team-score display-num" id="team2-score-display">0</div>
+          <div class="team-scores-row">
+            <div class="team-card" id="team1-card">
+              <div class="team-name" id="team1-name-display">Team 1</div>
+              <div class="team-score display-num" id="team1-score-display">0</div>
+            </div>
+            <div class="team-card" id="team2-card">
+              <div class="team-name" id="team2-name-display">Team 2</div>
+              <div class="team-score display-num" id="team2-score-display">0</div>
+            </div>
           </div>
         </div>
       </section>
@@ -405,6 +530,31 @@
           </div>
         </fieldset>
         <fieldset>
+          <legend>Scores</legend>
+          <div class="row">
+            <span>Team 1</span>
+            <input type="number" id="team1-score-input" value="0" />
+            <button onclick="setScore(1)">Set score</button>
+            <button onclick="resetScore(1)">Reset to 0</button>
+          </div>
+          <div class="row">
+            <span>Team 2</span>
+            <input type="number" id="team2-score-input" value="0" />
+            <button onclick="setScore(2)">Set score</button>
+            <button onclick="resetScore(2)">Reset to 0</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Round</legend>
+          <div class="row">
+            <button onclick="roundDecrement()">Round -</button>
+            <span class="round-label" id="round-value">1</span>
+            <button onclick="roundIncrement()">Round +</button>
+            <input type="number" id="round-input" value="1" style="max-width: 5rem" />
+            <button onclick="setRound()">Set round</button>
+          </div>
+        </fieldset>
+        <fieldset>
           <legend>Load Question</legend>
           <div class="row">
             <select id="question-select"></select>
@@ -414,13 +564,22 @@
               <option value="3">3x</option>
             </select>
             <button class="primary" onclick="loadQuestion()">Load</button>
+            <button onclick="unloadQuestion()">Unload Question</button>
+          </div>
+          <div class="row">
+            <button id="question-visibility-btn" onclick="toggleQuestionVisibility()">Show Question</button>
           </div>
         </fieldset>
         <fieldset>
           <legend>Face-off (who controls the board)</legend>
           <div class="row">
-            <button onclick="faceOff('team1')">Team 1 controls</button>
-            <button onclick="faceOff('team2')">Team 2 controls</button>
+            <button class="control-btn"
+                    id="team1-controls-btn"
+                    onclick="faceOff('team1')">Team 1 controls</button>
+            <button class="control-btn"
+                    id="team2-controls-btn"
+                    onclick="faceOff('team2')">Team 2 controls</button>
+            <button onclick="faceOff(null)">Clear control</button>
           </div>
         </fieldset>
         <fieldset>
@@ -428,14 +587,24 @@
           <div id="answer-list"></div>
         </fieldset>
         <fieldset>
-          <legend>Strikes &amp; Steal</legend>
+          <legend>Strikes</legend>
           <div class="row">
             <button onclick="strike()" id="strike-btn">Add strike</button>
+            <button onclick="strikeMax()">3 Strikes</button>
             <button onclick="resetStrikes()">Reset strikes</button>
           </div>
           <div class="row">
-            <button class="danger" onclick="stealAction('team1')">Team 1 steals remaining</button>
-            <button class="danger" onclick="stealAction('team2')">Team 2 steals remaining</button>
+            <button class="danger" onclick="revealRemaining()">Reveal remaining answers</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Award Round</legend>
+          <div class="row">
+            <span>Round score: <strong id="round-score-value">0</strong></span>
+          </div>
+          <div class="row">
+            <button class="primary" onclick="awardRound('team1')">Award to Team 1</button>
+            <button class="primary" onclick="awardRound('team2')">Award to Team 2</button>
           </div>
         </fieldset>
         <div class="status-line" id="status-line"></div>
@@ -447,6 +616,8 @@
       let currentView = params.get("view") || "display";
       let state = null;
       let failCount = 0;
+      let lastStateJson = null;
+      let lastStrikesForAnim = null;
 
       if (!gameId) {
         document.body.innerHTML =
@@ -493,8 +664,11 @@
 
       async function patch(path, body) {
         try {
-          state = await api(path, { method: "PATCH", body: JSON.stringify(body || {}) });
-          render();
+          const newState = await api(path, {
+            method: "PATCH",
+            body: JSON.stringify(body === undefined ? {} : body),
+          });
+          applyState(newState);
           setStatus("");
         } catch (e) {
           setStatus(String(e.message || e));
@@ -505,6 +679,19 @@
         document.getElementById("status-line").textContent = msg;
       }
 
+      // Only re-render (and re-run animations) when the state actually
+      // changed since the last render. Without this, the 200ms poll loop
+      // rebuilds the whole answer list every tick even when nothing
+      // changed, which can eat a click if a rebuild lands between
+      // mousedown and mouseup on a button.
+      function applyState(newState) {
+        const json = JSON.stringify(newState);
+        if (json === lastStateJson) return;
+        lastStateJson = json;
+        state = newState;
+        render();
+      }
+
       async function poll() {
         try {
           const resp = await fetch(`/api/squad-squabble/games/${gameId}`);
@@ -513,10 +700,10 @@
             if (failCount >= 3) setConnStatus(false);
             return;
           }
-          state = await resp.json();
+          const newState = await resp.json();
           failCount = 0;
           setConnStatus(true);
-          render();
+          applyState(newState);
         } catch (e) {
           failCount++;
           if (failCount >= 3) setConnStatus(false);
@@ -538,6 +725,14 @@
         patch("/load-question", { question_id, multiplier });
       }
 
+      function unloadQuestion() {
+        patch("/unload-question");
+      }
+
+      function toggleQuestionVisibility() {
+        patch("/question-visibility", { visible: !state.question_visible });
+      }
+
       function faceOff(team) {
         patch("/face-off", { team });
       }
@@ -546,16 +741,50 @@
         patch("/reveal", { answer_index: index });
       }
 
+      function unrevealAnswer(index) {
+        patch("/unreveal", { answer_index: index });
+      }
+
+      function revealRemaining() {
+        patch("/reveal-remaining");
+      }
+
       function strike() {
-        patch("/strike", {});
+        patch("/strike");
+      }
+
+      function strikeMax() {
+        patch("/strike/max");
       }
 
       function resetStrikes() {
-        patch("/strike/reset", {});
+        patch("/strike/reset");
       }
 
-      function stealAction(team) {
-        patch("/steal", { team });
+      function awardRound(team) {
+        patch("/award-round", { team });
+      }
+
+      function setScore(n) {
+        const value = Number(document.getElementById(`team${n}-score-input`).value);
+        patch("/score", { team: n === 1 ? "team1" : "team2", value });
+      }
+
+      function resetScore(n) {
+        patch("/score", { team: n === 1 ? "team1" : "team2", value: 0 });
+      }
+
+      function roundIncrement() {
+        patch("/round/increment");
+      }
+
+      function roundDecrement() {
+        patch("/round/decrement");
+      }
+
+      function setRound() {
+        const round_number = Number(document.getElementById("round-input").value);
+        patch("/round", { round_number });
       }
 
       function updateTeamName(n) {
@@ -564,14 +793,61 @@
         patch("/teams", n === 1 ? { team1_name: value } : { team2_name: value });
       }
 
+      // FLIP-technique animation: spawn `count` huge red Xs centered on
+      // screen, then animate each to the real (already-lit) indicator dot's
+      // position/size and fade out, so the "landing" reads as the big X
+      // shrinking into place.
+      function triggerStrikeAnimation(count) {
+        const targets = document.querySelectorAll("#strikes-display .strike-x");
+        if (!targets.length || !count) return;
+
+        const overlay = document.createElement("div");
+        overlay.className = "strike-overlay";
+        const items = [];
+        for (let i = 0; i < count; i++) {
+          const el = document.createElement("div");
+          el.className = "strike-overlay-x";
+          el.textContent = "X";
+          overlay.appendChild(el);
+          items.push(el);
+        }
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => {
+          items.forEach((el, i) => {
+            const target = targets[i];
+            if (!target) {
+              el.remove();
+              return;
+            }
+            const tRect = target.getBoundingClientRect();
+            const eRect = el.getBoundingClientRect();
+            const scale = tRect.width / eRect.width;
+            const dx = tRect.left + tRect.width / 2 - (eRect.left + eRect.width / 2);
+            const dy = tRect.top + tRect.height / 2 - (eRect.top + eRect.height / 2);
+            el.style.transition =
+              "transform 0.6s cubic-bezier(.2,.8,.2,1), opacity 0.6s ease-in";
+            el.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+            el.style.opacity = "0";
+          });
+          setTimeout(() => overlay.remove(), 650);
+        });
+      }
+
       function render() {
         if (!state) return;
 
         // ----- Display -----
+        document.getElementById("round-display").textContent =
+          `ROUND ${state.current_round}`;
+
         const q = state.current_question;
-        document.getElementById("prompt-card").textContent = q
+        document.getElementById("question-back").textContent = q
           ? q.prompt
-          : "Waiting for the next question…";
+          : "";
+        document.getElementById("question-card").className = state.question_visible
+          ? "flipped"
+          : "";
 
         const board = document.getElementById("board");
         board.innerHTML = "";
@@ -590,6 +866,7 @@
         document.getElementById("team2-name-display").textContent = state.team2_name;
         document.getElementById("team1-score-display").textContent = state.team1_score;
         document.getElementById("team2-score-display").textContent = state.team2_score;
+        document.getElementById("round-score-display").textContent = state.round_points;
         document
           .getElementById("team1-card")
           .classList.toggle("controlling", state.controlling_team === "team1");
@@ -607,6 +884,15 @@
           strikesEl.appendChild(x);
         }
 
+        if (
+          currentView === "display" &&
+          lastStrikesForAnim !== null &&
+          state.strikes > lastStrikesForAnim
+        ) {
+          triggerStrikeAnimation(state.strikes);
+        }
+        lastStrikesForAnim = state.strikes;
+
         // ----- Control -----
         if (document.activeElement.id !== "team1-input") {
           document.getElementById("team1-input").placeholder = state.team1_name;
@@ -614,6 +900,29 @@
         if (document.activeElement.id !== "team2-input") {
           document.getElementById("team2-input").placeholder = state.team2_name;
         }
+        if (document.activeElement.id !== "team1-score-input") {
+          document.getElementById("team1-score-input").value = state.team1_score;
+        }
+        if (document.activeElement.id !== "team2-score-input") {
+          document.getElementById("team2-score-input").value = state.team2_score;
+        }
+        if (document.activeElement.id !== "round-input") {
+          document.getElementById("round-input").value = state.current_round;
+        }
+
+        document.getElementById("round-value").textContent = state.current_round;
+        document.getElementById("round-score-value").textContent = state.round_points;
+
+        document
+          .getElementById("question-visibility-btn")
+          .textContent = state.question_visible ? "Hide Question" : "Show Question";
+
+        document
+          .getElementById("team1-controls-btn")
+          .classList.toggle("active", state.controlling_team === "team1");
+        document
+          .getElementById("team2-controls-btn")
+          .classList.toggle("active", state.controlling_team === "team2");
 
         const answerList = document.getElementById("answer-list");
         answerList.innerHTML = "";
@@ -622,10 +931,10 @@
             const row = document.createElement("div");
             row.className = "answer-row" + (a.revealed ? " revealed" : "");
             const btn = a.revealed
-              ? `<span>&#10003; revealed</span>`
-              : `<button onclick="revealAnswer(${i})" ${
-                  state.controlling_team ? "" : "disabled"
-                }>Reveal (+${a.points * state.multiplier})</button>`;
+              ? `<button class="unreveal-btn" onclick="unrevealAnswer(${i})">Unreveal</button>`
+              : `<button class="reveal-btn" onclick="revealAnswer(${i})">Reveal (+${
+                  a.points * state.multiplier
+                })</button>`;
             row.innerHTML = `<span class="label">${a.text} <em>(${a.points} pts)</em></span>${btn}`;
             answerList.appendChild(row);
           });

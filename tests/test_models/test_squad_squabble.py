@@ -3,6 +3,7 @@ from manygameshow.models.squad_squabble import (
     Team,
     current_question,
     revealed_indices,
+    round_points,
 )
 
 
@@ -12,6 +13,8 @@ def test_defaults() -> None:
     assert game.team2_name == "Team 2"
     assert game.team1_score == 0
     assert game.team2_score == 0
+    assert game.current_round == 1
+    assert game.question_visible is False
     assert game.multiplier == 1
     assert game.controlling_team is None
     assert game.strikes == 0
@@ -41,3 +44,18 @@ def test_current_question_resolves_from_sample_bank() -> None:
     assert question is not None
     assert question.id == "desk-drawer"
     assert len(question.answers) == 5
+
+
+def test_round_points_zero_with_no_question() -> None:
+    game = SquadSquabbleGame()
+    assert round_points(game) == 0
+
+
+def test_round_points_sums_revealed_with_multiplier() -> None:
+    game = SquadSquabbleGame(
+        current_question_id="desk-drawer",
+        multiplier=2,
+        revealed_answer_indices_json="[0, 1]",
+    )
+    # "Tangled cables" (32) + "Snacks" (27) = 59, times 2x multiplier
+    assert round_points(game) == 118
