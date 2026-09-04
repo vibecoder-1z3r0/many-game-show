@@ -154,10 +154,10 @@ schema / router layer. The model layer never parses JSON itself.
 ### Database
 - SQLite, single file, created automatically on startup via
   `SQLModel.metadata.create_all(engine)` in a FastAPI `lifespan` handler.
-- No migrations tooling. **If a model's columns change, delete the `.db`
-  file and restart** during development. Acceptable for a conference demo;
-  would need real migrations (e.g. Alembic) if this became a long-lived
-  multi-event app.
+- No migrations tooling. **If a model's columns change, run `make clean`
+  (or delete the `.db` file yourself) and restart** during development.
+  Acceptable for a conference demo; would need real migrations (e.g.
+  Alembic) if this became a long-lived multi-event app.
 
 ---
 
