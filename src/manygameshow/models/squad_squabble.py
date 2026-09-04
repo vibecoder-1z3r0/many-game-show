@@ -53,8 +53,8 @@ class SquadSquabbleGame(SQLModel, table=True):
     # localStorage-only setting) since Control and Display may run on
     # different devices (e.g. host's phone vs. a venue projector laptop),
     # and this app's design principle is server-authoritative state.
-    strike_anim_hold_ms: int = Field(default=500, ge=0, le=5000)
-    strike_anim_duration_ms: int = Field(default=600, ge=100, le=5000)
+    strike_anim_hold_ms: int = Field(default=1000, ge=0, le=5000)
+    strike_anim_duration_ms: int = Field(default=800, ge=100, le=5000)
 
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)

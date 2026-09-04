@@ -366,8 +366,8 @@ def test_strike_animation_defaults(client: TestClient) -> None:
     game_id = _create_game(client)
     resp = client.get(f"/api/squad-squabble/games/{game_id}")
     body = resp.json()
-    assert body["strike_anim_hold_ms"] == 500
-    assert body["strike_anim_duration_ms"] == 600
+    assert body["strike_anim_hold_ms"] == 1000
+    assert body["strike_anim_duration_ms"] == 800
 
 
 def test_set_strike_animation_timing(client: TestClient) -> None:
