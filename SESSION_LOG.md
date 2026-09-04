@@ -1,10 +1,5 @@
 # Session Timing Report
 
-Regenerate with: `python3 scripts/session_timing.py <session_id>`
-(see `scripts/session_timing.py` for what "agent time spent" vs.
-"human think time" mean, and how flagged/outlier events are
-handled).
-
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
 
 | # | Prompt (truncated) | Started (UTC) | Agent time spent | Human think time |
@@ -61,12 +56,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 50 | for the load question in the drop down can we have the number of answe… | 02:45:04 | 1m 24s | 13s |
 | 51 | it would be nice on the main page for the strikes to be shaded x's or … | 02:46:41 | 1m 15s | 3m 6s |
 | 52 | can you make a few other questions and give them variable answers, fro… | 02:51:02 | 2m 7s | 3m 42s |
-| 53 | can the X's start in the middle of the survey answer area in the verti… | 02:56:51 | 1m 42s | — |
+| 53 | can the X's start in the middle of the survey answer area in the verti… | 02:56:51 | 1m 47s | 10m 18s |
+| 54 | strike Xs should be about 1.5 larger, agree? | 03:08:57 | 1m 21s | — |
 
-**Total turns:** 53  
-**Total agent time spent (excl. flagged):** 1h 41m  
-**Total human think time (excl. outliers):** 1h 27m  
-**Average human think time (excl. outliers):** 1m 49s  
+**Total turns:** 54  
+**Total agent time spent (excl. flagged):** 1h 42m  
+**Total human think time (excl. outliers):** 1h 37m  
+**Average human think time (excl. outliers):** 1m 60s  
 **Think-time outliers (> 15 min):** 4
 
 ⏳ Turn(s) 11, 13, 14, 42 had a 'human think time' over 15 min (total 649h 36m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
