@@ -263,8 +263,8 @@ def test_strike_animation_timing_configurable_and_persisted(
     game_id = _create_game(live_server, page)
     _goto_control(live_server, page, game_id)
 
-    expect(page.locator("#strike-hold-input")).to_have_value("500")
-    expect(page.locator("#strike-duration-input")).to_have_value("600")
+    expect(page.locator("#strike-hold-input")).to_have_value("1000")
+    expect(page.locator("#strike-duration-input")).to_have_value("800")
 
     page.fill("#strike-hold-input", "1200")
     page.fill("#strike-duration-input", "900")

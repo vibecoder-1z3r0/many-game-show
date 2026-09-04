@@ -33,6 +33,70 @@
         { "text": "Recurring", "points": 14 },
         { "text": "Icebreaker", "points": 8 }
       ]
+    },
+    {
+      "id": "pre-demo-ritual",
+      "prompt": "We asked 100 developers: name something you do right before a live demo.",
+      "answers": [
+        { "text": "Restart everything", "points": 38 },
+        { "text": "Close Slack notifications", "points": 29 },
+        { "text": "Pray", "points": 20 },
+        { "text": "Have a backup recording ready", "points": 13 }
+      ]
+    },
+    {
+      "id": "unused-language",
+      "prompt": "We asked 100 developers: name a programming language you learned but rarely use.",
+      "answers": [
+        { "text": "COBOL", "points": 24 },
+        { "text": "Haskell", "points": 21 },
+        { "text": "Perl", "points": 18 },
+        { "text": "Fortran", "points": 14 },
+        { "text": "Scheme", "points": 12 },
+        { "text": "Prolog", "points": 8 }
+      ]
+    },
+    {
+      "id": "getting-started-fail",
+      "prompt": "We asked 100 developers: name something in a 'Getting Started' guide that never works on the first try.",
+      "answers": [
+        { "text": "The install command", "points": 26 },
+        { "text": "The environment variables", "points": 20 },
+        { "text": "The Docker setup", "points": 16 },
+        { "text": "The screenshot (outdated UI)", "points": 13 },
+        { "text": "The example config file", "points": 11 },
+        { "text": "The version requirement", "points": 8 },
+        { "text": "The 'one-line' setup script", "points": 6 }
+      ]
+    },
+    {
+      "id": "code-review-comment",
+      "prompt": "We asked 100 developers: name a reason someone leaves a code review comment.",
+      "answers": [
+        { "text": "Naming things", "points": 22 },
+        { "text": "Missing tests", "points": 18 },
+        { "text": "Nit: formatting", "points": 15 },
+        { "text": "Could this be simpler?", "points": 13 },
+        { "text": "Magic number", "points": 11 },
+        { "text": "Unused import", "points": 9 },
+        { "text": "Just a heart emoji", "points": 7 },
+        { "text": "Wrong PR branch", "points": 5 }
+      ]
+    },
+    {
+      "id": "slack-general",
+      "prompt": "We asked 100 developers: name something that shows up in a Slack #general channel.",
+      "answers": [
+        { "text": "Someone's birthday", "points": 19 },
+        { "text": "A GIF reacting to nothing in particular", "points": 16 },
+        { "text": "An outage alert", "points": 14 },
+        { "text": "Lunch order poll", "points": 12 },
+        { "text": "A new-hire introduction", "points": 11 },
+        { "text": "Someone asking 'wrong channel?'", "points": 10 },
+        { "text": "A meme about Mondays", "points": 8 },
+        { "text": "A link no one clicks", "points": 6 },
+        { "text": "Office parking complaint", "points": 4 }
+      ]
     }
   ]
 }
