@@ -53,8 +53,9 @@ from the lobby to create a game. That takes you to the Control view; open
 screen/tab for the big-screen Display view.
 
 The SQLite database file (`manygameshow.db`) is created automatically on
-first run. **If you change a model's fields, delete the db file and
-restart** — there's no migration tooling (see ARCHITECTURE.md).
+first run. **If you change a model's fields, run `make clean` (or delete
+the db file yourself) before restarting** — there's no migration tooling
+(see ARCHITECTURE.md).
 
 ### Question content
 
