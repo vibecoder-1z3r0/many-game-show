@@ -115,6 +115,15 @@
         font-size: 0.95rem;
       }
 
+      .links button.danger {
+        background: transparent;
+        border: 1px solid #ff4d4d;
+        color: #ff4d4d;
+        margin-left: 0.75rem;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+      }
+
       .empty {
         color: var(--text-dim);
         text-align: center;
@@ -177,10 +186,17 @@
             <div class="links">
               <a href="/squad-squabble.html?id=${g.id}&view=display">Display</a>
               <a href="/squad-squabble.html?id=${g.id}&view=control">Control</a>
+              <button class="danger" onclick="deleteGame('${g.id}')">Delete</button>
             </div>
           </div>`
           )
           .join("");
+      }
+
+      async function deleteGame(id) {
+        if (!confirm("Delete this game? This can't be undone.")) return;
+        await fetch(`/api/squad-squabble/games/${id}`, { method: "DELETE" });
+        loadGames();
       }
 
       loadGames();
