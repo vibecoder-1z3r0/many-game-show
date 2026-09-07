@@ -17,10 +17,11 @@ frontend conventions, and AI attribution respectively.
   `Vibe-Coder 1.z3r0 <243014891+vibecoder-1z3r0@users.noreply.github.com>`.
 - Branch for this Claude agent: `claude/conference-demo-app-h3448o`.
   Push with `git push -u origin claude/conference-demo-app-h3448o`.
-- **Refresh `SESSION_LOG.md` as part of every commit+push.** Regenerate it
-  with `python3 scripts/session_timing.py <session_id>` (see that script
-  for what it reports) before pushing, so the log stays current rather
-  than needing to be asked each time.
+- **Refresh `SESSION_LOG_2.md` as part of every commit+push.** Regenerate
+  it with `python3 scripts/session_timing.py <session_id>` (see that
+  script for what it reports) before pushing, so the log stays current
+  rather than needing to be asked each time. `SESSION_LOG.md` is a frozen
+  historical snapshot (see its own header) — don't regenerate over it.
 
 ## Before committing
 

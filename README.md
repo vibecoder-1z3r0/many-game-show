@@ -92,4 +92,9 @@ in CI on every push/PR.
 - [ADDING_A_GAME.md](./ADDING_A_GAME.md) — step-by-step recipe for adding a new game
 - [UI_LOOK_AND_FEEL.md](./UI_LOOK_AND_FEEL.md) — theming, typography, view conventions
 - [AIA_ATTRIBUTION.md](./AIA_ATTRIBUTION.md) — AI attribution statement used in commits
-- [SESSION_LOG.md](./SESSION_LOG.md) — turn-by-turn build timing (see `scripts/session_timing.py`)
+- [SESSION_LOG.md](./SESSION_LOG.md) — turn-by-turn build timing, turns 1–69
+  (frozen: a container reset truncated the transcript this is generated
+  from — see the file's own header)
+- [SESSION_LOG_2.md](./SESSION_LOG_2.md) — continuation of the above from
+  the reset onward (turn numbering restarts at 1, since it's a separate
+  transcript file)
