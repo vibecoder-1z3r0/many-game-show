@@ -241,11 +241,42 @@
         border-color: var(--accent);
       }
 
+      .tally-slot.pending {
+        color: var(--text-dim);
+        border-color: var(--text-dim);
+        border-style: dashed;
+      }
+
       .tally-total {
         margin-left: auto;
         font-family: "Orbitron", system-ui, sans-serif;
         font-weight: 800;
         font-size: clamp(1rem, 2.6vw, 1.5rem);
+      }
+
+      /* ---------- Main (Display) tallies: text-then-points reveal ---------- */
+
+      #display-tallies .tally-row {
+        align-items: flex-start;
+      }
+
+      #display-tallies .tally-slots {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      #display-tallies .tally-slot {
+        width: 100%;
+        height: auto;
+        min-height: clamp(2.4rem, 6vw, 3.2rem);
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 0.4rem 0.75rem;
+        font-size: clamp(1rem, 2.4vw, 1.5rem);
+      }
+
+      #display-tallies .slot-points {
+        color: var(--accent);
       }
 
       /* ---------- Display view ---------- */
@@ -455,6 +486,7 @@
           <legend>Current question</legend>
           <div id="current-prompt">No question in play</div>
           <div id="answer-options"></div>
+          <div id="reveal-points-container"></div>
         </fieldset>
         <fieldset>
           <legend>Scores</legend>
@@ -652,8 +684,17 @@
         patch("/start-round", { player });
       }
 
-      function award(points) {
-        patch("/award", { points });
+      function awardOption(i) {
+        const a = answerOptions[i];
+        patch("/award", { text: a.text, points: a.points });
+      }
+
+      function awardNoMatch() {
+        patch("/award", { text: "No match", points: 0 });
+      }
+
+      function revealPoints() {
+        patch("/reveal-points");
       }
 
       function revealResult() {
@@ -667,15 +708,49 @@
         patch("/reset");
       }
 
-      function tallySlotsHtml(points) {
-        return points
-          .map(
-            (p) =>
-              `<span class="tally-slot${p !== null ? " filled" : ""}">${
-                p !== null ? p : "-"
-              }</span>`
-          )
+      // Compact scoreboard tile for Control: a small square that just
+      // needs to say "not yet / pending / this many points" — the full
+      // answer text is already visible above in the options list, so
+      // repeating it here would only fit truncated.
+      function controlTallySlotsHtml(slots) {
+        return slots
+          .map((s) => {
+            if (!s || s.text === null) return '<span class="tally-slot">-</span>';
+            if (s.points === null)
+              return '<span class="tally-slot pending">…</span>';
+            return `<span class="tally-slot filled">${s.points}</span>`;
+          })
           .join("");
+      }
+
+      // Rich per-question tile for the Main view: the audience sees the
+      // matched answer's text as soon as the host picks it (reveal beat
+      // one), then the point value once the host separately reveals it
+      // (reveal beat two) — never both at once.
+      function mainTallySlotsHtml(slots) {
+        return slots
+          .map((s) => {
+            const cls = !s || s.text === null ? "" : s.points === null ? "pending" : "filled";
+            const text = s && s.text !== null ? s.text : "-";
+            const points = s && s.points !== null ? s.points : "";
+            return (
+              `<div class="tally-slot${cls ? " " + cls : ""}">` +
+              `<span class="slot-text">${text}</span>` +
+              `<span class="slot-points">${points}</span></div>`
+            );
+          })
+          .join("");
+      }
+
+      // The slot the host is currently deciding on: text already chosen
+      // (visible on Main) but points not yet revealed. Drives whether the
+      // Reveal Points button shows.
+      function pendingSlot() {
+        if (!state || !state.current_player) return null;
+        const slots =
+          state.current_player === "player1" ? state.player1_slots : state.player2_slots;
+        const slot = slots[state.current_question_index];
+        return slot && slot.text !== null && slot.points === null ? slot : null;
       }
 
       function render() {
@@ -683,11 +758,11 @@
 
         document.getElementById("player1-name-label").textContent = state.player1_name;
         document.getElementById("player2-name-label").textContent = state.player2_name;
-        document.getElementById("player1-tally").innerHTML = tallySlotsHtml(
-          state.player1_points
+        document.getElementById("player1-tally").innerHTML = controlTallySlotsHtml(
+          state.player1_slots
         );
-        document.getElementById("player2-tally").innerHTML = tallySlotsHtml(
-          state.player2_points
+        document.getElementById("player2-tally").innerHTML = controlTallySlotsHtml(
+          state.player2_slots
         );
         document.getElementById("player1-total").textContent = state.player1_total;
         document.getElementById("player2-total").textContent = state.player2_total;
@@ -702,14 +777,18 @@
             answerOptions
               .map(
                 (a, i) =>
-                  `<button class="award-btn" onclick="award(${a.points})">` +
+                  `<button class="award-btn" onclick="awardOption(${i})">` +
                   `<span>${a.text}</span><span>${a.points} pts</span></button>`
               )
               .join("") +
-            `<button class="award-btn" onclick="award(0)">No match (0)</button>`;
+            `<button class="award-btn" onclick="awardNoMatch()">No match (0)</button>`;
         } else {
           optsEl.innerHTML = "";
         }
+
+        document.getElementById("reveal-points-container").innerHTML = pendingSlot()
+          ? '<button class="primary" onclick="revealPoints()">Reveal Points</button>'
+          : "";
 
         // ----- Display -----
         document.getElementById("turn-display").textContent = state.current_player
@@ -728,12 +807,12 @@
         document.getElementById("display-tallies").innerHTML = `
           <div class="tally-row">
             <span class="tally-name">${state.player1_name}</span>
-            <div class="tally-slots">${tallySlotsHtml(state.player1_points)}</div>
+            <div class="tally-slots">${mainTallySlotsHtml(state.player1_slots)}</div>
             <span class="tally-total display-num">${state.player1_total}</span>
           </div>
           <div class="tally-row">
             <span class="tally-name">${state.player2_name}</span>
-            <div class="tally-slots">${tallySlotsHtml(state.player2_points)}</div>
+            <div class="tally-slots">${mainTallySlotsHtml(state.player2_slots)}</div>
             <span class="tally-total display-num">${state.player2_total}</span>
           </div>`;
 

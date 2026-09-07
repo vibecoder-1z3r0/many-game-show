@@ -12,14 +12,16 @@ from manygameshow.models.speed_points import (
     DEFAULT_TIMER_SECONDS,
     QUESTIONS_PER_ROUND,
     AnswerOptionRead,
+    AnswerSlot,
     Player,
     QuestionPromptRead,
+    SlotRead,
     SpeedPointsGame,
     SpeedPointsGameCreate,
     SpeedPointsGameRead,
     combined_total,
     current_question,
-    player_points,
+    player_slots,
     player_total,
     remaining_seconds,
 )
@@ -45,6 +47,14 @@ def _save(game: SpeedPointsGame, session: Session) -> SpeedPointsGame:
     return game
 
 
+def _slot_read(slot: AnswerSlot | None) -> SlotRead:
+    if slot is None:
+        return SlotRead(text=None, points=None)
+    # Text is visible as soon as it's chosen; points stay hidden in the API
+    # response itself (not just CSS-hidden client-side) until revealed.
+    return SlotRead(text=slot.text, points=slot.points if slot.revealed else None)
+
+
 def _to_read(game: SpeedPointsGame) -> SpeedPointsGameRead:
     # No round active yet (or a leg just finished) -> nothing "current" to
     # show, even if the index still points at a resolvable question.
@@ -62,8 +72,8 @@ def _to_read(game: SpeedPointsGame) -> SpeedPointsGameRead:
         current_player=game.current_player,
         current_question_index=game.current_question_index,
         current_question=question_read,
-        player1_points=player_points(game, Player.PLAYER1),
-        player2_points=player_points(game, Player.PLAYER2),
+        player1_slots=[_slot_read(s) for s in player_slots(game, Player.PLAYER1)],
+        player2_slots=[_slot_read(s) for s in player_slots(game, Player.PLAYER2)],
         player1_total=player_total(game, Player.PLAYER1),
         player2_total=player_total(game, Player.PLAYER2),
         combined_total=total,
@@ -112,11 +122,15 @@ def delete_game(game_id: str, session: SessionDep) -> None:
     session.commit()
 
 
+def _empty_slots_json() -> str:
+    return json.dumps([None] * QUESTIONS_PER_ROUND)
+
+
 def _reset_round_state(game: SpeedPointsGame) -> None:
     game.current_player = None
     game.current_question_index = 0
-    game.player1_points_json = json.dumps([None] * QUESTIONS_PER_ROUND)
-    game.player2_points_json = json.dumps([None] * QUESTIONS_PER_ROUND)
+    game.player1_slots_json = _empty_slots_json()
+    game.player2_slots_json = _empty_slots_json()
     game.timer_started_at = None
     game.scores_revealed = False
 
@@ -131,16 +145,14 @@ def start_round(
     game_id: str, body: StartRoundBody, session: SessionDep
 ) -> SpeedPointsGameRead:
     """Start (or restart) one player's 5-question relay leg: resets their
-    points, rewinds to question 1, and starts their countdown."""
+    slots, rewinds to question 1, and starts their countdown."""
     game = _get_game(game_id, session)
     game.current_player = body.player
     game.current_question_index = 0
-    points_field = (
-        "player1_points_json"
-        if body.player == Player.PLAYER1
-        else "player2_points_json"
+    slots_field = (
+        "player1_slots_json" if body.player == Player.PLAYER1 else "player2_slots_json"
     )
-    setattr(game, points_field, json.dumps([None] * QUESTIONS_PER_ROUND))
+    setattr(game, slots_field, _empty_slots_json())
     game.timer_duration_seconds = (
         body.duration_seconds
         if body.duration_seconds is not None
@@ -150,28 +162,60 @@ def start_round(
     return _to_read(_save(game, session))
 
 
+def _slots_field_for(game: SpeedPointsGame) -> str:
+    assert game.current_player is not None
+    return (
+        "player1_slots_json"
+        if game.current_player == Player.PLAYER1
+        else "player2_slots_json"
+    )
+
+
 class AwardBody(SQLModel):
+    text: str = Field(min_length=1)
     points: int = Field(ge=0)
 
 
 @router.patch("/{game_id}/award", response_model=SpeedPointsGameRead)
 def award(game_id: str, body: AwardBody, session: SessionDep) -> SpeedPointsGameRead:
-    """Record the host's judged points for the current question (0 = no
-    match), then advance to the next question in this player's leg."""
+    """Lock in which answer matched the player's spoken response for the
+    current question — the text becomes visible immediately, but the
+    points stay hidden until /reveal-points. Calling this again for the
+    same (still-unrevealed) question overwrites the choice, so the host
+    can correct a match before committing to it."""
     game = _get_game(game_id, session)
     if game.current_player is None:
         raise HTTPException(status_code=400, detail="No active round")
     if game.current_question_index >= QUESTIONS_PER_ROUND:
         raise HTTPException(status_code=400, detail="Round already complete")
 
-    points_field = (
-        "player1_points_json"
-        if game.current_player == Player.PLAYER1
-        else "player2_points_json"
-    )
-    points = json.loads(getattr(game, points_field))
-    points[game.current_question_index] = body.points
-    setattr(game, points_field, json.dumps(points))
+    slots_field = _slots_field_for(game)
+    slots = json.loads(getattr(game, slots_field))
+    slots[game.current_question_index] = AnswerSlot(
+        text=body.text, points=body.points, revealed=False
+    ).model_dump()
+    setattr(game, slots_field, json.dumps(slots))
+    return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/reveal-points", response_model=SpeedPointsGameRead)
+def reveal_points(game_id: str, session: SessionDep) -> SpeedPointsGameRead:
+    """Reveal the current question's points (the second reveal beat),
+    then advance to the next question in this player's leg."""
+    game = _get_game(game_id, session)
+    if game.current_player is None:
+        raise HTTPException(status_code=400, detail="No active round")
+    if game.current_question_index >= QUESTIONS_PER_ROUND:
+        raise HTTPException(status_code=400, detail="Round already complete")
+
+    slots_field = _slots_field_for(game)
+    slots = json.loads(getattr(game, slots_field))
+    slot = slots[game.current_question_index]
+    if slot is None:
+        raise HTTPException(status_code=400, detail="No answer selected yet")
+
+    slot["revealed"] = True
+    setattr(game, slots_field, json.dumps(slots))
     game.current_question_index += 1
     return _to_read(_save(game, session))
 
@@ -187,7 +231,7 @@ def reveal_result(game_id: str, session: SessionDep) -> SpeedPointsGameRead:
 def answer_options(game_id: str, session: SessionDep) -> list[AnswerOptionRead]:
     """Host-only reference: the current question's possible answers and
     their point values, for judging which one the player's spoken answer
-    matches. Never exposed on the Display view's response shape."""
+    matches. Never exposed on the Main view's response shape."""
     game = _get_game(game_id, session)
     question = current_question(game) if game.current_player is not None else None
     if question is None:

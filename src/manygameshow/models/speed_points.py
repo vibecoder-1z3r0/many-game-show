@@ -27,11 +27,23 @@ class Player(StrEnum):
     PLAYER2 = "player2"
 
 
+class AnswerSlot(SQLModel):
+    """One question's judged answer, mid-reveal: the host locks in which
+    answer matched (text) first — visible immediately — and the points
+    stay hidden until a separate reveal-points action, so the two beats
+    (what they said, then what it's worth) read as distinct moments on
+    the Main view, matching a classic board-game reveal."""
+
+    text: str
+    points: int
+    revealed: bool = False
+
+
 def _default_question_ids_json() -> str:
     return json.dumps([])
 
 
-def _default_points_json() -> str:
+def _default_slots_json() -> str:
     return json.dumps([None] * QUESTIONS_PER_ROUND)
 
 
@@ -49,11 +61,12 @@ class SpeedPointsGame(SQLModel, table=True):
     current_player: Player | None = Field(default=None)
     current_question_index: int = Field(default=0, ge=0, le=QUESTIONS_PER_ROUND)
 
-    # JSON list of QUESTIONS_PER_ROUND ints-or-null: points awarded per
-    # question, in the same order as question_ids_json. null = not yet
-    # answered. Parsed in the router/Read layer, never in the model itself.
-    player1_points_json: str = Field(default_factory=_default_points_json)
-    player2_points_json: str = Field(default_factory=_default_points_json)
+    # JSON list of QUESTIONS_PER_ROUND AnswerSlot-dicts-or-null, in the same
+    # order as question_ids_json. null = not yet judged. A slot with
+    # revealed=False has its answer text locked in but points still hidden.
+    # Parsed in player_slots()/router/Read layer, never in the model itself.
+    player1_slots_json: str = Field(default_factory=_default_slots_json)
+    player2_slots_json: str = Field(default_factory=_default_slots_json)
 
     # Countdown for the current player's round, server-authoritative (per
     # ARCHITECTURE.md: store started_at + duration, compute elapsed on every
@@ -77,7 +90,7 @@ class SpeedPointsGameCreate(SQLModel):
 
 class QuestionPromptRead(SQLModel):
     """Spoiler-free question view for the main Read schema — no answers,
-    so Display never leaks the answer/points key the host uses to judge."""
+    so Main never leaks the answer/points key the host uses to judge."""
 
     id: str
     prompt: str
@@ -88,6 +101,16 @@ class AnswerOptionRead(SQLModel):
     points: int
 
 
+class SlotRead(SQLModel):
+    """A player's judged-answer tile as the API exposes it: text appears
+    as soon as the host picks a match, but points stay null until the
+    host explicitly reveals them — never send points early, even to a
+    client that would only display it a moment later."""
+
+    text: str | None
+    points: int | None
+
+
 class SpeedPointsGameRead(SQLModel):
     id: str
     player1_name: str
@@ -95,8 +118,8 @@ class SpeedPointsGameRead(SQLModel):
     current_player: Player | None
     current_question_index: int
     current_question: QuestionPromptRead | None
-    player1_points: list[int | None]
-    player2_points: list[int | None]
+    player1_slots: list[SlotRead]
+    player2_slots: list[SlotRead]
     player1_total: int
     player2_total: int
     combined_total: int
@@ -126,17 +149,21 @@ def current_question(game: SpeedPointsGame) -> Question | None:
     return None
 
 
-def _points_json_field(player: Player) -> str:
-    return "player1_points_json" if player == Player.PLAYER1 else "player2_points_json"
+def _slots_json_field(player: Player) -> str:
+    return "player1_slots_json" if player == Player.PLAYER1 else "player2_slots_json"
 
 
-def player_points(game: SpeedPointsGame, player: Player) -> list[int | None]:
-    result: list[int | None] = json.loads(getattr(game, _points_json_field(player)))
-    return result
+def player_slots(game: SpeedPointsGame, player: Player) -> list[AnswerSlot | None]:
+    raw: list[dict[str, object] | None] = json.loads(
+        getattr(game, _slots_json_field(player))
+    )
+    return [AnswerSlot.model_validate(s) if s is not None else None for s in raw]
 
 
 def player_total(game: SpeedPointsGame, player: Player) -> int:
-    return sum(p for p in player_points(game, player) if p is not None)
+    return sum(
+        s.points for s in player_slots(game, player) if s is not None and s.revealed
+    )
 
 
 def combined_total(game: SpeedPointsGame) -> int:

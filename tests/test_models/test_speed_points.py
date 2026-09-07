@@ -2,12 +2,13 @@ import json
 from datetime import UTC, datetime, timedelta
 
 from manygameshow.models.speed_points import (
+    AnswerSlot,
     Player,
     SpeedPointsGame,
     combined_total,
     current_question,
     current_questions,
-    player_points,
+    player_slots,
     player_total,
     remaining_seconds,
 )
@@ -22,8 +23,8 @@ def test_defaults() -> None:
     assert game.win_threshold == 200
     assert game.scores_revealed is False
     assert game.status == "active"
-    assert player_points(game, Player.PLAYER1) == [None] * 5
-    assert player_points(game, Player.PLAYER2) == [None] * 5
+    assert player_slots(game, Player.PLAYER1) == [None] * 5
+    assert player_slots(game, Player.PLAYER2) == [None] * 5
 
 
 def test_id_is_unique_uuid() -> None:
@@ -69,20 +70,52 @@ def test_current_question_resolves_at_index() -> None:
     assert q.id == "standup-word"
 
 
-def test_player_total_sums_non_null_points() -> None:
-    game = SpeedPointsGame(
-        player1_points_json=json.dumps([34, None, 20, None, None]),
-    )
-    assert player_total(game, Player.PLAYER1) == 54
+def test_player_total_sums_only_revealed_slots() -> None:
+    slots = [
+        {"text": "Actually...", "points": 34, "revealed": True},
+        {"text": "Nit:", "points": 26, "revealed": False},  # text chosen, not revealed
+        None,
+        None,
+        None,
+    ]
+    game = SpeedPointsGame(player1_slots_json=json.dumps(slots))
+    assert player_total(game, Player.PLAYER1) == 34
     assert player_total(game, Player.PLAYER2) == 0
 
 
-def test_combined_total_sums_both_players() -> None:
+def test_player_slots_parses_into_answer_slot_objects() -> None:
+    slots = [
+        {"text": "Actually...", "points": 34, "revealed": True},
+        None,
+        None,
+        None,
+        None,
+    ]
+    game = SpeedPointsGame(player1_slots_json=json.dumps(slots))
+    parsed = player_slots(game, Player.PLAYER1)
+    assert parsed[0] == AnswerSlot(text="Actually...", points=34, revealed=True)
+    assert parsed[1:] == [None] * 4
+
+
+def test_combined_total_sums_both_players_revealed_only() -> None:
+    p1 = [
+        {"text": "a", "points": 34, "revealed": True},
+        {"text": "b", "points": 26, "revealed": True},
+        None,
+        None,
+        None,
+    ]
+    p2 = [
+        {"text": "c", "points": 38, "revealed": True},
+        {"text": "d", "points": 24, "revealed": False},
+        None,
+        None,
+        None,
+    ]
     game = SpeedPointsGame(
-        player1_points_json=json.dumps([34, 26, 20, 12, 8]),
-        player2_points_json=json.dumps([38, 24, None, None, None]),
+        player1_slots_json=json.dumps(p1), player2_slots_json=json.dumps(p2)
     )
-    assert combined_total(game) == 100 + 62
+    assert combined_total(game) == (34 + 26) + 38
 
 
 def test_remaining_seconds_none_when_no_timer_running() -> None:
