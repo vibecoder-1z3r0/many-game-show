@@ -163,24 +163,15 @@ schema / router layer. The model layer never parses JSON itself.
 
 ## Adding a New Game (extension pattern)
 
-Same recipe as the reference app's `ADDING_A_SPORT.md`, renamed to games:
-
-1. `models/{game}.py` — table model + `Create` + `Read` schemas.
-2. `routers/{game}.py` — `APIRouter` with create/list/get/delete plus one
-   `PATCH` endpoint per state-changing action (score, buzz, next question,
-   reveal answer, etc. — whatever the game needs).
-3. `static/{game}.html` — self-contained page with its own `<style>` and
-   `<script>`; implements the poll/render loop and whatever views/tabs the
-   game needs (Display, Control, Player, ...).
-4. Wire it up:
-   - `main.py`: import the router, `app.include_router(...)`.
-   - `static/index.html`: add a card linking to the new game's views.
-5. Tests: `test_models/test_{game}.py` (defaults, enums, ID generation),
-   `test_api/test_{game}.py` (every endpoint, happy path + one edge case).
+See [ADDING_A_GAME.md](./ADDING_A_GAME.md) for the concrete, step-by-step
+recipe — extracted from actually building Squad Squabble, superseding the
+speculative outline that used to live here. Short version: model +
+router + one self-contained HTML page per game, wired into `main.py` and
+the lobby, tests written first.
 
 This is the pattern we'll actually exercise live at the conference — the
-"idea to working app" arc is: pick a game → walk through steps 1–4 → it's
-live in the lobby.
+"idea to working app" arc is: pick a game → walk through ADDING_A_GAME.md
+→ it's live in the lobby.
 
 ---
 
@@ -195,11 +186,16 @@ live in the lobby.
 
 ---
 
-## Open Questions (fill in once the game-show concept is locked)
+## Resolved Questions
 
-- What is the actual show format — single game, or a lobby of several
-  mini-games? (Architecture above assumes "lobby of games," matching the
-  reference app's multi-sport structure.)
-- Does any game need a buzzer/player view, or is it host-vs-screen only?
-- Any state that needs to survive a server restart mid-demo, or is
-  fresh-DB-per-run acceptable for the conference run?
+These were open before the game-show concept was locked; answered by
+actually building Squad Squabble:
+
+- **Show format**: a lobby of several mini-games (this doc's assumption
+  going in), not a single game — confirmed by the lobby/multi-game-card
+  UI now in place.
+- **Buzzer/player view**: not needed yet — Squad Squabble is host-vs-screen
+  only (Control + Display). Add a player/buzzer view for the first game
+  that actually needs one (see ADDING_A_GAME.md, step 3).
+- **State surviving a restart**: fresh-DB-per-run is acceptable; see the
+  Database section above for the no-migrations tradeoff this implies.

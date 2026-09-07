@@ -1,8 +1,9 @@
 # Many Game Show — Project Context
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md), [UI_LOOK_AND_FEEL.md](./UI_LOOK_AND_FEEL.md),
-and [AIA_ATTRIBUTION.md](./AIA_ATTRIBUTION.md) for stack, frontend conventions,
-and AI attribution respectively.
+See [ARCHITECTURE.md](./ARCHITECTURE.md), [ADDING_A_GAME.md](./ADDING_A_GAME.md),
+[UI_LOOK_AND_FEEL.md](./UI_LOOK_AND_FEEL.md), and
+[AIA_ATTRIBUTION.md](./AIA_ATTRIBUTION.md) for stack, the new-game recipe,
+frontend conventions, and AI attribution respectively.
 
 ## Git Conventions
 
