@@ -6,7 +6,9 @@ transcript file), which truncated the raw data this report is generated
 from. This file is the last full snapshot from just before that happened
 (turns 1–69) and is no longer regenerated — don't overwrite it with
 `scripts/session_timing.py`. See [SESSION_LOG_2.md](./SESSION_LOG_2.md)
-for the continuation from the reset onward.
+for the continuation from the reset onward — note that its rows 1–15
+duplicate this file's rows 55–69 (see its header for why), so don't
+double-count those when totaling across both files.
 
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
 
