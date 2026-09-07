@@ -132,10 +132,19 @@
   </head>
   <body>
     <h1>Many Game Show</h1>
-    <button onclick="createGame()">New Squad Squabble Game</button>
+    <button onclick="createSquadSquabbleGame()">New Squad Squabble Game</button>
+    <button onclick="createSpeedPointsGame()">New Speed Points Game</button>
     <div class="games" id="games"></div>
     <script>
-      async function createGame() {
+      // Each game type has its own API prefix + control/display page. Adding
+      // a game means adding one entry here plus a card-rendering function
+      // below — see ADDING_A_GAME.md step 4.
+      const GAME_TYPES = [
+        { key: "squad-squabble", label: "Squad Squabble", render: renderSquadSquabbleCard },
+        { key: "speed-points", label: "Speed Points", render: renderSpeedPointsCard },
+      ];
+
+      async function createSquadSquabbleGame() {
         const resp = await fetch("/api/squad-squabble/games/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -143,6 +152,16 @@
         });
         const game = await resp.json();
         location.href = `/squad-squabble.html?id=${game.id}&view=control`;
+      }
+
+      async function createSpeedPointsGame() {
+        const resp = await fetch("/api/speed-points/games/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const game = await resp.json();
+        location.href = `/speed-points.html?id=${game.id}&view=control`;
       }
 
       function controllingLabel(g) {
@@ -160,17 +179,8 @@
         return html;
       }
 
-      async function loadGames() {
-        const resp = await fetch("/api/squad-squabble/games/");
-        const games = await resp.json();
-        const el = document.getElementById("games");
-        if (games.length === 0) {
-          el.innerHTML = '<p class="empty">No games yet — start one above.</p>';
-          return;
-        }
-        el.innerHTML = games
-          .map(
-            (g) => `
+      function renderSquadSquabbleCard(g) {
+        return `
           <div class="game-card">
             <div>
               <div class="game-type">Squad Squabble</div>
@@ -186,16 +196,57 @@
             <div class="links">
               <a href="/squad-squabble.html?id=${g.id}&view=display">Display</a>
               <a href="/squad-squabble.html?id=${g.id}&view=control">Control</a>
-              <button class="danger" onclick="deleteGame('${g.id}')">Delete</button>
+              <button class="danger" onclick="deleteGame('squad-squabble', '${g.id}')">Delete</button>
             </div>
-          </div>`
-          )
-          .join("");
+          </div>`;
       }
 
-      async function deleteGame(id) {
+      function turnLabel(g) {
+        if (!g.current_player) return "Not started";
+        const name = g.current_player === "player1" ? g.player1_name : g.player2_name;
+        return `${name}'s turn — Q${Math.min(g.current_question_index + 1, 5)}/5`;
+      }
+
+      function renderSpeedPointsCard(g) {
+        return `
+          <div class="game-card">
+            <div>
+              <div class="game-type">Speed Points</div>
+              <strong>${g.player1_name} & ${g.player2_name}</strong>
+              <div class="meta">${g.combined_total} / ${g.win_threshold} · ${g.status}</div>
+              <div class="meta">${turnLabel(g)}</div>
+            </div>
+            <div class="links">
+              <a href="/speed-points.html?id=${g.id}&view=display">Display</a>
+              <a href="/speed-points.html?id=${g.id}&view=control">Control</a>
+              <button class="danger" onclick="deleteGame('speed-points', '${g.id}')">Delete</button>
+            </div>
+          </div>`;
+      }
+
+      async function loadGames() {
+        const lists = await Promise.all(
+          GAME_TYPES.map(async (t) => {
+            const resp = await fetch(`/api/${t.key}/games/`);
+            const games = await resp.json();
+            return games.map((g) => ({ ...g, _type: t }));
+          })
+        );
+        const all = lists.flat().sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        const el = document.getElementById("games");
+        if (all.length === 0) {
+          el.innerHTML = '<p class="empty">No games yet — start one above.</p>';
+          return;
+        }
+        el.innerHTML = all.map((g) => g._type.render(g)).join("");
+      }
+
+      async function deleteGame(typeKey, id) {
         if (!confirm("Delete this game? This can't be undone.")) return;
-        await fetch(`/api/squad-squabble/games/${id}`, { method: "DELETE" });
+        await fetch(`/api/${typeKey}/games/${id}`, { method: "DELETE" });
         loadGames();
       }
 
