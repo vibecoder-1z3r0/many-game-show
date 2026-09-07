@@ -5,7 +5,12 @@ conference session. FastAPI + SQLite backend, vanilla HTML/CSS/JS frontend,
 no build step. See [ARCHITECTURE.md](./ARCHITECTURE.md) and
 [UI_LOOK_AND_FEEL.md](./UI_LOOK_AND_FEEL.md) for the design behind it.
 
-Currently implements **Squad Squabble** — a Family-Feud-style survey game.
+Currently implements:
+- **Squad Squabble** — a Family-Feud-style survey game.
+- **Speed Points** — a Fast-Money-style relay: two players take turns
+  answering the same 5 questions against a countdown, the host judges each
+  answer against the survey data, and a big reveal checks the combined
+  score against a win threshold.
 
 ---
 
@@ -47,10 +52,11 @@ make run
 # (equivalent to: uv run uvicorn manygameshow.main:app --reload)
 ```
 
-Then open **http://localhost:8000** — click **New Squad Squabble Game**
-from the lobby to create a game. That takes you to the Control view; open
-`/squad-squabble.html?id=<the game id>&view=display` on a second
-screen/tab for the big-screen Display view.
+Then open **http://localhost:8000** — click **New Squad Squabble Game** or
+**New Speed Points Game** from the lobby to create a game. That takes you
+to the Control view; open `/squad-squabble.html?id=<the game id>&view=display`
+(or `/speed-points.html?...`) on a second screen/tab for the big-screen
+Display view.
 
 The SQLite database file (`manygameshow.db`) is created automatically on
 first run. **If you change a model's fields, run `make clean` (or delete
@@ -59,15 +65,18 @@ the db file yourself) before restarting** — there's no migration tooling
 
 ### Question content
 
-Squad Squabble's questions live as data, not code, in
-[`src/manygameshow/data/squad_squabble_questions.sample.json`](./src/manygameshow/data/squad_squabble_questions.sample.json) —
-a small sample/test set. Point `SQUAD_SQUABBLE_QUESTIONS_PATH` at a
-different JSON file (same shape) to swap in real content without
-touching any code:
+Both games' questions live as data, not code, so real content can be
+swapped in without touching any code — point the env var at a different
+JSON file (same `{"questions": [{"id", "prompt", "answers": [{"text",
+"points"}]}]}` shape):
 
 ```bash
 SQUAD_SQUABBLE_QUESTIONS_PATH=/path/to/real_questions.json make run
+SPEED_POINTS_QUESTIONS_PATH=/path/to/other_questions.json make run
 ```
+
+Squad Squabble uses its whole bank; Speed Points always uses exactly the
+first 5 questions in the file (both players face the same 5, in order).
 
 ---
 
