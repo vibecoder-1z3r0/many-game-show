@@ -1,0 +1,60 @@
+{
+  "_comment": "Sample/test question bank for Speed Points (Fast Money). NOT the real conference content. Exactly 5 questions are used per game, in file order, same as the reference app's fast-money format — both players face the identical 5 questions.",
+  "questions": [
+    {
+      "id": "code-review-word",
+      "prompt": "Name a word you'd never want to see in a code review comment.",
+      "answers": [
+        { "text": "Actually...", "points": 34 },
+        { "text": "Nit:", "points": 26 },
+        { "text": "Why?", "points": 20 },
+        { "text": "Hmm", "points": 12 },
+        { "text": "LGTM (sarcastically)", "points": 8 }
+      ]
+    },
+    {
+      "id": "standup-word",
+      "prompt": "Name something people say in standup that means \"I didn't do much.\"",
+      "answers": [
+        { "text": "I was in meetings all day", "points": 38 },
+        { "text": "Investigating a bug", "points": 24 },
+        { "text": "Blocked on review", "points": 18 },
+        { "text": "Refactoring", "points": 12 },
+        { "text": "Onboarding stuff", "points": 8 }
+      ]
+    },
+    {
+      "id": "laptop-sticker",
+      "prompt": "Name something you'd find on a developer's laptop lid.",
+      "answers": [
+        { "text": "A programming language logo", "points": 36 },
+        { "text": "A conference sticker", "points": 27 },
+        { "text": "A cat", "points": 19 },
+        { "text": "\"Ctrl+Z\" or similar joke sticker", "points": 11 },
+        { "text": "Nothing — bare laptop", "points": 7 }
+      ]
+    },
+    {
+      "id": "deploy-fear",
+      "prompt": "Name something that makes a developer afraid to deploy on a Friday.",
+      "answers": [
+        { "text": "No one's around to help if it breaks", "points": 40 },
+        { "text": "Weekend on-call", "points": 25 },
+        { "text": "Untested edge cases", "points": 17 },
+        { "text": "Bad past experience", "points": 11 },
+        { "text": "Manager will notice", "points": 7 }
+      ]
+    },
+    {
+      "id": "ai-assistant-use",
+      "prompt": "Name something developers ask an AI coding assistant to do.",
+      "answers": [
+        { "text": "Write tests", "points": 33 },
+        { "text": "Explain an error message", "points": 28 },
+        { "text": "Write a commit message", "points": 19 },
+        { "text": "Refactor messy code", "points": 12 },
+        { "text": "Name a variable", "points": 8 }
+      ]
+    }
+  ]
+}

@@ -25,10 +25,10 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 14 | TDD first, right? | 04:25:14 | 0s | 1m 5s |
 | 15 | Try again | 04:26:19 | 1m 43s | 85h 2m ⏳ |
 | 16 | Ok, let's implement fast money named as "Speed Points" as a separate g… | 17:30:02 | 17s | 23s |
-| 17 | yeah - go ahead! | 17:30:42 | 9m 6s | — |
+| 17 | yeah - go ahead! | 17:30:42 | 14m 25s | — |
 
 **Total turns:** 17  
-**Total agent time spent (excl. flagged):** 19m 55s  
+**Total agent time spent (excl. flagged):** 25m 15s  
 **Total human think time (excl. outliers):** 24m 5s  
 **Average human think time (excl. outliers):** 1m 43s  
 **Think-time outliers (> 15 min):** 2
