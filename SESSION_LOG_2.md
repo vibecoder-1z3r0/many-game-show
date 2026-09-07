@@ -5,6 +5,14 @@ turn 69 after a container reset truncated the transcript this report is
 generated from. This is the log to keep regenerating with
 `python3 scripts/session_timing.py <session_id>` going forward.
 
+**Rows 1–15 below duplicate [SESSION_LOG.md](./SESSION_LOG.md)'s rows
+55–69** — the post-reset transcript this report reads from turned out to
+still contain that tail of turns rather than starting completely empty,
+so the same 15 turns got logged twice under different row numbers. Only
+row 16 onward here ("Ok, let's implement fast money...") is turns not
+already present in SESSION_LOG.md. Don't double-count rows 1–15 against
+SESSION_LOG.md's totals.
+
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
 
 | # | Prompt (truncated) | Started (UTC) | Agent time spent | Human think time |
