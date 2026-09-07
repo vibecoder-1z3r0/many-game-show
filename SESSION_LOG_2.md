@@ -5,12 +5,12 @@ turn 69 after a container reset truncated the transcript this report is
 generated from. This is the log to keep regenerating with
 `python3 scripts/session_timing.py <session_id>` going forward.
 
-**Rows 1–15 below duplicate [SESSION_LOG.md](./SESSION_LOG.md)'s rows
-55–69** — the post-reset transcript this report reads from turned out to
+**Rows 1-15 below duplicate [SESSION_LOG.md](./SESSION_LOG.md)'s rows
+55-69** — the post-reset transcript this report reads from turned out to
 still contain that tail of turns rather than starting completely empty,
 so the same 15 turns got logged twice under different row numbers. Only
 row 16 onward here ("Ok, let's implement fast money...") is turns not
-already present in SESSION_LOG.md. Don't double-count rows 1–15 against
+already present in SESSION_LOG.md. Don't double-count rows 1-15 against
 SESSION_LOG.md's totals.
 
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
@@ -34,12 +34,15 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 15 | Try again | 04:26:19 | 1m 43s | 85h 2m ⏳ |
 | 16 | Ok, let's implement fast money named as "Speed Points" as a separate g… | 17:30:02 | 17s | 23s |
 | 17 | yeah - go ahead! | 17:30:42 | 27m 55s | 2h 45m ⏳ |
-| 18 | Looking at the first screen shot the buttons are like on top of each o… | 20:44:29 | 1m 19s | — |
+| 18 | Looking at the first screen shot the buttons are like on top of each o… | 20:44:29 | 1m 29s | 42m 60s ⏳ |
+| 19 | Yeah, this one is going to need a lot of work, you made a ton of assum… | 21:28:58 | 7s | 32s |
+| 20 | also 1 - 15 in session log 2 are replicated from session log 1 - so ma… | 21:29:37 | 44s | 1m 39s |
+| 21 | The UI, first let's make sure each player's scores are vertical and no… | 21:31:59 | 12m 29s | — |
 
-**Total turns:** 18  
-**Total agent time spent (excl. flagged):** 40m 3s  
-**Total human think time (excl. outliers):** 24m 5s  
-**Average human think time (excl. outliers):** 1m 43s  
-**Think-time outliers (> 15 min):** 3
+**Total turns:** 21  
+**Total agent time spent (excl. flagged):** 53m 33s  
+**Total human think time (excl. outliers):** 26m 16s  
+**Average human think time (excl. outliers):** 1m 38s  
+**Think-time outliers (> 15 min):** 4
 
-⏳ Turn(s) 7, 15, 17 had a 'human think time' over 15 min (total 88h 30m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 7, 15, 17, 18 had a 'human think time' over 15 min (total 89h 13m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
