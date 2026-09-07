@@ -89,6 +89,7 @@ in CI on every push/PR.
 ## Project docs
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — stack, conventions, extension pattern
+- [ADDING_A_GAME.md](./ADDING_A_GAME.md) — step-by-step recipe for adding a new game
 - [UI_LOOK_AND_FEEL.md](./UI_LOOK_AND_FEEL.md) — theming, typography, view conventions
 - [AIA_ATTRIBUTION.md](./AIA_ATTRIBUTION.md) — AI attribution statement used in commits
 - [SESSION_LOG.md](./SESSION_LOG.md) — turn-by-turn build timing (see `scripts/session_timing.py`)
