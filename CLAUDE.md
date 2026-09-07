@@ -22,6 +22,9 @@ frontend conventions, and AI attribution respectively.
   script for what it reports) before pushing, so the log stays current
   rather than needing to be asked each time. `SESSION_LOG.md` is a frozen
   historical snapshot (see its own header) — don't regenerate over it.
+  The script overwrites the whole file, including the "continued from"
+  header note — re-add that note (copy it from the file's git history if
+  needed) after every regeneration, don't just let it silently disappear.
 
 ## Before committing
 

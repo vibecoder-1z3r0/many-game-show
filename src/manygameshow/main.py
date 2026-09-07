@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from manygameshow.database import create_db_and_tables
-from manygameshow.routers import squad_squabble
+from manygameshow.routers import speed_points, squad_squabble
 
 
 @asynccontextmanager
@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Many Game Show", lifespan=lifespan)
 
 app.include_router(squad_squabble.router)
+app.include_router(speed_points.router)
 
 
 @app.get("/health")
