@@ -37,12 +37,13 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 18 | Looking at the first screen shot the buttons are like on top of each o… | 20:44:29 | 1m 29s | 42m 60s ⏳ |
 | 19 | Yeah, this one is going to need a lot of work, you made a ton of assum… | 21:28:58 | 7s | 32s |
 | 20 | also 1 - 15 in session log 2 are replicated from session log 1 - so ma… | 21:29:37 | 44s | 1m 39s |
-| 21 | The UI, first let's make sure each player's scores are vertical and no… | 21:31:59 | 12m 29s | — |
+| 21 | The UI, first let's make sure each player's scores are vertical and no… | 21:31:59 | 12m 56s | 20s |
+| 22 | mood misalignment big time, I wanted the [answer              ] [ poin… | 21:45:16 | 2m 23s | — |
 
-**Total turns:** 21  
-**Total agent time spent (excl. flagged):** 53m 33s  
-**Total human think time (excl. outliers):** 26m 16s  
-**Average human think time (excl. outliers):** 1m 38s  
+**Total turns:** 22  
+**Total agent time spent (excl. flagged):** 56m 23s  
+**Total human think time (excl. outliers):** 26m 36s  
+**Average human think time (excl. outliers):** 1m 34s  
 **Think-time outliers (> 15 min):** 4
 
 ⏳ Turn(s) 7, 15, 17, 18 had a 'human think time' over 15 min (total 89h 13m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).

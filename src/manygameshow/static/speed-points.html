@@ -255,28 +255,83 @@
       }
 
       /* ---------- Main (Display) tallies: text-then-points reveal ---------- */
+      /* Each question is its own row, split into two separate chip cards —
+         a wide answer chip and a narrow points chip — not one merged box,
+         so the two reveal beats (text, then points) read as genuinely
+         distinct pieces even before the points chip fills in. */
 
-      #display-tallies .tally-row {
+      /* Player 1 on the left, Player 2 on the right — each an equal-width
+         column: name, then the vertical slot stack, then the running
+         total at the bottom. */
+      #display-tallies {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
         align-items: flex-start;
+      }
+
+      .player-column {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .player-column .tally-name {
+        text-align: center;
+        font-size: clamp(1rem, 2.6vw, 1.4rem);
+      }
+
+      .player-column .tally-total {
+        text-align: center;
+        font-size: clamp(1.4rem, 3.4vw, 2rem);
       }
 
       #display-tallies .tally-slots {
         flex-direction: column;
         width: 100%;
+        gap: 0.5rem;
       }
 
-      #display-tallies .tally-slot {
+      .slot-row {
+        display: flex;
+        gap: 0.5rem;
         width: 100%;
-        height: auto;
-        min-height: clamp(2.4rem, 6vw, 3.2rem);
-        flex-direction: row;
-        justify-content: space-between;
+      }
+
+      .slot-card {
+        border-radius: 0.4rem;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        display: flex;
+        align-items: center;
         padding: 0.4rem 0.75rem;
+        min-height: clamp(2.4rem, 6vw, 3.2rem);
         font-size: clamp(1rem, 2.4vw, 1.5rem);
       }
 
-      #display-tallies .slot-points {
+      .answer-chip {
+        flex: 1;
+        color: var(--text-dim);
+      }
+
+      .answer-chip.pending,
+      .answer-chip.filled {
+        color: var(--text);
+      }
+
+      .points-chip {
+        min-width: clamp(3.5rem, 9vw, 5rem);
+        justify-content: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-weight: 700;
+        color: var(--text-dim);
+      }
+
+      .points-chip.filled {
         color: var(--accent);
+        border-color: var(--accent);
       }
 
       /* ---------- Display view ---------- */
@@ -723,20 +778,24 @@
           .join("");
       }
 
-      // Rich per-question tile for the Main view: the audience sees the
-      // matched answer's text as soon as the host picks it (reveal beat
-      // one), then the point value once the host separately reveals it
-      // (reveal beat two) — never both at once.
+      // Rich per-question row for the Main view: two separate chip cards
+      // (a wide answer chip, a narrow points chip), not one merged box —
+      // the audience sees the matched answer's text as soon as the host
+      // picks it (reveal beat one), then the point value once the host
+      // separately reveals it (reveal beat two).
       function mainTallySlotsHtml(slots) {
         return slots
           .map((s) => {
-            const cls = !s || s.text === null ? "" : s.points === null ? "pending" : "filled";
-            const text = s && s.text !== null ? s.text : "-";
-            const points = s && s.points !== null ? s.points : "";
+            const hasText = !!s && s.text !== null;
+            const hasPoints = !!s && s.points !== null;
+            const answerCls = hasPoints ? "filled" : hasText ? "pending" : "";
+            const text = hasText ? s.text : "-";
+            const points = hasPoints ? s.points : "";
             return (
-              `<div class="tally-slot${cls ? " " + cls : ""}">` +
-              `<span class="slot-text">${text}</span>` +
-              `<span class="slot-points">${points}</span></div>`
+              '<div class="slot-row">' +
+              `<div class="slot-card answer-chip${answerCls ? " " + answerCls : ""}">${text}</div>` +
+              `<div class="slot-card points-chip${hasPoints ? " filled" : ""}">${points}</div>` +
+              "</div>"
             );
           })
           .join("");
@@ -805,15 +864,15 @@
           : "No question in play";
 
         document.getElementById("display-tallies").innerHTML = `
-          <div class="tally-row">
-            <span class="tally-name">${state.player1_name}</span>
+          <div class="player-column">
+            <div class="tally-name">${state.player1_name}</div>
             <div class="tally-slots">${mainTallySlotsHtml(state.player1_slots)}</div>
-            <span class="tally-total display-num">${state.player1_total}</span>
+            <div class="tally-total display-num">${state.player1_total}</div>
           </div>
-          <div class="tally-row">
-            <span class="tally-name">${state.player2_name}</span>
+          <div class="player-column">
+            <div class="tally-name">${state.player2_name}</div>
             <div class="tally-slots">${mainTallySlotsHtml(state.player2_slots)}</div>
-            <span class="tally-total display-num">${state.player2_total}</span>
+            <div class="tally-total display-num">${state.player2_total}</div>
           </div>`;
 
         document.getElementById("combined-total-display").textContent =
