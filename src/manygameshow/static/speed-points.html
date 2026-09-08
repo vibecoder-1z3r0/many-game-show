@@ -587,7 +587,6 @@
           <ol id="host-question-list">
           </ol>
         </fieldset>
-        <button class="danger" onclick="resetGame()">Reset Game</button>
         <div class="status-line" id="host-status-line"></div>
       </section>
       <section id="view-judge">
@@ -599,6 +598,7 @@
                  placeholder="Type the contestant's answer..." />
           <button class="buzzer-btn" id="buzzer-btn" onclick="toggleDuplicateFlag()">Flag Duplicate</button>
           <div id="answer-options"></div>
+          <button class="award-btn" onclick="awardPass()">Pass</button>
           <div id="reveal-points-container"></div>
         </fieldset>
         <fieldset>
@@ -614,6 +614,7 @@
             <span class="tally-total" id="player2-total"></span>
           </div>
         </fieldset>
+        <button class="danger" onclick="resetGame()">Reset Game</button>
         <div class="status-line" id="judge-status-line"></div>
       </section>
     </main>
@@ -823,6 +824,15 @@
       function awardNoMatch() {
         const text = typedAnswerText() || "No match";
         patch("/award", { text, points: 0 });
+      }
+
+      // Distinct from No match: the contestant gave no answer at all
+      // (e.g. time ran out), rather than answering with something not on
+      // the board. Always records as "Pass" regardless of anything left
+      // typed in the input — a stray note shouldn't get mistaken for what
+      // was actually said.
+      function awardPass() {
+        patch("/award", { text: "Pass", points: 0 });
       }
 
       function toggleDuplicateFlag() {

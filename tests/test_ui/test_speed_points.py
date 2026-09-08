@@ -253,6 +253,15 @@ def test_display_view_player_tallies_are_vertical(live_server: str, page: Page) 
     )
 
 
+def test_reset_game_is_on_judge_not_host(live_server: str, page: Page) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_host(live_server, page, game_id)
+    expect(page.get_by_role("button", name="Reset Game")).to_be_hidden()
+
+    _goto_judge(live_server, page, game_id)
+    expect(page.get_by_role("button", name="Reset Game", exact=True)).to_be_visible()
+
+
 def test_reset_game_requires_confirmation_and_clears_state(
     live_server: str, page: Page
 ) -> None:
@@ -263,16 +272,46 @@ def test_reset_game_requires_confirmation_and_clears_state(
     _goto_judge(live_server, page, game_id)
     _award_and_reveal(page)
 
-    _goto_host(live_server, page, game_id)
     page.once("dialog", lambda dialog: dialog.dismiss())
     page.get_by_role("button", name="Reset Game", exact=True).click()
-
-    _goto_judge(live_server, page, game_id)
     expect(page.locator("#player1-tally .tally-slot").first).to_have_text("34")
 
-    _goto_host(live_server, page, game_id)
     page.once("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Reset Game", exact=True).click()
+    expect(page.locator("#player1-tally .tally-slot").first).to_have_text("-")
+
+
+def test_pass_records_distinct_from_no_match(live_server: str, page: Page) -> None:
+    """A contestant who says nothing (Pass) should read differently from
+    one who guessed something not on the board (No match) — both score 0,
+    but the reveal text should tell the two apart."""
+    game_id = _create_game(live_server, page)
+    _goto_host(live_server, page, game_id)
+    page.get_by_role("button", name="Start Player 1", exact=True).click()
 
     _goto_judge(live_server, page, game_id)
-    expect(page.locator("#player1-tally .tally-slot").first).to_have_text("-")
+    page.get_by_role("button", name="Pass", exact=True).click()
+    page.get_by_role("button", name="Reveal Points", exact=True).click()
+    expect(page.locator("#player1-tally .tally-slot").first).to_have_text("0")
+
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
+    expect(page.locator("#display-tallies")).to_contain_text("Pass")
+
+
+def test_pass_works_even_with_typed_text(live_server: str, page: Page) -> None:
+    """Pass always records as a pass, ignoring anything left in the input
+    (e.g. a partial note the judge was jotting down)."""
+    game_id = _create_game(live_server, page)
+    _goto_host(live_server, page, game_id)
+    page.get_by_role("button", name="Start Player 1", exact=True).click()
+
+    _goto_judge(live_server, page, game_id)
+    page.fill("#judge-answer-input", "something they mumbled")
+    page.get_by_role("button", name="Pass", exact=True).click()
+    page.get_by_role("button", name="Reveal Points", exact=True).click()
+
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
+    expect(page.locator("#display-tallies")).to_contain_text("Pass")
+    expect(page.locator("#display-tallies")).not_to_contain_text(
+        "something they mumbled"
+    )
