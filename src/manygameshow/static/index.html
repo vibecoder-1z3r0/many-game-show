@@ -170,7 +170,7 @@
           body: JSON.stringify({}),
         });
         const game = await resp.json();
-        location.href = `/speed-points.html?id=${game.id}&view=control`;
+        location.href = `/speed-points.html?id=${game.id}&view=host`;
       }
 
       function controllingLabel(g) {
@@ -227,7 +227,8 @@
             </div>
             <div class="links">
               <a href="/speed-points.html?id=${g.id}&view=display">Display</a>
-              <a href="/speed-points.html?id=${g.id}&view=control">Control</a>
+              <a href="/speed-points.html?id=${g.id}&view=host">Host</a>
+              <a href="/speed-points.html?id=${g.id}&view=judge">Judge</a>
               <button class="danger" onclick="deleteGame('speed-points', '${g.id}')">Delete</button>
             </div>
           </div>`;

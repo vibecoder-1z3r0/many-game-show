@@ -54,18 +54,20 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 28 | I’m going to be doing the next significant chunk of effort from my mob… | 13:48:11 | 12s | 57s | 2 | 353 | 465,108 | 45,433 |
 | 29 | I was reviewing the transcript to see where we’re at and I noticed thi… | 13:49:19 | 29s | 1m 28s | 12 | 3,712 | 3,934 | 3,065,457 |
 | 30 | Words and phrasing matters :). Then again you’re a token predictor :-D | 13:51:16 | 5s | 4m 21s | 2 | 100 | 67 | 513,255 |
-| 31 | Ok for speed tokens we need to separate the views to a host view and a… | 13:55:42 | 27m 35s | — | 144 | 71,602 | 162,893 | 39,981,783 |
+| 31 | Ok for speed tokens we need to separate the views to a host view and a… | 13:55:42 | 43m 7s ⚠ | — | 410 | 182,429 | 351,609 | 123,804,430 |
 
 **Total turns:** 31  
-**Total agent time spent (excl. flagged):** 1h 30m  
+**Total agent time spent (excl. flagged):** 1h 3m  
 **Total human think time (excl. outliers):** 34m 31s  
 **Average human think time (excl. outliers):** 1m 26s  
 **Think-time outliers (> 15 min):** 6  
-**Total input tokens:** 1,583  
-**Total output tokens:** 589,773  
-**Total cache-write tokens:** 3,959,396  
-**Total cache-read tokens:** 238,814,231  
-**Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
+**Total input tokens:** 1,849  
+**Total output tokens:** 700,600  
+**Total cache-write tokens:** 4,148,112  
+**Total cache-read tokens:** 322,636,878  
+**Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
+
+⚠ Turn(s) 31 had an 'agent time spent' over 30 min (total 43m 7s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
 
 ⏳ Turn(s) 7, 15, 17, 18, 25, 27 had a 'human think time' over 15 min (total 105h 6m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
@@ -76,10 +78,10 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 Adds this file's turns after row 15 (the known-duplicate boundary) to SESSION_LOG_prior_totals.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
 **Combined total turns:** 85  
-**Combined agent time spent (excl. flagged):** 3h 13m  
+**Combined agent time spent (excl. flagged):** 2h 45m  
 **Combined human think time (excl. outliers):** 2h 12m  
 **Combined think-time outliers:** 9  
-**Total input tokens (since tracking began, this file only):** 1,191  
-**Total output tokens (since tracking began, this file only):** 517,806  
-**Total cache-write tokens (since tracking began, this file only):** 3,421,868  
-**Total cache-read tokens (since tracking began, this file only):** 215,700,218
+**Total input tokens (since tracking began, this file only):** 1,457  
+**Total output tokens (since tracking began, this file only):** 628,633  
+**Total cache-write tokens (since tracking began, this file only):** 3,610,584  
+**Total cache-read tokens (since tracking began, this file only):** 299,522,865
