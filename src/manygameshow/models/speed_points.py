@@ -28,7 +28,7 @@ class Player(StrEnum):
 
 
 class AnswerSlot(SQLModel):
-    """One question's judged answer, mid-reveal: the host locks in which
+    """One question's judged answer, mid-reveal: the judge locks in which
     answer matched (text) first — visible immediately — and the points
     stay hidden until a separate reveal-points action, so the two beats
     (what they said, then what it's worth) read as distinct moments on
@@ -37,6 +37,11 @@ class AnswerSlot(SQLModel):
     text: str
     points: int
     revealed: bool = False
+    # Snapshot of the judge's buzzer flag (see pending_duplicate_flag on
+    # the game) at the moment this slot was last awarded — "this answer
+    # repeated the other player's" — display/scoring behavior TBD, this
+    # just carries the marker through.
+    duplicate: bool = False
 
 
 def _default_question_ids_json() -> str:
@@ -77,6 +82,13 @@ class SpeedPointsGame(SQLModel, table=True):
     win_threshold: int = Field(default=200, ge=1)
     scores_revealed: bool = Field(default=False)
 
+    # Judge's buzzer: "this answer duplicates the other player's" — a
+    # standalone toggle, independent of typing/awarding an answer, so it
+    # can be pressed any time before the current question's points are
+    # revealed. Baked into the slot at award time (see AnswerSlot.duplicate)
+    # and reset whenever the current question changes.
+    pending_duplicate_flag: bool = Field(default=False)
+
     status: str = Field(default="active")
 
     created_at: datetime = Field(default_factory=_utcnow)
@@ -90,7 +102,8 @@ class SpeedPointsGameCreate(SQLModel):
 
 class QuestionPromptRead(SQLModel):
     """Spoiler-free question view for the main Read schema — no answers,
-    so Main never leaks the answer/points key the host uses to judge."""
+    so neither Main nor the Host view ever leaks the answer/points key
+    the judge uses to score."""
 
     id: str
     prompt: str
@@ -103,12 +116,13 @@ class AnswerOptionRead(SQLModel):
 
 class SlotRead(SQLModel):
     """A player's judged-answer tile as the API exposes it: text appears
-    as soon as the host picks a match, but points stay null until the
-    host explicitly reveals them — never send points early, even to a
+    as soon as the judge locks in a match, but points stay null until the
+    judge explicitly reveals them — never send points early, even to a
     client that would only display it a moment later."""
 
     text: str | None
     points: int | None
+    duplicate: bool
 
 
 class SpeedPointsGameRead(SQLModel):
@@ -118,6 +132,10 @@ class SpeedPointsGameRead(SQLModel):
     current_player: Player | None
     current_question_index: int
     current_question: QuestionPromptRead | None
+    # Every question's prompt, spoiler-free, in play order — lets the Host
+    # view show the full rundown up front rather than one at a time.
+    all_questions: list[QuestionPromptRead]
+    pending_duplicate_flag: bool
     player1_slots: list[SlotRead]
     player2_slots: list[SlotRead]
     player1_total: int
