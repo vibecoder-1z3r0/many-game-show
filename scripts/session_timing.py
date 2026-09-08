@@ -13,15 +13,33 @@ table of each human turn with two separate timing metrics:
   before replying, with the agent's own working time subtracted out (a
   slow agent response no longer inflates this number).
 
+Also sums per-turn token usage (input/output/cache-write/cache-read),
+summed across every assistant round-trip within that turn's boundary.
+
 Usage:
     python3 scripts/session_timing.py [session_id]
+    python3 scripts/session_timing.py [session_id] \\
+        --skip-duplicate N --prior-summary path/to/prior.json
 
-If session_id is omitted, uses the most recently modified .jsonl file for
-this project.
+--skip-duplicate N: this transcript's first N turns are known duplicates
+of turns already counted in a prior (frozen) log file — e.g. after a
+container reset replayed a tail of the old transcript into a new JSONL.
+Combined with --prior-summary, prints an extra "Combined Summary" section
+that adds the frozen file's totals to *only* the turns after that
+boundary, so the overlap isn't double-counted. The main per-turn table
+still prints every row regardless, for a full transparent history.
+
+--prior-summary PATH: a small JSON file with the frozen prior file's
+totals: {"turns": int, "agent_seconds": number, "think_seconds": number,
+"think_outliers": int}. These necessarily come from that file's
+already-printed (rounded) footer, not raw data — the frozen file's own
+source JSONL no longer has full precision available (that's the point of
+freezing it), so the combined totals below are an approximation, not an
+exact recomputation.
 """
 
+import argparse
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -49,7 +67,7 @@ def find_transcript(session_id: str | None) -> Path:
 def is_human_turn(entry: dict) -> bool:
     if entry.get("type") != "user":
         return False
-    return entry.get("origin", {}).get("kind") == "human"
+    return bool(entry.get("origin", {}).get("kind") == "human")
 
 
 def is_agent_activity(entry: dict) -> bool:
@@ -90,7 +108,7 @@ def first_text(entry: dict) -> str:
     if isinstance(content, list):
         for block in content:
             if isinstance(block, dict) and block.get("type") == "text":
-                return block.get("text", "")
+                return str(block.get("text", ""))
     return ""
 
 
@@ -123,10 +141,7 @@ AGENT_TIME_SANITY_THRESHOLD_SECONDS = 30 * 60
 THINK_TIME_OUTLIER_THRESHOLD_SECONDS = 15 * 60
 
 
-def main() -> None:
-    session_id = sys.argv[1] if len(sys.argv) > 1 else None
-    path = find_transcript(session_id)
-
+def load_turns(path: Path) -> list[dict]:
     entries = []
     with path.open() as f:
         for line in f:
@@ -148,7 +163,7 @@ def main() -> None:
     # logged on either side of a turn boundary, e.g. reminders bundled with
     # the *next* human message, which would otherwise falsely stretch this
     # turn's end).
-    turns = []
+    turns: list[dict] = []
     current = None
     for entry in timestamped:
         if is_human_turn(entry):
@@ -172,22 +187,22 @@ def main() -> None:
                     current["usage"][key] += value
     if current is not None:
         turns.append(current)
+    return turns
 
-    print(f"# Session Timing Report\n\nSource: `{path}`\n")
-    print(
-        "| # | Prompt (truncated) | Started (UTC) | Agent time spent | "
-        "Human think time | Input | Output | Cache Write | Cache Read |"
-    )
-    print("|---|---|---|---|---|---|---|---|---|")
 
+def summarize(turns: list[dict], offset: int = 0) -> dict:
+    """Compute the same totals the footer prints, over `turns` (a slice is
+    fine — `offset` is only used to report correct 1-based turn numbers in
+    the outlier/flagged lists)."""
     total_agent_seconds = 0.0
     flagged_agent_seconds = 0.0
-    total_think_seconds = 0.0  # excludes think-time outliers
+    total_think_seconds = 0.0
     think_count = 0
     flagged_turns = []
     think_outlier_turns = []
     think_outlier_seconds = 0.0
     total_usage = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
+
     for i, t in enumerate(turns, 1):
         start = parse_ts(t["start"])
         last_activity = parse_ts(t["last_activity"])
@@ -195,26 +210,56 @@ def main() -> None:
 
         suspicious = agent_seconds > AGENT_TIME_SANITY_THRESHOLD_SECONDS
         if suspicious:
-            flagged_turns.append(i)
+            flagged_turns.append(offset + i)
             flagged_agent_seconds += agent_seconds
         else:
             total_agent_seconds += agent_seconds
 
         if i < len(turns):
             next_start = parse_ts(turns[i]["start"])
-            # Human think time = gap between messages MINUS the agent's own
-            # working time — a slow agent response should never count
-            # against the human's pacing.
             think_seconds = (next_start - last_activity).total_seconds()
-
             is_think_outlier = think_seconds > THINK_TIME_OUTLIER_THRESHOLD_SECONDS
             if is_think_outlier:
-                think_outlier_turns.append(i)
+                think_outlier_turns.append(offset + i)
                 think_outlier_seconds += think_seconds
             else:
                 total_think_seconds += think_seconds
                 think_count += 1
 
+        for key in total_usage:
+            total_usage[key] += t["usage"][key]
+
+    return {
+        "turns": len(turns),
+        "agent_seconds": total_agent_seconds,
+        "flagged_agent_seconds": flagged_agent_seconds,
+        "flagged_turns": flagged_turns,
+        "think_seconds": total_think_seconds,
+        "think_count": think_count,
+        "think_outlier_turns": think_outlier_turns,
+        "think_outlier_seconds": think_outlier_seconds,
+        "usage": total_usage,
+    }
+
+
+def print_report(turns: list[dict], path: Path) -> None:
+    print(f"# Session Timing Report\n\nSource: `{path}`\n")
+    print(
+        "| # | Prompt (truncated) | Started (UTC) | Agent time spent | "
+        "Human think time | Input | Output | Cache Write | Cache Read |"
+    )
+    print("|---|---|---|---|---|---|---|---|---|")
+
+    for i, t in enumerate(turns, 1):
+        start = parse_ts(t["start"])
+        last_activity = parse_ts(t["last_activity"])
+        agent_seconds = (last_activity - start).total_seconds()
+        suspicious = agent_seconds > AGENT_TIME_SANITY_THRESHOLD_SECONDS
+
+        if i < len(turns):
+            next_start = parse_ts(turns[i]["start"])
+            think_seconds = (next_start - last_activity).total_seconds()
+            is_think_outlier = think_seconds > THINK_TIME_OUTLIER_THRESHOLD_SECONDS
             think_str = fmt_duration(think_seconds) + (
                 " ⏳" if is_think_outlier else ""
             )
@@ -225,8 +270,6 @@ def main() -> None:
         prompt = prompt.replace("|", "\\|")
         agent_str = fmt_duration(agent_seconds) + (" ⚠" if suspicious else "")
         u = t["usage"]
-        for key in total_usage:
-            total_usage[key] += u[key]
         print(
             f"| {i} | {prompt} | {start.strftime('%H:%M:%S')} "
             f"| {agent_str} | {think_str} "
@@ -234,52 +277,117 @@ def main() -> None:
             f"| {u['cache_read']:,} |"
         )
 
-    avg_think = total_think_seconds / think_count if think_count else 0.0
-    # Fraction of prompt-side tokens (fresh + cache-write + cache-read) that
-    # were served from cache rather than reprocessed — the efficiency payoff
-    # of a long-running session's prompt cache.
+    s = summarize(turns)
+    avg_think = s["think_seconds"] / s["think_count"] if s["think_count"] else 0.0
     prompt_side = (
-        total_usage["input"] + total_usage["cache_write"] + total_usage["cache_read"]
+        s["usage"]["input"] + s["usage"]["cache_write"] + s["usage"]["cache_read"]
     )
-    cache_hit_ratio = total_usage["cache_read"] / prompt_side if prompt_side else 0.0
+    cache_hit_ratio = s["usage"]["cache_read"] / prompt_side if prompt_side else 0.0
     print(
-        f"\n**Total turns:** {len(turns)}  \n"
+        f"\n**Total turns:** {s['turns']}  \n"
         f"**Total agent time spent (excl. flagged):** "
-        f"{fmt_duration(total_agent_seconds)}  \n"
+        f"{fmt_duration(s['agent_seconds'])}  \n"
         f"**Total human think time (excl. outliers):** "
-        f"{fmt_duration(total_think_seconds)}  \n"
+        f"{fmt_duration(s['think_seconds'])}  \n"
         f"**Average human think time (excl. outliers):** "
         f"{fmt_duration(avg_think)}  \n"
         f"**Think-time outliers (> "
         f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min):** "
-        f"{len(think_outlier_turns)}  \n"
-        f"**Total input tokens:** {total_usage['input']:,}  \n"
-        f"**Total output tokens:** {total_usage['output']:,}  \n"
-        f"**Total cache-write tokens:** {total_usage['cache_write']:,}  \n"
-        f"**Total cache-read tokens:** {total_usage['cache_read']:,}  \n"
+        f"{len(s['think_outlier_turns'])}  \n"
+        f"**Total input tokens:** {s['usage']['input']:,}  \n"
+        f"**Total output tokens:** {s['usage']['output']:,}  \n"
+        f"**Total cache-write tokens:** {s['usage']['cache_write']:,}  \n"
+        f"**Total cache-read tokens:** {s['usage']['cache_read']:,}  \n"
         f"**Cache hit ratio (cache-read ÷ all prompt-side tokens):** "
         f"{cache_hit_ratio:.0%}"
     )
-    if flagged_turns:
+    if s["flagged_turns"]:
         print(
-            f"\n⚠ Turn(s) {', '.join(str(n) for n in flagged_turns)} had an "
+            f"\n⚠ Turn(s) {', '.join(str(n) for n in s['flagged_turns'])} had an "
             f"'agent time spent' over "
             f"{AGENT_TIME_SANITY_THRESHOLD_SECONDS // 60} min "
-            f"(total {fmt_duration(flagged_agent_seconds)}), which is "
+            f"(total {fmt_duration(s['flagged_agent_seconds'])}), which is "
             f"implausible as real agent work — likely a transcript entry "
             f"logged near session-resume time rather than when it actually "
             f"ran. Excluded from the agent-time total above."
         )
-    if think_outlier_turns:
+    if s["think_outlier_turns"]:
         print(
-            f"\n⏳ Turn(s) {', '.join(str(n) for n in think_outlier_turns)} had a "
-            f"'human think time' over "
+            f"\n⏳ Turn(s) {', '.join(str(n) for n in s['think_outlier_turns'])} had "
+            f"a 'human think time' over "
             f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min "
-            f"(total {fmt_duration(think_outlier_seconds)}) — likely a break, "
-            f"a resumed session, or time reading a long response rather than "
-            f"active back-and-forth. Excluded from BOTH the total and the "
-            f"average above (still shown per-row)."
+            f"(total {fmt_duration(s['think_outlier_seconds'])}) — likely a "
+            f"break, a resumed session, or time reading a long response "
+            f"rather than active back-and-forth. Excluded from BOTH the "
+            f"total and the average above (still shown per-row)."
         )
+
+
+def print_combined_summary(
+    turns: list[dict], skip_duplicate: int, prior_summary_path: Path
+) -> None:
+    prior = json.loads(prior_summary_path.read_text())
+    new_turns = turns[skip_duplicate:]
+    s = summarize(new_turns, offset=skip_duplicate)
+
+    combined_turns = prior["turns"] + s["turns"]
+    combined_agent_seconds = prior["agent_seconds"] + s["agent_seconds"]
+    combined_think_seconds = prior["think_seconds"] + s["think_seconds"]
+    combined_think_outliers = prior["think_outliers"] + len(s["think_outlier_turns"])
+
+    print("\n---\n")
+    print(
+        f"## Combined Summary (whole session, both files)\n\n"
+        f"Adds this file's turns after row {skip_duplicate} (the "
+        f"known-duplicate boundary) to {prior_summary_path.name}'s frozen "
+        f"totals. The frozen side is only as precise as that file's "
+        f"already-rounded footer — its raw source data no longer exists —"
+        f" so treat this as an approximation, not an exact recomputation.\n"
+    )
+    print(
+        f"**Combined total turns:** {combined_turns}  \n"
+        f"**Combined agent time spent (excl. flagged):** "
+        f"{fmt_duration(combined_agent_seconds)}  \n"
+        f"**Combined human think time (excl. outliers):** "
+        f"{fmt_duration(combined_think_seconds)}  \n"
+        f"**Combined think-time outliers:** {combined_think_outliers}  \n"
+        f"**Total input tokens (since tracking began, this file only):** "
+        f"{s['usage']['input']:,}  \n"
+        f"**Total output tokens (since tracking began, this file only):** "
+        f"{s['usage']['output']:,}  \n"
+        f"**Total cache-write tokens (since tracking began, this file "
+        f"only):** {s['usage']['cache_write']:,}  \n"
+        f"**Total cache-read tokens (since tracking began, this file "
+        f"only):** {s['usage']['cache_read']:,}"
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("session_id", nargs="?", default=None)
+    parser.add_argument(
+        "--skip-duplicate",
+        type=int,
+        default=None,
+        help="This transcript's first N turns duplicate a prior frozen log.",
+    )
+    parser.add_argument(
+        "--prior-summary",
+        type=Path,
+        default=None,
+        help="JSON file with the prior frozen log's totals (see module docstring).",
+    )
+    args = parser.parse_args()
+
+    path = find_transcript(args.session_id)
+    turns = load_turns(path)
+
+    print_report(turns, path)
+
+    if args.skip_duplicate is not None and args.prior_summary is not None:
+        print_combined_summary(turns, args.skip_duplicate, args.prior_summary)
+    elif args.skip_duplicate is not None or args.prior_summary is not None:
+        raise SystemExit("--skip-duplicate and --prior-summary must be given together")
 
 
 if __name__ == "__main__":

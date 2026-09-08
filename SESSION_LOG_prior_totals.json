@@ -1,0 +1,7 @@
+{
+  "_comment": "Frozen totals from SESSION_LOG.md's footer (turns 1-69), for scripts/session_timing.py --prior-summary. That file's raw source JSONL no longer exists (see its own header), so these numbers are transcribed from its already-rounded printed footer, not recomputed from source. Token usage isn't included: token tracking didn't exist yet when that file was generated.",
+  "turns": 69,
+  "agent_seconds": 6780,
+  "think_seconds": 7320,
+  "think_outliers": 5
+}
