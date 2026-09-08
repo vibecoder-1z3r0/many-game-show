@@ -18,13 +18,20 @@ frontend conventions, and AI attribution respectively.
 - Branch for this Claude agent: `claude/conference-demo-app-h3448o`.
   Push with `git push -u origin claude/conference-demo-app-h3448o`.
 - **Refresh `SESSION_LOG_2.md` as part of every commit+push.** Regenerate
-  it with `python3 scripts/session_timing.py <session_id>` (see that
-  script for what it reports) before pushing, so the log stays current
-  rather than needing to be asked each time. `SESSION_LOG.md` is a frozen
-  historical snapshot (see its own header) — don't regenerate over it.
-  The script overwrites the whole file, including the "continued from"
-  header note — re-add that note (copy it from the file's git history if
-  needed) after every regeneration, don't just let it silently disappear.
+  it with:
+  ```
+  python3 scripts/session_timing.py <session_id> \
+    --skip-duplicate 15 --prior-summary SESSION_LOG_prior_totals.json
+  ```
+  (see the script's docstring for what it reports and what those flags
+  do) before pushing, so the log stays current rather than needing to be
+  asked each time. `SESSION_LOG.md` is a frozen historical snapshot (see
+  its own header) — don't regenerate over it, and don't edit
+  `SESSION_LOG_prior_totals.json` (it's derived from that frozen file's
+  footer and should stay fixed). The script overwrites the whole file,
+  including the "continued from" header note — re-add that note (copy it
+  from the file's git history if needed) after every regeneration, don't
+  just let it silently disappear.
 
 ## Before committing
 

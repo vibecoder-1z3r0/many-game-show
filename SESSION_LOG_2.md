@@ -3,19 +3,22 @@
 Continuation of [SESSION_LOG.md](./SESSION_LOG.md), which is frozen as of
 turn 69 after a container reset truncated the transcript this report is
 generated from. This is the log to keep regenerating with
-`python3 scripts/session_timing.py <session_id>` going forward.
+`python3 scripts/session_timing.py <session_id> --skip-duplicate 15 --prior-summary SESSION_LOG_prior_totals.json`
+going forward (see the script's own docstring for what those flags do).
 
 **Rows 1-15 below duplicate [SESSION_LOG.md](./SESSION_LOG.md)'s rows
 55-69** — the post-reset transcript this report reads from turned out to
 still contain that tail of turns rather than starting completely empty,
-so the same 15 turns got logged twice under different row numbers. Only
-row 16 onward here ("Ok, let's implement fast money...") is turns not
-already present in SESSION_LOG.md. Don't double-count rows 1-15 against
-SESSION_LOG.md's totals.
+so the same 15 turns got logged twice under different row numbers. The
+"Combined Summary" section at the bottom already accounts for this
+(it adds only rows 16+ here to SESSION_LOG.md's totals) — don't also
+double-count rows 1-15 yourself.
 
 Token-usage columns (Input/Output/Cache Write/Cache Read) were added
 starting this file's regeneration on 2026-09-08 — SESSION_LOG.md (the
-frozen turns 1-69 file) predates that and doesn't have them.
+frozen turns 1-69 file) predates that and doesn't have them, so the
+Combined Summary's token totals only cover "since tracking began," not
+the whole session.
 
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
 
@@ -46,17 +49,33 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 23 | you also know one thing that we didn't track in the session log are th… | 21:48:22 | 12s | 24s | 4 | 1,792 | 196 | 942,398 |
 | 24 | where would it be output then? | 21:48:58 | 7s | 12s | 4 | 1,096 | 98 | 944,386 |
 | 25 | shouldn't that be for each turn though? | 21:49:17 | 16s | 2h 12m ⏳ | 4 | 2,488 | 110 | 945,580 |
-| 26 | Yes and for session log 2 go forward it should track it, right? | 00:02:15 | 1m 39s | — | 62 | 15,821 | 1,231,656 | 12,873,219 |
+| 26 | Yes and for session log 2 go forward it should track it, right? | 00:02:15 | 2m 1s | 2s | 72 | 16,866 | 1,241,342 | 15,194,715 |
+| 27 | You could also have a summary for the whole session log too then I sup… | 00:04:17 | 2m 51s | — | 34 | 43,306 | 61,004 | 8,181,823 |
 
-**Total turns:** 26  
-**Total agent time spent (excl. flagged):** 58m 50s  
-**Total human think time (excl. outliers):** 27m 43s  
-**Average human think time (excl. outliers):** 1m 23s  
+**Total turns:** 27  
+**Total agent time spent (excl. flagged):** 1h 2m  
+**Total human think time (excl. outliers):** 27m 45s  
+**Average human think time (excl. outliers):** 1m 19s  
 **Think-time outliers (> 15 min):** 5  
-**Total input tokens:** 1,361  
-**Total output tokens:** 467,479  
-**Total cache-write tokens:** 3,248,461  
-**Total cache-read tokens:** 180,238,145  
+**Total input tokens:** 1,405  
+**Total output tokens:** 511,830  
+**Total cache-write tokens:** 3,319,151  
+**Total cache-read tokens:** 190,741,464  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
 ⏳ Turn(s) 7, 15, 17, 18, 25 had a 'human think time' over 15 min (total 91h 25m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+
+---
+
+## Combined Summary (whole session, both files)
+
+Adds this file's turns after row 15 (the known-duplicate boundary) to SESSION_LOG_prior_totals.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
+
+**Combined total turns:** 81  
+**Combined agent time spent (excl. flagged):** 2h 44m  
+**Combined human think time (excl. outliers):** 2h 6m  
+**Combined think-time outliers:** 8  
+**Total input tokens (since tracking began, this file only):** 1,013  
+**Total output tokens (since tracking began, this file only):** 439,863  
+**Total cache-write tokens (since tracking began, this file only):** 2,781,623  
+**Total cache-read tokens (since tracking began, this file only):** 167,627,451
