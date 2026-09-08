@@ -311,11 +311,18 @@ class DuplicateFlagBody(SQLModel):
 def set_duplicate_flag(
     game_id: str, body: DuplicateFlagBody, session: SessionDep
 ) -> JudgeGameRead:
-    """The judge's buzzer for one question: flag (or clear) that this
-    answer duplicates the other player's. Freely settable any time.
-    Scoring/main-view behavior for a flagged duplicate is still TBD; this
-    just records the marker."""
+    """The judge's buzzer for one question: player 2 repeated an answer
+    player 1 already gave, so the contestant gets to answer again.
+    Only meaningful during player 2's turn (there's nothing to duplicate
+    against during player 1's) — hit it as soon as the repeat happens,
+    before typing the contestant's actual (new) answer into the same
+    slot, same as normal from there."""
     game = _get_game(game_id, session)
+    if game.current_player != Player.PLAYER2:
+        raise HTTPException(
+            status_code=400,
+            detail="Duplicate flag only applies during Player 2's turn",
+        )
     slots = _load_slots(game)
     slot = _slot_at(slots, body.question_index)
     slot["duplicate"] = body.flagged

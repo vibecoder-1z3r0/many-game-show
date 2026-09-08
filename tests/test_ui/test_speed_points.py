@@ -190,12 +190,27 @@ def test_pass_prefills_and_locks_zero_points(live_server: str, page: Page) -> No
     expect(page.locator("#main-tallies")).to_contain_text("0")
 
 
-def test_buzzer_flags_duplicate_independently_of_answer_state(
-    live_server: str, page: Page
-) -> None:
+def test_buzzer_hidden_during_player1_turn(live_server: str, page: Page) -> None:
+    """Nothing to duplicate against yet during player 1's turn, so the
+    buzzer shouldn't even be offered."""
     game_id = _create_game(live_server, page)
     _goto_host(live_server, page, game_id)
     page.get_by_role("button", name="Start Player 1", exact=True).click()
+
+    _goto_judge(live_server, page, game_id)
+    _row(page, 0)
+    expect(page.locator("#buzzer-btn-0")).to_have_count(0)
+
+
+def test_buzzer_flags_duplicate_independently_of_answer_state(
+    live_server: str, page: Page
+) -> None:
+    """The buzzer is hit as soon as player 2 repeats player 1's answer —
+    before the judge types anything — so the contestant can answer
+    again; it's independent of whatever's drafted in the row."""
+    game_id = _create_game(live_server, page)
+    _goto_host(live_server, page, game_id)
+    page.get_by_role("button", name="Start Player 2", exact=True).click()
 
     _goto_judge(live_server, page, game_id)
     buzzer = page.locator("#buzzer-btn-0")

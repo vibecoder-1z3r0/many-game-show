@@ -961,6 +961,11 @@
       function buildJudgeRows() {
         const container = document.getElementById("judge-rows");
         const prompts = judgeState.all_questions;
+        // The buzzer ("player 2 repeated player 1's answer, contestant
+        // answers again") only makes sense during player 2's turn — there's
+        // nothing to duplicate against during player 1's — so it's only
+        // built into the row markup then, not just hidden for player 1.
+        const showBuzzer = judgeState.current_player === "player2";
         container.innerHTML = prompts
           .map((q, i) => {
             const quickPoints = answerKey
@@ -972,6 +977,9 @@
                   .join("") +
                 `<button class="quick-pt-btn" onclick="setPoints(${i}, 0)">No match (0)</button>`
               : "";
+            const buzzer = showBuzzer
+              ? `<button class="buzzer-btn" id="buzzer-btn-${i}" onclick="toggleDuplicate(${i}, !judgeState.player_slots_active[${i}].duplicate)"></button>`
+              : "";
             return `
               <div class="judge-row" data-index="${i}">
                 <div class="judge-row-prompt">${q.prompt}</div>
@@ -979,7 +987,7 @@
                   <input type="text" class="answer-input" id="answer-input-${i}"
                          placeholder="Contestant's answer..." />
                   <button class="primary lock-btn" id="answer-lock-btn-${i}"></button>
-                  <button class="buzzer-btn" id="buzzer-btn-${i}" onclick="toggleDuplicate(${i}, !judgeState.player_slots_active[${i}].duplicate)"></button>
+                  ${buzzer}
                 </div>
                 <div class="judge-row-line">
                   <div class="quick-points" id="quick-points-${i}">${quickPoints}</div>
@@ -1035,8 +1043,10 @@
           pointsLockBtn.onclick = () => togglePointsLock(i, !slot.points_revealed);
 
           const buzzerBtn = document.getElementById(`buzzer-btn-${i}`);
-          buzzerBtn.textContent = slot.duplicate ? "Duplicate flagged" : "Flag Duplicate";
-          buzzerBtn.classList.toggle("active", slot.duplicate);
+          if (buzzerBtn) {
+            buzzerBtn.textContent = slot.duplicate ? "Duplicate flagged" : "Flag Duplicate";
+            buzzerBtn.classList.toggle("active", slot.duplicate);
+          }
         });
       }
 
