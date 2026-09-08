@@ -392,13 +392,55 @@
         color: var(--win-green);
       }
 
-      /* ---------- Control view ---------- */
+      /* ---------- Host / Judge views ---------- */
 
-      #view-control {
+      #view-host,
+      #view-judge {
         display: flex;
         flex-direction: column;
         gap: 1rem;
         max-width: 640px;
+      }
+
+      #host-question-list {
+        margin: 0;
+        padding-left: 1.4rem;
+      }
+
+      #host-question-list li {
+        padding: 0.2rem 0;
+        color: var(--text-dim);
+      }
+
+      #host-question-list li.current-question {
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      #host-turn-status {
+        font-weight: 600;
+      }
+
+      #host-timer {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 1.4rem;
+      }
+
+      button.buzzer-btn {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+        margin: 0.5rem 0;
+      }
+
+      button.buzzer-btn.active {
+        background: #ff4d4d;
+        color: #fff;
+        border-color: #ff4d4d;
+        font-weight: 700;
       }
 
       fieldset {
@@ -495,7 +537,8 @@
       </h1>
       <div class="tabs">
         <button id="tab-display" onclick="switchView('display')">Display</button>
-        <button id="tab-control" onclick="switchView('control')">Control</button>
+        <button id="tab-host" onclick="switchView('host')">Host</button>
+        <button id="tab-judge" onclick="switchView('judge')">Judge</button>
       </div>
       <select id="theme-select" onchange="applyTheme(this.value)">
         <option value="default">Default</option>
@@ -521,7 +564,7 @@
         <div id="combined-total-display"></div>
         <div id="verdict" hidden></div>
       </section>
-      <section id="view-control">
+      <section id="view-host">
         <fieldset>
           <legend>Players</legend>
           <input type="text" id="player1-input" placeholder="Player 1 name" />
@@ -533,13 +576,28 @@
         </fieldset>
         <fieldset>
           <legend>Round control</legend>
+          <div id="host-turn-status">Waiting to start</div>
+          <div id="host-timer"></div>
           <button class="primary" onclick="startRound('player1')">Start Player 1</button>
           <button class="primary" onclick="startRound('player2')">Start Player 2</button>
           <button class="primary" onclick="revealResult()">Reveal Result</button>
         </fieldset>
         <fieldset>
+          <legend>Questions this round</legend>
+          <ol id="host-question-list">
+          </ol>
+        </fieldset>
+        <button class="danger" onclick="resetGame()">Reset Game</button>
+        <div class="status-line" id="host-status-line"></div>
+      </section>
+      <section id="view-judge">
+        <fieldset>
           <legend>Current question</legend>
           <div id="current-prompt">No question in play</div>
+          <input type="text"
+                 id="judge-answer-input"
+                 placeholder="Type the contestant's answer..." />
+          <button class="buzzer-btn" id="buzzer-btn" onclick="toggleDuplicateFlag()">Flag Duplicate</button>
           <div id="answer-options"></div>
           <div id="reveal-points-container"></div>
         </fieldset>
@@ -556,8 +614,7 @@
             <span class="tally-total" id="player2-total"></span>
           </div>
         </fieldset>
-        <button class="danger" onclick="resetGame()">Reset Game</button>
-        <div class="status-line" id="status-line"></div>
+        <div class="status-line" id="judge-status-line"></div>
       </section>
     </main>
     <script>
@@ -569,6 +626,13 @@
       let failCount = 0;
       let answerOptions = [];
       let answerOptionsForQuestionId = null;
+      let judgeInputForQuestionId = null;
+      // Tracks what's currently rendered into #answer-options and
+      // #reveal-points-container, so render() only touches those buttons'
+      // DOM when what should be shown actually changes (see the render()
+      // comment) instead of on every poll tick.
+      let renderedAnswerOptionsKey = undefined;
+      let renderedShowRevealBtn = undefined;
 
       let headerCollapsed = localStorage.getItem("mgsHeaderCollapsed") === "1";
 
@@ -588,16 +652,18 @@
       function switchView(v) {
         currentView = v;
         document.getElementById("view-display").hidden = v !== "display";
-        document.getElementById("view-control").hidden = v !== "control";
+        document.getElementById("view-host").hidden = v !== "host";
+        document.getElementById("view-judge").hidden = v !== "judge";
         document.getElementById("tab-display").classList.toggle("active", v === "display");
-        document.getElementById("tab-control").classList.toggle("active", v === "control");
+        document.getElementById("tab-host").classList.toggle("active", v === "host");
+        document.getElementById("tab-judge").classList.toggle("active", v === "judge");
         const url = new URL(location.href);
         url.searchParams.set("view", v);
         history.replaceState(null, "", url);
         updateHeaderChrome();
-        // Switching away from Control must drop any already-fetched
+        // Switching away from Judge must drop any already-fetched
         // answer-options out of the DOM immediately, not just stop
-        // fetching new ones.
+        // fetching new ones — Host and Display must never see them.
         loadAnswerOptionsIfNeeded().then(render);
       }
       switchView(currentView);
@@ -668,15 +734,16 @@
       }
 
       function setStatus(msg) {
-        document.getElementById("status-line").textContent = msg;
+        document.getElementById("host-status-line").textContent = msg;
+        document.getElementById("judge-status-line").textContent = msg;
       }
 
       async function loadAnswerOptionsIfNeeded() {
-        // Host-only reference — never fetch (let alone render into the
-        // DOM) on Display, even though the section is only CSS-hidden
-        // there. A visually-hidden element's textContent is still full
-        // page content, so this is the actual spoiler boundary.
-        if (currentView !== "control" || !state || !state.current_question) {
+        // Judge-only reference — never fetch (let alone render into the
+        // DOM) on Display or Host, even though the section is only
+        // CSS-hidden there. A visually-hidden element's textContent is
+        // still full page content, so this is the actual spoiler boundary.
+        if (currentView !== "judge" || !state || !state.current_question) {
           answerOptions = [];
           answerOptionsForQuestionId = null;
           return;
@@ -739,13 +806,29 @@
         patch("/start-round", { player });
       }
 
+      function typedAnswerText() {
+        return document.getElementById("judge-answer-input").value.trim();
+      }
+
       function awardOption(i) {
+        const text = typedAnswerText();
+        if (!text) {
+          setStatus("Type the contestant's answer before awarding points.");
+          return;
+        }
         const a = answerOptions[i];
-        patch("/award", { text: a.text, points: a.points });
+        patch("/award", { text, points: a.points });
       }
 
       function awardNoMatch() {
-        patch("/award", { text: "No match", points: 0 });
+        const text = typedAnswerText() || "No match";
+        patch("/award", { text, points: 0 });
+      }
+
+      function toggleDuplicateFlag() {
+        patch("/duplicate-flag", {
+          flagged: !(state && state.pending_duplicate_flag),
+        });
       }
 
       function revealPoints() {
@@ -763,11 +846,11 @@
         patch("/reset");
       }
 
-      // Compact scoreboard tile for Control: a small square that just
-      // needs to say "not yet / pending / this many points" — the full
-      // answer text is already visible above in the options list, so
-      // repeating it here would only fit truncated.
-      function controlTallySlotsHtml(slots) {
+      // Compact scoreboard tile for Judge: a small square that just needs
+      // to say "not yet / pending / this many points" — the currently
+      // typed-in answer is already visible above in the input, so
+      // repeating past answers here would only fit truncated.
+      function judgeTallySlotsHtml(slots) {
         return slots
           .map((s) => {
             if (!s || s.text === null) return '<span class="tally-slot">-</span>';
@@ -780,8 +863,8 @@
 
       // Rich per-question row for the Main view: two separate chip cards
       // (a wide answer chip, a narrow points chip), not one merged box —
-      // the audience sees the matched answer's text as soon as the host
-      // picks it (reveal beat one), then the point value once the host
+      // the audience sees the matched answer's text as soon as the judge
+      // picks it (reveal beat one), then the point value once the judge
       // separately reveals it (reveal beat two).
       function mainTallySlotsHtml(slots) {
         return slots
@@ -801,7 +884,14 @@
           .join("");
       }
 
-      // The slot the host is currently deciding on: text already chosen
+      function turnStatusText() {
+        if (!state || !state.current_player) return "Waiting to start";
+        const name =
+          state.current_player === "player1" ? state.player1_name : state.player2_name;
+        return `${name}'s turn — Q${Math.min(state.current_question_index + 1, 5)} of 5`;
+      }
+
+      // The slot the judge is currently deciding on: text already chosen
       // (visible on Main) but points not yet revealed. Drives whether the
       // Reveal Points button shows.
       function pendingSlot() {
@@ -817,44 +907,107 @@
 
         document.getElementById("player1-name-label").textContent = state.player1_name;
         document.getElementById("player2-name-label").textContent = state.player2_name;
-        document.getElementById("player1-tally").innerHTML = controlTallySlotsHtml(
+        document.getElementById("player1-tally").innerHTML = judgeTallySlotsHtml(
           state.player1_slots
         );
-        document.getElementById("player2-tally").innerHTML = controlTallySlotsHtml(
+        document.getElementById("player2-tally").innerHTML = judgeTallySlotsHtml(
           state.player2_slots
         );
         document.getElementById("player1-total").textContent = state.player1_total;
         document.getElementById("player2-total").textContent = state.player2_total;
 
-        document.getElementById("current-prompt").textContent = state.current_question
+        // ----- Judge -----
+        const currentPromptEl = document.getElementById("current-prompt");
+        currentPromptEl.textContent = state.current_question
           ? state.current_question.prompt
           : "No question in play";
-
-        const optsEl = document.getElementById("answer-options");
-        if (state.current_question && answerOptions.length) {
-          optsEl.innerHTML =
-            answerOptions
-              .map(
-                (a, i) =>
-                  `<button class="award-btn" onclick="awardOption(${i})">` +
-                  `<span>${a.text}</span><span>${a.points} pts</span></button>`
-              )
-              .join("") +
-            `<button class="award-btn" onclick="awardNoMatch()">No match (0)</button>`;
-        } else {
-          optsEl.innerHTML = "";
-        }
-
-        document.getElementById("reveal-points-container").innerHTML = pendingSlot()
-          ? '<button class="primary" onclick="revealPoints()">Reveal Points</button>'
+        currentPromptEl.dataset.questionId = state.current_question
+          ? state.current_question.id
           : "";
 
+        // A fresh question always clears whatever was typed for the last
+        // one; mid-question poll ticks must never clobber active typing.
+        const judgeInput = document.getElementById("judge-answer-input");
+        const currentQid = state.current_question ? state.current_question.id : null;
+        if (currentQid !== judgeInputForQuestionId) {
+          judgeInput.value = "";
+          judgeInputForQuestionId = currentQid;
+        }
+
+        const buzzerBtn = document.getElementById("buzzer-btn");
+        const flagged = !!state.pending_duplicate_flag;
+        buzzerBtn.textContent = flagged
+          ? "Duplicate flagged (click to clear)"
+          : "Flag Duplicate";
+        buzzerBtn.classList.toggle("active", flagged);
+
+        // render() runs on every poll tick where *anything* in state
+        // differs — including remaining_seconds ticking down once a
+        // second — not just when the judge does something. Rebuilding
+        // these buttons' innerHTML unconditionally on every call risks
+        // replacing the exact button a click is mid-flight on (mousedown
+        // landing on a node that's gone by mouseup). Only touch the DOM
+        // when what should be shown has actually changed.
+        // Key on answerOptionsForQuestionId (set only once the fetch for
+        // the *current* question resolves), not just current_question.id —
+        // right after a question changes, current_question.id updates
+        // synchronously but the still-stale `answerOptions` array (last
+        // question's) hasn't been replaced yet, so keying on the id alone
+        // would rebuild with the wrong data and then skip the real rebuild
+        // once the fresh fetch actually lands.
+        const optsEl = document.getElementById("answer-options");
+        const optsKey =
+          state.current_question &&
+          answerOptions.length &&
+          answerOptionsForQuestionId === state.current_question.id
+            ? state.current_question.id
+            : null;
+        // Exposes the same freshness signal the rebuild itself is gated
+        // on, so a test (or anything else) can wait for "the options
+        // showing are actually this question's" rather than guessing
+        // from timing — button count alone can't tell old vs. new apart
+        // since every question has exactly 5 options + no-match.
+        optsEl.dataset.ready = optsKey || "";
+        if (optsKey !== renderedAnswerOptionsKey) {
+          renderedAnswerOptionsKey = optsKey;
+          optsEl.innerHTML = optsKey
+            ? answerOptions
+                .map(
+                  (a, i) =>
+                    `<button class="award-btn" onclick="awardOption(${i})">` +
+                    `<span>${a.text}</span><span>${a.points} pts</span></button>`
+                )
+                .join("") +
+              `<button class="award-btn" onclick="awardNoMatch()">No match (0)</button>`
+            : "";
+        }
+
+        const revealBtnEl = document.getElementById("reveal-points-container");
+        const showRevealBtn = !!pendingSlot();
+        if (showRevealBtn !== renderedShowRevealBtn) {
+          renderedShowRevealBtn = showRevealBtn;
+          revealBtnEl.innerHTML = showRevealBtn
+            ? '<button class="primary" onclick="revealPoints()">Reveal Points</button>'
+            : "";
+        }
+
+        // ----- Host -----
+        document.getElementById("host-turn-status").textContent = turnStatusText();
+        document.getElementById("host-timer").textContent =
+          state.remaining_seconds !== null ? `${state.remaining_seconds}s` : "";
+        document.getElementById("host-question-list").innerHTML = state.all_questions
+          .map(
+            (q, i) =>
+              `<li class="${
+                state.current_player && i === state.current_question_index
+                  ? "current-question"
+                  : ""
+              }">${q.prompt}</li>`
+          )
+          .join("");
+
         // ----- Display -----
-        document.getElementById("turn-display").textContent = state.current_player
-          ? `${
-              state.current_player === "player1" ? state.player1_name : state.player2_name
-            }'s turn — Q${Math.min(state.current_question_index + 1, 5)} of 5`
-          : "Waiting to start";
+        document.getElementById("turn-display").textContent = turnStatusText();
 
         document.getElementById("timer-display").textContent =
           state.remaining_seconds !== null ? `${state.remaining_seconds}s` : "";
