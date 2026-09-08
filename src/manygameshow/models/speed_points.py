@@ -28,19 +28,22 @@ class Player(StrEnum):
 
 
 class AnswerSlot(SQLModel):
-    """One question's judged answer, mid-reveal: the judge locks in which
-    answer matched (text) first — visible immediately — and the points
-    stay hidden until a separate reveal-points action, so the two beats
-    (what they said, then what it's worth) read as distinct moments on
-    the Main view, matching a classic board-game reveal."""
+    """One question's judged answer for one player. All 5 questions are
+    workable at once (not one-at-a-time), in whatever order the judge
+    hears answers in. Text and points are independently drafted and
+    independently locked/revealed — a judge can lock in (and reveal) the
+    contestant's words before deciding the score, or vice versa; each
+    lock is its own explicit action, reversible (unlock) before the
+    other side locks if the judge needs to correct something."""
 
-    text: str
-    points: int
-    revealed: bool = False
-    # Snapshot of the judge's buzzer flag (see pending_duplicate_flag on
-    # the game) at the moment this slot was last awarded — "this answer
-    # repeated the other player's" — display/scoring behavior TBD, this
-    # just carries the marker through.
+    text: str = ""
+    points: int = 0
+    text_revealed: bool = False
+    points_revealed: bool = False
+    # Buzzer: "this answer duplicates the other player's" — a plain
+    # per-question toggle, freely settable any time. Display/scoring
+    # behavior for a flagged duplicate is still TBD; this just carries
+    # the marker.
     duplicate: bool = False
 
 
@@ -49,7 +52,7 @@ def _default_question_ids_json() -> str:
 
 
 def _default_slots_json() -> str:
-    return json.dumps([None] * QUESTIONS_PER_ROUND)
+    return json.dumps([AnswerSlot().model_dump()] * QUESTIONS_PER_ROUND)
 
 
 class SpeedPointsGame(SQLModel, table=True):
@@ -64,12 +67,10 @@ class SpeedPointsGame(SQLModel, table=True):
     question_ids_json: str = Field(default_factory=_default_question_ids_json)
 
     current_player: Player | None = Field(default=None)
-    current_question_index: int = Field(default=0, ge=0, le=QUESTIONS_PER_ROUND)
 
-    # JSON list of QUESTIONS_PER_ROUND AnswerSlot-dicts-or-null, in the same
-    # order as question_ids_json. null = not yet judged. A slot with
-    # revealed=False has its answer text locked in but points still hidden.
-    # Parsed in player_slots()/router/Read layer, never in the model itself.
+    # JSON list of exactly QUESTIONS_PER_ROUND AnswerSlot dicts, index-
+    # aligned with question_ids_json. Parsed in player_slots()/the router,
+    # never in the model itself.
     player1_slots_json: str = Field(default_factory=_default_slots_json)
     player2_slots_json: str = Field(default_factory=_default_slots_json)
 
@@ -81,13 +82,6 @@ class SpeedPointsGame(SQLModel, table=True):
 
     win_threshold: int = Field(default=200, ge=1)
     scores_revealed: bool = Field(default=False)
-
-    # Judge's buzzer: "this answer duplicates the other player's" — a
-    # standalone toggle, independent of typing/awarding an answer, so it
-    # can be pressed any time before the current question's points are
-    # revealed. Baked into the slot at award time (see AnswerSlot.duplicate)
-    # and reset whenever the current question changes.
-    pending_duplicate_flag: bool = Field(default=False)
 
     status: str = Field(default="active")
 
@@ -114,14 +108,35 @@ class AnswerOptionRead(SQLModel):
     points: int
 
 
+class QuestionAnswerKeyRead(SQLModel):
+    """Judge-only: one question's prompt plus its full answer key —
+    never exposed on Main's or Host's response shape."""
+
+    id: str
+    prompt: str
+    answers: list[AnswerOptionRead]
+
+
 class SlotRead(SQLModel):
-    """A player's judged-answer tile as the API exposes it: text appears
-    as soon as the judge locks in a match, but points stay null until the
-    judge explicitly reveals them — never send points early, even to a
-    client that would only display it a moment later."""
+    """A player's judged-answer tile as Main/Host see it: text/points are
+    each null until that specific side is locked/revealed — the two are
+    independent, not a single combined reveal."""
 
     text: str | None
     points: int | None
+    duplicate: bool
+
+
+class JudgeSlotRead(SQLModel):
+    """A player's judged-answer tile as the Judge sees it: the judge is
+    the one who typed the draft, so unlike SlotRead this never hides
+    anything — draft text/points are visible before locking too, plus the
+    lock flags themselves so the UI knows whether a field is editable."""
+
+    text: str
+    points: int
+    text_revealed: bool
+    points_revealed: bool
     duplicate: bool
 
 
@@ -130,12 +145,9 @@ class SpeedPointsGameRead(SQLModel):
     player1_name: str
     player2_name: str
     current_player: Player | None
-    current_question_index: int
-    current_question: QuestionPromptRead | None
     # Every question's prompt, spoiler-free, in play order — lets the Host
-    # view show the full rundown up front rather than one at a time.
+    # view show the full rundown, and Judge pair each row with its prompt.
     all_questions: list[QuestionPromptRead]
-    pending_duplicate_flag: bool
     player1_slots: list[SlotRead]
     player2_slots: list[SlotRead]
     player1_total: int
@@ -151,6 +163,29 @@ class SpeedPointsGameRead(SQLModel):
     updated_at: datetime
 
 
+class JudgeGameRead(SQLModel):
+    """Everything the Judge view needs, in one poll — same shape as
+    SpeedPointsGameRead but with full-visibility slots (JudgeSlotRead)
+    instead of the spoiler-gated ones Main/Host get."""
+
+    id: str
+    player1_name: str
+    player2_name: str
+    current_player: Player | None
+    all_questions: list[QuestionPromptRead]
+    player1_slots: list[JudgeSlotRead]
+    player2_slots: list[JudgeSlotRead]
+    player1_total: int
+    player2_total: int
+    combined_total: int
+    win_threshold: int
+    won: bool
+    scores_revealed: bool
+    remaining_seconds: int | None
+    timer_duration_seconds: int
+    status: str
+
+
 def question_ids(game: SpeedPointsGame) -> list[str]:
     result: list[str] = json.loads(game.question_ids_json)
     return result
@@ -160,28 +195,17 @@ def current_questions(game: SpeedPointsGame) -> list[Question]:
     return [q for qid in question_ids(game) if (q := get_question(qid)) is not None]
 
 
-def current_question(game: SpeedPointsGame) -> Question | None:
-    questions = current_questions(game)
-    if 0 <= game.current_question_index < len(questions):
-        return questions[game.current_question_index]
-    return None
-
-
 def _slots_json_field(player: Player) -> str:
     return "player1_slots_json" if player == Player.PLAYER1 else "player2_slots_json"
 
 
-def player_slots(game: SpeedPointsGame, player: Player) -> list[AnswerSlot | None]:
-    raw: list[dict[str, object] | None] = json.loads(
-        getattr(game, _slots_json_field(player))
-    )
-    return [AnswerSlot.model_validate(s) if s is not None else None for s in raw]
+def player_slots(game: SpeedPointsGame, player: Player) -> list[AnswerSlot]:
+    raw: list[dict[str, object]] = json.loads(getattr(game, _slots_json_field(player)))
+    return [AnswerSlot.model_validate(s) for s in raw]
 
 
 def player_total(game: SpeedPointsGame, player: Player) -> int:
-    return sum(
-        s.points for s in player_slots(game, player) if s is not None and s.revealed
-    )
+    return sum(s.points for s in player_slots(game, player) if s.points_revealed)
 
 
 def combined_total(game: SpeedPointsGame) -> int:

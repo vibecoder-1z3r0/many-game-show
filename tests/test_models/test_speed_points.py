@@ -2,11 +2,11 @@ import json
 from datetime import UTC, datetime, timedelta
 
 from manygameshow.models.speed_points import (
+    QUESTIONS_PER_ROUND,
     AnswerSlot,
     Player,
     SpeedPointsGame,
     combined_total,
-    current_question,
     current_questions,
     player_slots,
     player_total,
@@ -19,17 +19,20 @@ def test_defaults() -> None:
     assert game.player1_name == "Player 1"
     assert game.player2_name == "Player 2"
     assert game.current_player is None
-    assert game.current_question_index == 0
     assert game.win_threshold == 200
     assert game.scores_revealed is False
-    assert game.pending_duplicate_flag is False
     assert game.status == "active"
-    assert player_slots(game, Player.PLAYER1) == [None] * 5
-    assert player_slots(game, Player.PLAYER2) == [None] * 5
+    assert player_slots(game, Player.PLAYER1) == [AnswerSlot()] * QUESTIONS_PER_ROUND
+    assert player_slots(game, Player.PLAYER2) == [AnswerSlot()] * QUESTIONS_PER_ROUND
 
 
-def test_answer_slot_duplicate_defaults_false() -> None:
-    assert AnswerSlot(text="x", points=5).duplicate is False
+def test_answer_slot_defaults() -> None:
+    slot = AnswerSlot()
+    assert slot.text == ""
+    assert slot.points == 0
+    assert slot.text_revealed is False
+    assert slot.points_revealed is False
+    assert slot.duplicate is False
 
 
 def test_id_is_unique_uuid() -> None:
@@ -57,66 +60,43 @@ def test_current_questions_resolves_from_sample_bank() -> None:
     ]
 
 
-def test_current_question_none_when_index_out_of_range() -> None:
-    game = SpeedPointsGame(
-        question_ids_json=json.dumps(["code-review-word"]),
-        current_question_index=5,
-    )
-    assert current_question(game) is None
-
-
-def test_current_question_resolves_at_index() -> None:
-    game = SpeedPointsGame(
-        question_ids_json=json.dumps(["code-review-word", "standup-word"]),
-        current_question_index=1,
-    )
-    q = current_question(game)
-    assert q is not None
-    assert q.id == "standup-word"
-
-
-def test_player_total_sums_only_revealed_slots() -> None:
+def test_player_slots_parses_into_answer_slot_objects() -> None:
     slots = [
-        {"text": "Actually...", "points": 34, "revealed": True},
-        {"text": "Nit:", "points": 26, "revealed": False},  # text chosen, not revealed
-        None,
-        None,
-        None,
-    ]
+        {
+            "text": "Actually...",
+            "points": 34,
+            "text_revealed": True,
+            "points_revealed": True,
+            "duplicate": False,
+        }
+    ] + [AnswerSlot().model_dump()] * 4
+    game = SpeedPointsGame(player1_slots_json=json.dumps(slots))
+    parsed = player_slots(game, Player.PLAYER1)
+    assert parsed[0] == AnswerSlot(
+        text="Actually...", points=34, text_revealed=True, points_revealed=True
+    )
+    assert parsed[1:] == [AnswerSlot()] * 4
+
+
+def test_player_total_sums_only_points_revealed_slots() -> None:
+    slots = [
+        {"text": "Actually...", "points": 34, "points_revealed": True},
+        {"text": "Nit:", "points": 26, "points_revealed": False},
+    ] + [AnswerSlot().model_dump()] * 3
     game = SpeedPointsGame(player1_slots_json=json.dumps(slots))
     assert player_total(game, Player.PLAYER1) == 34
     assert player_total(game, Player.PLAYER2) == 0
 
 
-def test_player_slots_parses_into_answer_slot_objects() -> None:
-    slots = [
-        {"text": "Actually...", "points": 34, "revealed": True},
-        None,
-        None,
-        None,
-        None,
-    ]
-    game = SpeedPointsGame(player1_slots_json=json.dumps(slots))
-    parsed = player_slots(game, Player.PLAYER1)
-    assert parsed[0] == AnswerSlot(text="Actually...", points=34, revealed=True)
-    assert parsed[1:] == [None] * 4
-
-
-def test_combined_total_sums_both_players_revealed_only() -> None:
+def test_combined_total_sums_both_players_points_revealed_only() -> None:
     p1 = [
-        {"text": "a", "points": 34, "revealed": True},
-        {"text": "b", "points": 26, "revealed": True},
-        None,
-        None,
-        None,
-    ]
+        {"text": "a", "points": 34, "points_revealed": True},
+        {"text": "b", "points": 26, "points_revealed": True},
+    ] + [AnswerSlot().model_dump()] * 3
     p2 = [
-        {"text": "c", "points": 38, "revealed": True},
-        {"text": "d", "points": 24, "revealed": False},
-        None,
-        None,
-        None,
-    ]
+        {"text": "c", "points": 38, "points_revealed": True},
+        {"text": "d", "points": 24, "points_revealed": False},
+    ] + [AnswerSlot().model_dump()] * 3
     game = SpeedPointsGame(
         player1_slots_json=json.dumps(p1), player2_slots_json=json.dumps(p2)
     )
