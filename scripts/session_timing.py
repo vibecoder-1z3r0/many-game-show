@@ -71,6 +71,18 @@ def is_agent_activity(entry: dict) -> bool:
     return False
 
 
+def usage_of(entry: dict) -> dict[str, int]:
+    """Token usage for one assistant event, zeroed out if absent (tool-result
+    'user' events that count as agent activity carry no usage of their own)."""
+    usage = entry.get("message", {}).get("usage") or {}
+    return {
+        "input": usage.get("input_tokens", 0),
+        "output": usage.get("output_tokens", 0),
+        "cache_write": usage.get("cache_creation_input_tokens", 0),
+        "cache_read": usage.get("cache_read_input_tokens", 0),
+    }
+
+
 def first_text(entry: dict) -> str:
     content = entry.get("message", {}).get("content")
     if isinstance(content, str):
@@ -146,18 +158,27 @@ def main() -> None:
                 "prompt": first_text(entry).strip().replace("\n", " "),
                 "start": entry["timestamp"],
                 "last_activity": entry["timestamp"],
+                "usage": {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0},
             }
         elif current is not None and is_agent_activity(entry):
             current["last_activity"] = entry["timestamp"]
+            # A turn can involve many assistant round-trips (tool-call
+            # loops) before the human sees a reply — sum all of them so
+            # this turn's token cost reflects the whole exchange, not just
+            # the final message.
+            if entry.get("type") == "assistant":
+                turn_usage = usage_of(entry)
+                for key, value in turn_usage.items():
+                    current["usage"][key] += value
     if current is not None:
         turns.append(current)
 
     print(f"# Session Timing Report\n\nSource: `{path}`\n")
     print(
         "| # | Prompt (truncated) | Started (UTC) | Agent time spent | "
-        "Human think time |"
+        "Human think time | Input | Output | Cache Write | Cache Read |"
     )
-    print("|---|---|---|---|---|")
+    print("|---|---|---|---|---|---|---|---|---|")
 
     total_agent_seconds = 0.0
     flagged_agent_seconds = 0.0
@@ -166,6 +187,7 @@ def main() -> None:
     flagged_turns = []
     think_outlier_turns = []
     think_outlier_seconds = 0.0
+    total_usage = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
     for i, t in enumerate(turns, 1):
         start = parse_ts(t["start"])
         last_activity = parse_ts(t["last_activity"])
@@ -202,12 +224,24 @@ def main() -> None:
         prompt = t["prompt"][:70] + ("…" if len(t["prompt"]) > 70 else "")
         prompt = prompt.replace("|", "\\|")
         agent_str = fmt_duration(agent_seconds) + (" ⚠" if suspicious else "")
+        u = t["usage"]
+        for key in total_usage:
+            total_usage[key] += u[key]
         print(
             f"| {i} | {prompt} | {start.strftime('%H:%M:%S')} "
-            f"| {agent_str} | {think_str} |"
+            f"| {agent_str} | {think_str} "
+            f"| {u['input']:,} | {u['output']:,} | {u['cache_write']:,} "
+            f"| {u['cache_read']:,} |"
         )
 
     avg_think = total_think_seconds / think_count if think_count else 0.0
+    # Fraction of prompt-side tokens (fresh + cache-write + cache-read) that
+    # were served from cache rather than reprocessed — the efficiency payoff
+    # of a long-running session's prompt cache.
+    prompt_side = (
+        total_usage["input"] + total_usage["cache_write"] + total_usage["cache_read"]
+    )
+    cache_hit_ratio = total_usage["cache_read"] / prompt_side if prompt_side else 0.0
     print(
         f"\n**Total turns:** {len(turns)}  \n"
         f"**Total agent time spent (excl. flagged):** "
@@ -218,7 +252,13 @@ def main() -> None:
         f"{fmt_duration(avg_think)}  \n"
         f"**Think-time outliers (> "
         f"{THINK_TIME_OUTLIER_THRESHOLD_SECONDS // 60} min):** "
-        f"{len(think_outlier_turns)}"
+        f"{len(think_outlier_turns)}  \n"
+        f"**Total input tokens:** {total_usage['input']:,}  \n"
+        f"**Total output tokens:** {total_usage['output']:,}  \n"
+        f"**Total cache-write tokens:** {total_usage['cache_write']:,}  \n"
+        f"**Total cache-read tokens:** {total_usage['cache_read']:,}  \n"
+        f"**Cache hit ratio (cache-read ÷ all prompt-side tokens):** "
+        f"{cache_hit_ratio:.0%}"
     )
     if flagged_turns:
         print(
