@@ -33,8 +33,17 @@ def _reveal_points(client: TestClient, game_id: str) -> dict:
     return resp.json()  # type: ignore[no-any-return]
 
 
+def _set_duplicate_flag(client: TestClient, game_id: str, flagged: bool) -> dict:
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/duplicate-flag",
+        json={"flagged": flagged},
+    )
+    assert resp.status_code == 200
+    return resp.json()  # type: ignore[no-any-return]
+
+
 def _empty_slots() -> list[dict]:
-    return [{"text": None, "points": None}] * 5
+    return [{"text": None, "points": None, "duplicate": False}] * 5
 
 
 def test_create_sets_up_five_fixed_questions_get_list_delete(
@@ -59,6 +68,16 @@ def test_create_sets_up_five_fixed_questions_get_list_delete(
     assert body["won"] is False
     assert body["scores_revealed"] is False
     assert body["remaining_seconds"] is None
+    assert body["pending_duplicate_flag"] is False
+    # Host wants the whole rundown up front, not one question at a time.
+    assert [q["id"] for q in body["all_questions"]] == [
+        "code-review-word",
+        "standup-word",
+        "laptop-sticker",
+        "deploy-fear",
+        "ai-assistant-use",
+    ]
+    assert all("prompt" in q for q in body["all_questions"])
 
     listed = client.get("/api/speed-points/games/")
     assert listed.status_code == 200
@@ -110,7 +129,11 @@ def test_award_locks_in_answer_text_but_hides_points(client: TestClient) -> None
     _start_round(client, game_id)
 
     body = _award(client, game_id, "Actually...", 34)
-    assert body["player1_slots"][0] == {"text": "Actually...", "points": None}
+    assert body["player1_slots"][0] == {
+        "text": "Actually...",
+        "points": None,
+        "duplicate": False,
+    }
     assert body["player1_total"] == 0  # not counted until revealed
     assert body["current_question_index"] == 0  # doesn't advance yet
     assert body["current_question"]["id"] == "code-review-word"  # still same Q
@@ -122,19 +145,77 @@ def test_reveal_points_shows_points_and_advances_question(client: TestClient) ->
     _award(client, game_id, "Actually...", 34)
 
     body = _reveal_points(client, game_id)
-    assert body["player1_slots"][0] == {"text": "Actually...", "points": 34}
+    assert body["player1_slots"][0] == {
+        "text": "Actually...",
+        "points": 34,
+        "duplicate": False,
+    }
     assert body["player1_total"] == 34
     assert body["current_question_index"] == 1
     assert body["current_question"]["id"] == "standup-word"
 
 
 def test_award_can_be_corrected_before_reveal(client: TestClient) -> None:
-    """Host can change their match before the points step locks it in."""
+    """Judge can change their match before the points step locks it in."""
     game_id = _create_game(client)
     _start_round(client, game_id)
     _award(client, game_id, "Actually...", 34)
     body = _award(client, game_id, "Nit:", 26)
-    assert body["player1_slots"][0] == {"text": "Nit:", "points": None}
+    assert body["player1_slots"][0] == {
+        "text": "Nit:",
+        "points": None,
+        "duplicate": False,
+    }
+
+
+def test_duplicate_flag_toggles_independently_of_award(client: TestClient) -> None:
+    """The buzzer is a standalone action — it can be set before an answer
+    is even typed in, not just bundled into the award submission."""
+    game_id = _create_game(client)
+    _start_round(client, game_id)
+
+    body = _set_duplicate_flag(client, game_id, True)
+    assert body["pending_duplicate_flag"] is True
+    # Not baked into anything yet — no answer has been awarded.
+    assert body["player1_slots"][0]["duplicate"] is False
+
+    body = _set_duplicate_flag(client, game_id, False)
+    assert body["pending_duplicate_flag"] is False
+
+
+def test_duplicate_flag_baked_into_slot_on_award(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _start_round(client, game_id)
+    _set_duplicate_flag(client, game_id, True)
+
+    body = _award(client, game_id, "Actually...", 34)
+    assert body["player1_slots"][0]["duplicate"] is True
+
+
+def test_duplicate_flag_resets_after_reveal_points_advances(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _start_round(client, game_id)
+    _set_duplicate_flag(client, game_id, True)
+    _award(client, game_id, "Actually...", 34)
+
+    body = _reveal_points(client, game_id)
+    assert body["pending_duplicate_flag"] is False
+    # The flag applied to the question just resolved, not the next one.
+    assert body["player1_slots"][0]["duplicate"] is True
+
+
+def test_duplicate_flag_resets_on_start_round(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _start_round(client, game_id)
+    _set_duplicate_flag(client, game_id, True)
+
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/start-round",
+        json={"player": "player1"},
+    )
+    assert resp.json()["pending_duplicate_flag"] is False
 
 
 def test_award_with_zero_records_no_match(client: TestClient) -> None:
@@ -142,7 +223,11 @@ def test_award_with_zero_records_no_match(client: TestClient) -> None:
     _start_round(client, game_id)
     _award(client, game_id, "No match", 0)
     body = _reveal_points(client, game_id)
-    assert body["player1_slots"][0] == {"text": "No match", "points": 0}
+    assert body["player1_slots"][0] == {
+        "text": "No match",
+        "points": 0,
+        "duplicate": False,
+    }
 
 
 def test_award_without_active_round_is_rejected(client: TestClient) -> None:
@@ -253,6 +338,7 @@ def test_update_player_names(client: TestClient) -> None:
 def test_reset_clears_round_state_but_keeps_names(client: TestClient) -> None:
     game_id = _create_game(client)
     _start_round(client, game_id)
+    _set_duplicate_flag(client, game_id, True)
     _award(client, game_id, "Actually...", 34)
     _reveal_points(client, game_id)
     client.patch(f"/api/speed-points/games/{game_id}/reveal-result")
@@ -267,3 +353,4 @@ def test_reset_clears_round_state_but_keeps_names(client: TestClient) -> None:
     assert body["player2_slots"] == _empty_slots()
     assert body["scores_revealed"] is False
     assert body["remaining_seconds"] is None
+    assert body["pending_duplicate_flag"] is False

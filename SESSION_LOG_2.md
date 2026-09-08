@@ -50,20 +50,24 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 24 | where would it be output then? | 21:48:58 | 7s | 12s | 4 | 1,096 | 98 | 944,386 |
 | 25 | shouldn't that be for each turn though? | 21:49:17 | 16s | 2h 12m ⏳ | 4 | 2,488 | 110 | 945,580 |
 | 26 | Yes and for session log 2 go forward it should track it, right? | 00:02:15 | 2m 1s | 2s | 72 | 16,866 | 1,241,342 | 15,194,715 |
-| 27 | You could also have a summary for the whole session log too then I sup… | 00:04:17 | 2m 51s | — | 34 | 43,306 | 61,004 | 8,181,823 |
+| 27 | You could also have a summary for the whole session log too then I sup… | 00:04:17 | 3m 21s | 13h 40m ⏳ | 52 | 45,482 | 69,247 | 12,648,662 |
+| 28 | I’m going to be doing the next significant chunk of effort from my mob… | 13:48:11 | 12s | 57s | 2 | 353 | 465,108 | 45,433 |
+| 29 | I was reviewing the transcript to see where we’re at and I noticed thi… | 13:49:19 | 29s | 1m 28s | 12 | 3,712 | 3,934 | 3,065,457 |
+| 30 | Words and phrasing matters :). Then again you’re a token predictor :-D | 13:51:16 | 5s | 4m 21s | 2 | 100 | 67 | 513,255 |
+| 31 | Ok for speed tokens we need to separate the views to a host view and a… | 13:55:42 | 27m 35s | — | 144 | 71,602 | 162,893 | 39,981,783 |
 
-**Total turns:** 27  
-**Total agent time spent (excl. flagged):** 1h 2m  
-**Total human think time (excl. outliers):** 27m 45s  
-**Average human think time (excl. outliers):** 1m 19s  
-**Think-time outliers (> 15 min):** 5  
-**Total input tokens:** 1,405  
-**Total output tokens:** 511,830  
-**Total cache-write tokens:** 3,319,151  
-**Total cache-read tokens:** 190,741,464  
+**Total turns:** 31  
+**Total agent time spent (excl. flagged):** 1h 30m  
+**Total human think time (excl. outliers):** 34m 31s  
+**Average human think time (excl. outliers):** 1m 26s  
+**Think-time outliers (> 15 min):** 6  
+**Total input tokens:** 1,583  
+**Total output tokens:** 589,773  
+**Total cache-write tokens:** 3,959,396  
+**Total cache-read tokens:** 238,814,231  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
-⏳ Turn(s) 7, 15, 17, 18, 25 had a 'human think time' over 15 min (total 91h 25m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 7, 15, 17, 18, 25, 27 had a 'human think time' over 15 min (total 105h 6m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
 ---
 
@@ -71,11 +75,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 15 (the known-duplicate boundary) to SESSION_LOG_prior_totals.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 81  
-**Combined agent time spent (excl. flagged):** 2h 44m  
-**Combined human think time (excl. outliers):** 2h 6m  
-**Combined think-time outliers:** 8  
-**Total input tokens (since tracking began, this file only):** 1,013  
-**Total output tokens (since tracking began, this file only):** 439,863  
-**Total cache-write tokens (since tracking began, this file only):** 2,781,623  
-**Total cache-read tokens (since tracking began, this file only):** 167,627,451
+**Combined total turns:** 85  
+**Combined agent time spent (excl. flagged):** 3h 13m  
+**Combined human think time (excl. outliers):** 2h 12m  
+**Combined think-time outliers:** 9  
+**Total input tokens (since tracking began, this file only):** 1,191  
+**Total output tokens (since tracking began, this file only):** 517,806  
+**Total cache-write tokens (since tracking began, this file only):** 3,421,868  
+**Total cache-read tokens (since tracking began, this file only):** 215,700,218

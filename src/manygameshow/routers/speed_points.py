@@ -21,6 +21,7 @@ from manygameshow.models.speed_points import (
     SpeedPointsGameRead,
     combined_total,
     current_question,
+    current_questions,
     player_slots,
     player_total,
     remaining_seconds,
@@ -49,10 +50,14 @@ def _save(game: SpeedPointsGame, session: Session) -> SpeedPointsGame:
 
 def _slot_read(slot: AnswerSlot | None) -> SlotRead:
     if slot is None:
-        return SlotRead(text=None, points=None)
+        return SlotRead(text=None, points=None, duplicate=False)
     # Text is visible as soon as it's chosen; points stay hidden in the API
     # response itself (not just CSS-hidden client-side) until revealed.
-    return SlotRead(text=slot.text, points=slot.points if slot.revealed else None)
+    return SlotRead(
+        text=slot.text,
+        points=slot.points if slot.revealed else None,
+        duplicate=slot.duplicate,
+    )
 
 
 def _to_read(game: SpeedPointsGame) -> SpeedPointsGameRead:
@@ -72,6 +77,11 @@ def _to_read(game: SpeedPointsGame) -> SpeedPointsGameRead:
         current_player=game.current_player,
         current_question_index=game.current_question_index,
         current_question=question_read,
+        all_questions=[
+            QuestionPromptRead(id=q.id, prompt=q.prompt)
+            for q in current_questions(game)
+        ],
+        pending_duplicate_flag=game.pending_duplicate_flag,
         player1_slots=[_slot_read(s) for s in player_slots(game, Player.PLAYER1)],
         player2_slots=[_slot_read(s) for s in player_slots(game, Player.PLAYER2)],
         player1_total=player_total(game, Player.PLAYER1),
@@ -133,6 +143,7 @@ def _reset_round_state(game: SpeedPointsGame) -> None:
     game.player2_slots_json = _empty_slots_json()
     game.timer_started_at = None
     game.scores_revealed = False
+    game.pending_duplicate_flag = False
 
 
 class StartRoundBody(SQLModel):
@@ -149,6 +160,7 @@ def start_round(
     game = _get_game(game_id, session)
     game.current_player = body.player
     game.current_question_index = 0
+    game.pending_duplicate_flag = False
     slots_field = (
         "player1_slots_json" if body.player == Player.PLAYER1 else "player2_slots_json"
     )
@@ -178,11 +190,14 @@ class AwardBody(SQLModel):
 
 @router.patch("/{game_id}/award", response_model=SpeedPointsGameRead)
 def award(game_id: str, body: AwardBody, session: SessionDep) -> SpeedPointsGameRead:
-    """Lock in which answer matched the player's spoken response for the
-    current question — the text becomes visible immediately, but the
-    points stay hidden until /reveal-points. Calling this again for the
-    same (still-unrevealed) question overwrites the choice, so the host
-    can correct a match before committing to it."""
+    """Lock in the judge's typed transcription of the player's answer plus
+    the points they matched it to for the current question — the text
+    becomes visible immediately, but the points stay hidden until
+    /reveal-points. Calling this again for the same (still-unrevealed)
+    question overwrites the choice, so the judge can correct it before
+    committing. Snapshots the current buzzer state (pending_duplicate_flag)
+    onto the slot each time, so toggling the buzzer before a (re-)award
+    updates what gets baked in."""
     game = _get_game(game_id, session)
     if game.current_player is None:
         raise HTTPException(status_code=400, detail="No active round")
@@ -192,7 +207,10 @@ def award(game_id: str, body: AwardBody, session: SessionDep) -> SpeedPointsGame
     slots_field = _slots_field_for(game)
     slots = json.loads(getattr(game, slots_field))
     slots[game.current_question_index] = AnswerSlot(
-        text=body.text, points=body.points, revealed=False
+        text=body.text,
+        points=body.points,
+        revealed=False,
+        duplicate=game.pending_duplicate_flag,
     ).model_dump()
     setattr(game, slots_field, json.dumps(slots))
     return _to_read(_save(game, session))
@@ -217,6 +235,27 @@ def reveal_points(game_id: str, session: SessionDep) -> SpeedPointsGameRead:
     slot["revealed"] = True
     setattr(game, slots_field, json.dumps(slots))
     game.current_question_index += 1
+    # The buzzer applies to the question just resolved (already baked into
+    # its slot above) — clear it so it doesn't leak into the next question.
+    game.pending_duplicate_flag = False
+    return _to_read(_save(game, session))
+
+
+class DuplicateFlagBody(SQLModel):
+    flagged: bool
+
+
+@router.patch("/{game_id}/duplicate-flag", response_model=SpeedPointsGameRead)
+def set_duplicate_flag(
+    game_id: str, body: DuplicateFlagBody, session: SessionDep
+) -> SpeedPointsGameRead:
+    """The judge's buzzer: flag (or clear) that the current question's
+    answer duplicates the other player's — a standalone action, settable
+    any time before /reveal-points regardless of whether an answer has
+    been typed in yet. Scoring/display behavior for a flagged duplicate
+    is still TBD; this just records the marker."""
+    game = _get_game(game_id, session)
+    game.pending_duplicate_flag = body.flagged
     return _to_read(_save(game, session))
 
 
@@ -229,8 +268,8 @@ def reveal_result(game_id: str, session: SessionDep) -> SpeedPointsGameRead:
 
 @router.get("/{game_id}/answer-options", response_model=list[AnswerOptionRead])
 def answer_options(game_id: str, session: SessionDep) -> list[AnswerOptionRead]:
-    """Host-only reference: the current question's possible answers and
-    their point values, for judging which one the player's spoken answer
+    """Judge-only reference: the current question's possible answers and
+    their point values, for picking which one the player's spoken answer
     matches. Never exposed on the Main view's response shape."""
     game = _get_game(game_id, session)
     question = current_question(game) if game.current_player is not None else None

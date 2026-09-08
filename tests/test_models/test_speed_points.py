@@ -22,9 +22,14 @@ def test_defaults() -> None:
     assert game.current_question_index == 0
     assert game.win_threshold == 200
     assert game.scores_revealed is False
+    assert game.pending_duplicate_flag is False
     assert game.status == "active"
     assert player_slots(game, Player.PLAYER1) == [None] * 5
     assert player_slots(game, Player.PLAYER2) == [None] * 5
+
+
+def test_answer_slot_duplicate_defaults_false() -> None:
+    assert AnswerSlot(text="x", points=5).duplicate is False
 
 
 def test_id_is_unique_uuid() -> None:
