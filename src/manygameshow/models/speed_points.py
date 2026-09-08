@@ -41,7 +41,7 @@ class AnswerSlot(SQLModel):
     text_revealed: bool = False
     points_revealed: bool = False
     # Buzzer: "this answer duplicates the other player's" — a plain
-    # per-question toggle, freely settable any time. Display/scoring
+    # per-question toggle, freely settable any time. Main-view/scoring
     # behavior for a flagged duplicate is still TBD; this just carries
     # the marker.
     duplicate: bool = False

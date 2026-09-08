@@ -20,9 +20,9 @@ Currently implements:
 |---|---|
 | ![Lobby](./docs/screenshots/lobby.png) | ![Control view](./docs/screenshots/control-view.png) |
 
-| Display (default theme) | Display (stage theme) |
+| Main (default theme) | Main (stage theme) |
 |---|---|
-| ![Display view](./docs/screenshots/display-view.png) | ![Display view, stage theme](./docs/screenshots/display-view-stage-theme.png) |
+| ![Main view](./docs/screenshots/main-view.png) | ![Main view, stage theme](./docs/screenshots/main-view-stage-theme.png) |
 
 ---
 
@@ -54,9 +54,9 @@ make run
 
 Then open **http://localhost:8000** — click **New Squad Squabble Game** or
 **New Speed Points Game** from the lobby to create a game. That takes you
-to the Control view; open `/squad-squabble.html?id=<the game id>&view=display`
+to the Control view; open `/squad-squabble.html?id=<the game id>&view=main`
 (or `/speed-points.html?...`) on a second screen/tab for the big-screen
-Display view.
+Main view.
 
 The SQLite database file (`manygameshow.db`) is created automatically on
 first run. **If you change a model's fields, run `make clean` (or delete

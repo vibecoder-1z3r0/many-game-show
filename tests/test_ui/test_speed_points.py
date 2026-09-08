@@ -185,9 +185,9 @@ def test_pass_prefills_and_locks_zero_points(live_server: str, page: Page) -> No
 
     _goto_judge(live_server, page, game_id)
     _pass_and_lock(page, 0)
-    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
-    expect(page.locator("#display-tallies")).to_contain_text("Pass")
-    expect(page.locator("#display-tallies")).to_contain_text("0")
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=main")
+    expect(page.locator("#main-tallies")).to_contain_text("Pass")
+    expect(page.locator("#main-tallies")).to_contain_text("0")
 
 
 def test_buzzer_flags_duplicate_independently_of_answer_state(
@@ -242,25 +242,25 @@ def test_reveal_result_shows_verdict(live_server: str, page: Page) -> None:
     _goto_host(live_server, page, game_id)
     page.get_by_role("button", name="Reveal Result", exact=True).click()
 
-    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=main")
     expect(page.locator("#verdict")).to_be_visible()
     expect(page.locator("#verdict")).to_contain_text("WINNER!")
 
 
-def test_display_view_shows_no_answers_before_any_locked(
+def test_main_view_shows_no_answers_before_any_locked(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
     _goto_host(live_server, page, game_id)
     page.get_by_role("button", name="Start Player 1", exact=True).click()
 
-    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
-    expect(page.locator("#turn-display")).to_contain_text("Ada")
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=main")
+    expect(page.locator("#turn-main")).to_contain_text("Ada")
     expect(page.locator("body")).not_to_contain_text("Actually...")
     expect(page.locator("body")).not_to_contain_text("Nit:")
 
 
-def test_display_view_reveals_answer_text_and_points_independently(
+def test_main_view_reveals_answer_text_and_points_independently(
     live_server: str, page: Page
 ) -> None:
     """The two independent locks, as seen from the audience's screen: the
@@ -274,26 +274,26 @@ def test_display_view_reveals_answer_text_and_points_independently(
     _goto_judge(live_server, page, game_id)
     _lock_answer(page, 0, "tangled cables from under the desk")
 
-    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
-    expect(page.locator("#display-tallies")).to_contain_text(
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=main")
+    expect(page.locator("#main-tallies")).to_contain_text(
         "tangled cables from under the desk"
     )
-    expect(page.locator("#display-tallies")).not_to_contain_text("34")
+    expect(page.locator("#main-tallies")).not_to_contain_text("34")
     expect(page.locator("body")).not_to_contain_text("Nit:")
 
     _goto_judge(live_server, page, game_id)
     _lock_points(page, 0, 34)
 
-    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
-    expect(page.locator("#display-tallies")).to_contain_text("34")
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=main")
+    expect(page.locator("#main-tallies")).to_contain_text("34")
 
 
-def test_display_view_player_columns_are_side_by_side(
+def test_main_view_player_columns_are_side_by_side(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
-    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=display")
-    expect(page.locator("#display-tallies")).to_have_css("flex-direction", "row")
+    page.goto(f"{live_server}/speed-points.html?id={game_id}&view=main")
+    expect(page.locator("#main-tallies")).to_have_css("flex-direction", "row")
     columns = page.locator(".player-column")
     expect(columns).to_have_count(2)
 

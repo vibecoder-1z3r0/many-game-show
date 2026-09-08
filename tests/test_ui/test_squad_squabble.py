@@ -39,11 +39,11 @@ def test_breadcrumb_links_back_to_lobby(live_server: str, page: Page) -> None:
     expect(page.locator("h1")).to_have_text("Many Game Show")
 
 
-def test_display_header_collapses_to_led_and_expands_back(
+def test_main_header_collapses_to_led_and_expands_back(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=main")
 
     header = page.locator("header")
     mini_header = page.locator("#mini-header")
@@ -61,7 +61,7 @@ def test_display_header_collapses_to_led_and_expands_back(
 
 
 def test_control_view_always_shows_full_header(live_server: str, page: Page) -> None:
-    """The collapse feature is a Display-only affordance — Control always
+    """The collapse feature is a Main-only affordance — Control always
     needs its tabs/theme select visible to operate the game."""
     game_id = _create_game(live_server, page)
     _goto_control(live_server, page, game_id)
@@ -191,7 +191,7 @@ def test_question_visibility_defaults_hidden_and_can_toggle(
     expect(page.get_by_role("button", name="Hide Question", exact=True)).to_be_visible()
 
 
-def test_display_view_round_number_and_hidden_question(
+def test_main_view_round_number_and_hidden_question(
     live_server: str, page: Page
 ) -> None:
     """Items 7 and 10."""
@@ -200,13 +200,13 @@ def test_display_view_round_number_and_hidden_question(
     _load_question(page)
     page.get_by_role("button", name="Round +", exact=True).click()
 
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
-    expect(page.locator("#round-display")).to_contain_text("ROUND 2")
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=main")
+    expect(page.locator("#round-main")).to_contain_text("ROUND 2")
     # Hidden by default (item 10) — the real prompt text shouldn't be visible
     expect(page.locator("#question-back")).not_to_be_visible()
 
 
-def test_display_view_question_reveals_on_visibility_toggle(
+def test_main_view_question_reveals_on_visibility_toggle(
     live_server: str, page: Page
 ) -> None:
     """Item 5 (flip trigger) + item 10."""
@@ -215,14 +215,14 @@ def test_display_view_question_reveals_on_visibility_toggle(
     _load_question(page)
     page.get_by_role("button", name="Show Question", exact=True).click()
 
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=main")
     expect(page.locator("#question-card")).to_have_class("flipped")
     expect(page.locator("#question-back")).to_contain_text(
         "name something you'd find in their desk drawer"
     )
 
 
-def test_display_view_reveal_remaining_shows_all_answers(
+def test_main_view_reveal_remaining_shows_all_answers(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
@@ -230,7 +230,7 @@ def test_display_view_reveal_remaining_shows_all_answers(
     _load_question(page)
     page.get_by_role("button", name="Reveal remaining answers", exact=True).click()
 
-    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=display")
+    page.goto(f"{live_server}/squad-squabble.html?id={game_id}&view=main")
     expect(page.locator("#board .board-row.hidden-row")).to_have_count(0)
 
 

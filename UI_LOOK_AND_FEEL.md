@@ -23,14 +23,14 @@ reference app:
 
 | View type | Audience | Behavior |
 |---|---|---|
-| **Display view** | Projected / big screen, read-only | Polls for state, renders big, no controls |
+| **Main view** | Projected / big screen, read-only | Polls for state, renders big, no controls |
 | **Control view** | Host/operator, on a phone or laptop | Interactive buttons that PATCH state |
 
 Optional third type if a game needs it: a **player/buzzer view** (read-only
 status + a single action, e.g. "buzz in").
 
 A tab/segment switcher lets one HTML page hold multiple views for the same
-game (mirrors `football.html` / `baseball.html` having Display / Box Score /
+game (mirrors `football.html` / `baseball.html` having Main / Box Score /
 Control / Ref tabs). The active tab is written to the URL as `?view=...` so
 a refresh (or someone else opening the link) restores the same tab.
 
@@ -78,7 +78,7 @@ color, daytime/outdoor).
 
 ## Responsive Sizing
 
-- Display views use `clamp(min, preferred, max)` for font sizes and
+- Main views use `clamp(min, preferred, max)` for font sizes and
   spacing instead of media query breakpoints, so the same markup scales
   from phone to tablet to TV without a distinct mobile layout.
 - Control views can be denser/fixed-size since they're operated on a known
