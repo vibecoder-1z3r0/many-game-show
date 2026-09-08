@@ -280,9 +280,15 @@ def test_out_of_range_question_index_is_rejected(client: TestClient) -> None:
     assert resp.status_code == 422
 
 
-def test_duplicate_flag_settable_per_question_any_time(client: TestClient) -> None:
+def test_duplicate_flag_settable_per_question_any_time_for_player2(
+    client: TestClient,
+) -> None:
+    """Duplicates only make sense against player 1's already-locked
+    answers, so the buzzer only applies during player 2's turn — hit
+    before the judge types anything, once the contestant repeats an
+    answer player 1 already gave, so the contestant can answer again."""
     game_id = _create_game(client)
-    _start_round(client, game_id)
+    _start_round(client, game_id, player="player2")
 
     resp = client.patch(
         f"/api/speed-points/games/{game_id}/duplicate-flag",
@@ -290,8 +296,19 @@ def test_duplicate_flag_settable_per_question_any_time(client: TestClient) -> No
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["player1_slots"][3]["duplicate"] is True
-    assert body["player1_slots"][0]["duplicate"] is False
+    assert body["player2_slots"][3]["duplicate"] is True
+    assert body["player2_slots"][0]["duplicate"] is False
+
+
+def test_duplicate_flag_rejected_during_player1_turn(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _start_round(client, game_id, player="player1")
+
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/duplicate-flag",
+        json={"question_index": 3, "flagged": True},
+    )
+    assert resp.status_code == 400
 
 
 def test_full_relay_reveal_result_and_win_threshold(client: TestClient) -> None:

@@ -40,10 +40,10 @@ class AnswerSlot(SQLModel):
     points: int = 0
     text_revealed: bool = False
     points_revealed: bool = False
-    # Buzzer: "this answer duplicates the other player's" — a plain
-    # per-question toggle, freely settable any time. Main-view/scoring
-    # behavior for a flagged duplicate is still TBD; this just carries
-    # the marker.
+    # Buzzer: player 2 repeated an answer player 1 already gave, so the
+    # contestant gets to answer again. Only settable during player 2's
+    # turn (see the router's set_duplicate_flag) — hit before typing the
+    # actual (new) answer into this same slot.
     duplicate: bool = False
 
 

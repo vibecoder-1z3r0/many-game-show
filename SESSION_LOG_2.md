@@ -57,22 +57,24 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 31 | Ok for speed tokens we need to separate the views to a host view and a… | 13:55:42 | 43m 27s ⚠ | 3m 19s | 414 | 183,633 | 353,637 | 125,150,037 |
 | 32 | Host should not get reset game, that should be on judge or a new view.… | 14:42:27 | 3m 35s | 2s | 66 | 17,959 | 38,063 | 22,666,356 |
 | 33 | I mean the UI for judge isn’t super intuitive.  Should all the survey … | 14:46:04 | 17m 21s | 1m 15s | 248 | 193,046 | 351,081 | 52,104,331 |
-| 34 | Yes execute the rename now while we only have 2 games in the system. | 15:04:40 | 4m 56s | — | 260 | 42,374 | 113,066 | 21,610,507 |
+| 34 | Yes execute the rename now while we only have 2 games in the system. | 15:04:40 | 5m 22s | 3h 27m ⏳ | 276 | 45,087 | 125,256 | 23,200,383 |
+| 35 | Ok, since I’m on my phone and scrolling back is a thing, what else do … | 18:37:13 | 11s | 30m 60s ⏳ | 6 | 770 | 331,234 | 301,696 |
+| 36 | For the duplicated answer, the game mechanic is that the contestant ca… | 19:08:24 | 8m 53s | — | 130 | 33,705 | 86,399 | 15,243,870 |
 
-**Total turns:** 34  
-**Total agent time spent (excl. flagged):** 1h 29m  
+**Total turns:** 36  
+**Total agent time spent (excl. flagged):** 1h 38m  
 **Total human think time (excl. outliers):** 39m 6s  
 **Average human think time (excl. outliers):** 1m 27s  
-**Think-time outliers (> 15 min):** 6  
-**Total input tokens:** 2,427  
-**Total output tokens:** 955,183  
-**Total cache-write tokens:** 4,652,350  
-**Total cache-read tokens:** 420,363,679  
+**Think-time outliers (> 15 min):** 8  
+**Total input tokens:** 2,579  
+**Total output tokens:** 992,371  
+**Total cache-write tokens:** 5,082,173  
+**Total cache-read tokens:** 437,499,121  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
 
 ⚠ Turn(s) 31 had an 'agent time spent' over 30 min (total 43m 27s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
 
-⏳ Turn(s) 7, 15, 17, 18, 25, 27 had a 'human think time' over 15 min (total 105h 6m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 7, 15, 17, 18, 25, 27, 34, 35 had a 'human think time' over 15 min (total 109h 4m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
 ---
 
@@ -80,11 +82,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 15 (the known-duplicate boundary) to SESSION_LOG_prior_totals.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 88  
-**Combined agent time spent (excl. flagged):** 3h 11m  
+**Combined total turns:** 90  
+**Combined agent time spent (excl. flagged):** 3h 21m  
 **Combined human think time (excl. outliers):** 2h 17m  
-**Combined think-time outliers:** 9  
-**Total input tokens (since tracking began, this file only):** 2,035  
-**Total output tokens (since tracking began, this file only):** 883,216  
-**Total cache-write tokens (since tracking began, this file only):** 4,114,822  
-**Total cache-read tokens (since tracking began, this file only):** 397,249,666
+**Combined think-time outliers:** 11  
+**Total input tokens (since tracking began, this file only):** 2,187  
+**Total output tokens (since tracking began, this file only):** 920,404  
+**Total cache-write tokens (since tracking began, this file only):** 4,544,645  
+**Total cache-read tokens (since tracking began, this file only):** 414,385,108
