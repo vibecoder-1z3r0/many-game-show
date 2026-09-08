@@ -213,7 +213,9 @@
       function turnLabel(g) {
         if (!g.current_player) return "Not started";
         const name = g.current_player === "player1" ? g.player1_name : g.player2_name;
-        return `${name}'s turn — Q${Math.min(g.current_question_index + 1, 5)}/5`;
+        const slots = g.current_player === "player1" ? g.player1_slots : g.player2_slots;
+        const scored = slots.filter((s) => s.points !== null).length;
+        return `${name}'s turn — ${scored}/5 scored`;
       }
 
       function renderSpeedPointsCard(g) {
