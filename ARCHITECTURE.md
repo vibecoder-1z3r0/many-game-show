@@ -195,7 +195,7 @@ actually building Squad Squabble:
   going in), not a single game — confirmed by the lobby/multi-game-card
   UI now in place.
 - **Buzzer/player view**: not needed yet — Squad Squabble is host-vs-screen
-  only (Control + Display). Add a player/buzzer view for the first game
+  only (Control + Main). Add a player/buzzer view for the first game
   that actually needs one (see ADDING_A_GAME.md, step 3).
 - **State surviving a restart**: fresh-DB-per-run is acceptable; see the
   Database section above for the no-migrations tradeoff this implies.

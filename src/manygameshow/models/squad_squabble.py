@@ -55,8 +55,8 @@ class SquadSquabbleGame(SQLModel, table=True):
 
     status: str = Field(default="active")
 
-    # Display-view strike callout timing — kept server-side (not a
-    # localStorage-only setting) since Control and Display may run on
+    # Main-view strike callout timing — kept server-side (not a
+    # localStorage-only setting) since Control and Main may run on
     # different devices (e.g. host's phone vs. a venue projector laptop),
     # and this app's design principle is server-authoritative state.
     strike_anim_hold_ms: int = Field(default=1000, ge=0, le=5000)

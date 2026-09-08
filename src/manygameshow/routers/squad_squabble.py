@@ -106,7 +106,7 @@ def delete_game(game_id: str, session: SessionDep) -> None:
 
 @router.get("/{game_id}/questions", response_model=list[QuestionRead])
 def get_question_bank(game_id: str, session: SessionDep) -> list[QuestionRead]:
-    """List the full question bank (host-side picker; not exposed to Display)."""
+    """List the full question bank (host-side picker; not exposed to Main)."""
     _get_game(game_id, session)  # 404 if game doesn't exist
     return [
         QuestionRead(
@@ -302,9 +302,9 @@ class StrikeAnimationBody(SQLModel):
 def set_strike_animation(
     game_id: str, body: StrikeAnimationBody, session: SessionDep
 ) -> SquadSquabbleGameRead:
-    """Tune the Display view's big-red-X strike callout: how long it holds
+    """Tune the Main view's big-red-X strike callout: how long it holds
     at full size before shrinking into place, and how long that shrink
-    takes. Server-side so Control and Display agree regardless of device."""
+    takes. Server-side so Control and Main agree regardless of device."""
     game = _get_game(game_id, session)
     game.strike_anim_hold_ms = body.hold_ms
     game.strike_anim_duration_ms = body.duration_ms

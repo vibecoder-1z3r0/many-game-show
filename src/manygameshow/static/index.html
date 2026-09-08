@@ -145,7 +145,7 @@
     </div>
     <div class="games" id="games"></div>
     <script>
-      // Each game type has its own API prefix + control/display page. Adding
+      // Each game type has its own API prefix + control/main page. Adding
       // a game means adding one entry here plus a card-rendering function
       // below — see ADDING_A_GAME.md step 4.
       const GAME_TYPES = [
@@ -203,7 +203,7 @@
               </div>
             </div>
             <div class="links">
-              <a href="/squad-squabble.html?id=${g.id}&view=display">Display</a>
+              <a href="/squad-squabble.html?id=${g.id}&view=main">Main</a>
               <a href="/squad-squabble.html?id=${g.id}&view=control">Control</a>
               <button class="danger" onclick="deleteGame('squad-squabble', '${g.id}')">Delete</button>
             </div>
@@ -228,7 +228,7 @@
               <div class="meta">${turnLabel(g)}</div>
             </div>
             <div class="links">
-              <a href="/speed-points.html?id=${g.id}&view=display">Display</a>
+              <a href="/speed-points.html?id=${g.id}&view=main">Main</a>
               <a href="/speed-points.html?id=${g.id}&view=host">Host</a>
               <a href="/speed-points.html?id=${g.id}&view=judge">Judge</a>
               <button class="danger" onclick="deleteGame('speed-points', '${g.id}')">Delete</button>

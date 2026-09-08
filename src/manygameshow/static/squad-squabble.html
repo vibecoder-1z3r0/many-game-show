@@ -198,15 +198,15 @@
         display: none !important;
       }
 
-      /* ---------- Display view ---------- */
+      /* ---------- Main view ---------- */
 
-      #view-display {
+      #view-main {
         display: flex;
         flex-direction: column;
         gap: clamp(0.6rem, 1.5vw, 1rem);
       }
 
-      #round-display {
+      #round-main {
         text-align: center;
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: clamp(2rem, 5vw, 3.4rem);
@@ -592,7 +592,7 @@
         Squad Squabble
       </h1>
       <div class="tabs">
-        <button id="tab-display" onclick="switchView('display')">Display</button>
+        <button id="tab-main" onclick="switchView('main')">Main</button>
         <button id="tab-control" onclick="switchView('control')">Control</button>
       </div>
       <select id="theme-select" onchange="applyTheme(this.value)">
@@ -611,8 +611,8 @@
       <button class="icon-btn" onclick="expandHeader()">Show header</button>
     </div>
     <main>
-      <section id="view-display">
-        <div id="round-display">ROUND 1</div>
+      <section id="view-main">
+        <div id="round-main">ROUND 1</div>
         <div class="question-flip-outer">
           <div id="question-card">
             <div class="question-face" id="question-front">Round in progress…</div>
@@ -623,20 +623,20 @@
         <div class="scoreboard">
           <div class="round-score-row">
             <div class="round-score-label">Round Score</div>
-            <div class="round-score-value display-num" id="round-score-display">0</div>
+            <div class="round-score-value display-num" id="round-score-main">0</div>
           </div>
           <div class="mid-stats">
-            <div class="multiplier-badge" id="multiplier-display">1x</div>
-            <div class="strikes" id="strikes-display"></div>
+            <div class="multiplier-badge" id="multiplier-main">1x</div>
+            <div class="strikes" id="strikes-main"></div>
           </div>
           <div class="team-scores-row">
             <div class="team-card" id="team1-card">
-              <div class="team-name" id="team1-name-display">Team 1</div>
-              <div class="team-score display-num" id="team1-score-display">0</div>
+              <div class="team-name" id="team1-name-main">Team 1</div>
+              <div class="team-score display-num" id="team1-score-main">0</div>
             </div>
             <div class="team-card" id="team2-card">
-              <div class="team-name" id="team2-name-display">Team 2</div>
-              <div class="team-score display-num" id="team2-score-display">0</div>
+              <div class="team-name" id="team2-name-main">Team 2</div>
+              <div class="team-score display-num" id="team2-score-main">0</div>
             </div>
           </div>
         </div>
@@ -722,7 +722,7 @@
           </div>
         </fieldset>
         <fieldset>
-          <legend>Strike Animation (Display)</legend>
+          <legend>Strike Animation (Main)</legend>
           <div class="row">
             <label for="strike-hold-input">Hold (ms)</label>
             <input type="number" id="strike-hold-input" value="1000" min="0" max="5000" />
@@ -752,7 +752,7 @@
     <script>
       const params = new URLSearchParams(location.search);
       const gameId = params.get("id");
-      let currentView = params.get("view") || "display";
+      let currentView = params.get("view") || "main";
       let state = null;
       let failCount = 0;
       let lastStateJson = null;
@@ -835,9 +835,9 @@
 
       function switchView(v) {
         currentView = v;
-        document.getElementById("view-display").hidden = v !== "display";
+        document.getElementById("view-main").hidden = v !== "main";
         document.getElementById("view-control").hidden = v !== "control";
-        document.getElementById("tab-display").classList.toggle("active", v === "display");
+        document.getElementById("tab-main").classList.toggle("active", v === "main");
         document.getElementById("tab-control").classList.toggle("active", v === "control");
         const url = new URL(location.href);
         url.searchParams.set("view", v);
@@ -846,7 +846,7 @@
       }
       switchView(currentView);
 
-      // The collapse-to-LED affordance only applies on Display (a big
+      // The collapse-to-LED affordance only applies on Main (a big
       // screen the audience watches) — Control always needs its tabs and
       // theme select visible to operate the game.
       function updateHeaderChrome() {
@@ -854,7 +854,7 @@
         const header = document.querySelector("header");
         const miniHeader = document.getElementById("mini-header");
 
-        if (currentView !== "display") {
+        if (currentView !== "main") {
           collapseBtn.hidden = true;
           header.hidden = false;
           miniHeader.hidden = true;
@@ -1055,7 +1055,7 @@
       // position/size and fade out, so the "landing" reads as the big X
       // shrinking into place.
       function triggerStrikeAnimation(count, holdMs, durationMs) {
-        const targets = document.querySelectorAll("#strikes-display .strike-x");
+        const targets = document.querySelectorAll("#strikes-main .strike-x");
         if (!targets.length || !count) return;
 
         const overlay = document.createElement("div");
@@ -1116,8 +1116,8 @@
       function render() {
         if (!state) return;
 
-        // ----- Display -----
-        document.getElementById("round-display").textContent =
+        // ----- Main -----
+        document.getElementById("round-main").textContent =
           `ROUND ${state.current_round}`;
 
         const q = state.current_question;
@@ -1130,20 +1130,20 @@
 
         renderBoard(q);
 
-        document.getElementById("team1-name-display").textContent = state.team1_name;
-        document.getElementById("team2-name-display").textContent = state.team2_name;
-        document.getElementById("team1-score-display").textContent = state.team1_score;
-        document.getElementById("team2-score-display").textContent = state.team2_score;
-        document.getElementById("round-score-display").textContent = state.round_points;
+        document.getElementById("team1-name-main").textContent = state.team1_name;
+        document.getElementById("team2-name-main").textContent = state.team2_name;
+        document.getElementById("team1-score-main").textContent = state.team1_score;
+        document.getElementById("team2-score-main").textContent = state.team2_score;
+        document.getElementById("round-score-main").textContent = state.round_points;
         document
           .getElementById("team1-card")
           .classList.toggle("controlling", state.controlling_team === "team1");
         document
           .getElementById("team2-card")
           .classList.toggle("controlling", state.controlling_team === "team2");
-        document.getElementById("multiplier-display").textContent = `${state.multiplier}x`;
+        document.getElementById("multiplier-main").textContent = `${state.multiplier}x`;
 
-        const strikesEl = document.getElementById("strikes-display");
+        const strikesEl = document.getElementById("strikes-main");
         strikesEl.innerHTML = "";
         for (let i = 0; i < 3; i++) {
           const x = document.createElement("div");
@@ -1153,7 +1153,7 @@
         }
 
         if (
-          currentView === "display" &&
+          currentView === "main" &&
           lastStrikesForAnim !== null &&
           state.strikes > lastStrikesForAnim
         ) {

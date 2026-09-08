@@ -313,7 +313,7 @@ def set_duplicate_flag(
 ) -> JudgeGameRead:
     """The judge's buzzer for one question: flag (or clear) that this
     answer duplicates the other player's. Freely settable any time.
-    Scoring/display behavior for a flagged duplicate is still TBD; this
+    Scoring/main-view behavior for a flagged duplicate is still TBD; this
     just records the marker."""
     game = _get_game(game_id, session)
     slots = _load_slots(game)

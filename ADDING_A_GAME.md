@@ -88,13 +88,13 @@ diverge.
 
 Required structure, in order of how central it is:
 
-1. **View tabs** (`?view=display|control[|player]`), written to the URL so
+1. **View tabs** (`?view=main|control[|player]`), written to the URL so
    a refresh or a shared link restores the same tab. `switchView(v)` sets
    `currentView`, toggles `hidden` on each `#view-*` section, updates the
    URL via `history.replaceState`, and shows/hides the tab buttons
    themselves (Control should be the only place the game can be operated
-   from — Display and any player view are read-only).
-2. **Collapsible header on Display only** (`Hide header` → shows a small
+   from — Main and any player view are read-only).
+2. **Collapsible header on Main only** (`Hide header` → shows a small
    `#mini-header` with just a connection-status LED and a `Show header`
    button; state persisted to `localStorage`). Control always keeps the
    full header — it needs its tabs/theme-select to operate the game.

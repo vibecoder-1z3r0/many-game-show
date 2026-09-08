@@ -254,7 +254,7 @@
         font-size: clamp(1rem, 2.6vw, 1.5rem);
       }
 
-      /* ---------- Main (Display) tallies: text-then-points reveal ---------- */
+      /* ---------- Main-view tallies: text-then-points reveal ---------- */
       /* Each question is its own row, split into two separate chip cards —
          a wide answer chip and a narrow points chip — not one merged box,
          so the two reveal beats (text, then points) read as genuinely
@@ -263,7 +263,7 @@
       /* Player 1 on the left, Player 2 on the right — each an equal-width
          column: name, then the vertical slot stack, then the running
          total at the bottom. */
-      #display-tallies {
+      #main-tallies {
         display: flex;
         gap: 1rem;
         width: 100%;
@@ -288,7 +288,7 @@
         font-size: clamp(1.4rem, 3.4vw, 2rem);
       }
 
-      #display-tallies .tally-slots {
+      #main-tallies .tally-slots {
         flex-direction: column;
         width: 100%;
         gap: 0.5rem;
@@ -334,15 +334,15 @@
         border-color: var(--accent);
       }
 
-      /* ---------- Display view ---------- */
+      /* ---------- Main view ---------- */
 
-      #view-display {
+      #view-main {
         display: flex;
         flex-direction: column;
         gap: clamp(0.6rem, 1.5vw, 1rem);
       }
 
-      #turn-display {
+      #turn-main {
         text-align: center;
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: clamp(1.4rem, 3.6vw, 2.2rem);
@@ -351,14 +351,14 @@
         font-weight: 800;
       }
 
-      #timer-display {
+      #timer-main {
         text-align: center;
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: clamp(2.4rem, 8vw, 5rem);
         font-weight: 800;
       }
 
-      #combined-total-display {
+      #combined-total-main {
         text-align: center;
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: clamp(1.6rem, 4vw, 2.6rem);
@@ -562,7 +562,7 @@
         Speed Points
       </h1>
       <div class="tabs">
-        <button id="tab-display" onclick="switchView('display')">Display</button>
+        <button id="tab-main" onclick="switchView('main')">Main</button>
         <button id="tab-host" onclick="switchView('host')">Host</button>
         <button id="tab-judge" onclick="switchView('judge')">Judge</button>
       </div>
@@ -582,11 +582,11 @@
       <button class="icon-btn" onclick="expandHeader()">Show header</button>
     </div>
     <main>
-      <section id="view-display">
-        <div id="turn-display">Waiting to start</div>
-        <div id="timer-display"></div>
-        <div id="display-tallies"></div>
-        <div id="combined-total-display"></div>
+      <section id="view-main">
+        <div id="turn-main">Waiting to start</div>
+        <div id="timer-main"></div>
+        <div id="main-tallies"></div>
+        <div id="combined-total-main"></div>
         <div id="verdict" hidden></div>
       </section>
       <section id="view-host">
@@ -637,8 +637,8 @@
     <script>
       const params = new URLSearchParams(location.search);
       const gameId = params.get("id");
-      let currentView = params.get("view") || "display";
-      let state = null; // public (spoiler-safe) state: Display + Host
+      let currentView = params.get("view") || "main";
+      let state = null; // public (spoiler-safe) state: Main + Host
       let judgeState = null; // full-visibility state: Judge only
       let lastStateJson = null;
       let lastJudgeStateJson = null;
@@ -664,10 +664,10 @@
 
       function switchView(v) {
         currentView = v;
-        document.getElementById("view-display").hidden = v !== "display";
+        document.getElementById("view-main").hidden = v !== "main";
         document.getElementById("view-host").hidden = v !== "host";
         document.getElementById("view-judge").hidden = v !== "judge";
-        document.getElementById("tab-display").classList.toggle("active", v === "display");
+        document.getElementById("tab-main").classList.toggle("active", v === "main");
         document.getElementById("tab-host").classList.toggle("active", v === "host");
         document.getElementById("tab-judge").classList.toggle("active", v === "judge");
         const url = new URL(location.href);
@@ -678,7 +678,7 @@
       }
       switchView(currentView);
 
-      // The collapse-to-LED affordance only applies on Display (a big
+      // The collapse-to-LED affordance only applies on Main (a big
       // screen the audience watches) — Host/Judge always need their tabs
       // and theme select visible to operate the game.
       function updateHeaderChrome() {
@@ -686,7 +686,7 @@
         const header = document.querySelector("header");
         const miniHeader = document.getElementById("mini-header");
 
-        if (currentView !== "display") {
+        if (currentView !== "main") {
           collapseBtn.hidden = true;
           header.hidden = false;
           miniHeader.hidden = true;
@@ -757,7 +757,7 @@
       async function loadAnswerKeyIfNeeded() {
         // Judge-only reference — fetched once (it's fixed for the game's
         // lifetime) and only ever while actually on the Judge tab, so it
-        // never even transits the network for Host/Display.
+        // never even transits the network for Host/Main.
         if (currentView !== "judge" || answerKey) return;
         try {
           answerKey = await api("/answer-key", { method: "GET" });
@@ -772,7 +772,7 @@
         if (json === lastStateJson) return;
         lastStateJson = json;
         state = newState;
-        renderDisplay();
+        renderMain();
         renderHost();
       }
 
@@ -895,14 +895,14 @@
         return `${name}'s turn`;
       }
 
-      function renderDisplay() {
+      function renderMain() {
         if (!state) return;
 
-        document.getElementById("turn-display").textContent = turnStatusText(state);
-        document.getElementById("timer-display").textContent =
+        document.getElementById("turn-main").textContent = turnStatusText(state);
+        document.getElementById("timer-main").textContent =
           state.remaining_seconds !== null ? `${state.remaining_seconds}s` : "";
 
-        document.getElementById("display-tallies").innerHTML = `
+        document.getElementById("main-tallies").innerHTML = `
           <div class="player-column">
             <div class="tally-name">${state.player1_name}</div>
             <div class="tally-slots">${mainTallySlotsHtml(state.player1_slots)}</div>
@@ -914,7 +914,7 @@
             <div class="tally-total display-num">${state.player2_total}</div>
           </div>`;
 
-        document.getElementById("combined-total-display").textContent =
+        document.getElementById("combined-total-main").textContent =
           `Combined: ${state.combined_total} / ${state.win_threshold}`;
 
         const verdictEl = document.getElementById("verdict");
