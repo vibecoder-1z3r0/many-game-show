@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from manygameshow.database import create_db_and_tables
-from manygameshow.routers import speed_points, squad_squabble
+from manygameshow.routers import big_tokens, speed_points, squad_squabble
 
 
 @asynccontextmanager
@@ -21,6 +21,7 @@ app = FastAPI(title="Many Game Show", lifespan=lifespan)
 
 app.include_router(squad_squabble.router)
 app.include_router(speed_points.router)
+app.include_router(big_tokens.router)
 
 
 @app.get("/health")
