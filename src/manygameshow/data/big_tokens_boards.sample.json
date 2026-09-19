@@ -1,0 +1,108 @@
+{
+  "boards": [
+    {
+      "id": "classic",
+      "name": "Classic Board",
+      "max_hallucinations": 3,
+      "wipe_on_every_hallucination": true,
+      "elimination_scope": "game",
+      "squares": [
+        { "items": [{ "type": "tokens", "amount": 300, "label": "+300 Tokens" }] },
+        {
+          "items": [
+            { "type": "tokens", "amount": 500, "label": "+500 Tokens" },
+            { "type": "tokens", "amount": 750, "label": "+750 Tokens" }
+          ]
+        },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        { "items": [{ "type": "tokens", "amount": 750, "label": "+750 Tokens" }] },
+        {
+          "items": [
+            { "type": "free_spin", "label": "Free Spin" },
+            { "type": "tokens", "amount": 500, "label": "+500 Tokens" }
+          ]
+        },
+        { "items": [{ "type": "tokens", "amount": 1000, "label": "+1000 Tokens" }] },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        { "items": [{ "type": "double", "label": "Double Your Tokens" }] },
+        { "items": [{ "type": "steal", "amount": 300, "label": "Steal 300 Tokens" }] },
+        { "items": [{ "type": "tokens", "amount": 600, "label": "+600 Tokens" }] },
+        {
+          "items": [
+            { "type": "choice_swap_or_free_spin", "label": "Swap Scores or Free Spin" }
+          ]
+        },
+        {
+          "items": [
+            { "type": "tokens", "amount": 300, "label": "+300 Tokens" },
+            { "type": "tokens", "amount": 600, "label": "+600 Tokens" },
+            { "type": "tokens", "amount": 900, "label": "+900 Tokens" }
+          ]
+        },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        {
+          "items": [
+            {
+              "type": "choice_tokens_or_cure",
+              "amount": 400,
+              "label": "Take 400 Tokens or Remove a Hallucination"
+            }
+          ]
+        },
+        { "items": [{ "type": "tokens", "amount": 750, "label": "+750 Tokens" }] },
+        { "items": [{ "type": "tokens", "amount": 1000, "label": "+1000 Tokens" }] },
+        { "items": [{ "type": "free_spin", "label": "Free Spin" }] },
+        { "items": [{ "type": "tokens", "amount": 2000, "label": "Big Tokens! +2000" }] }
+      ]
+    },
+    {
+      "id": "chaos",
+      "name": "Chaos Board",
+      "max_hallucinations": 2,
+      "wipe_on_every_hallucination": false,
+      "elimination_scope": "round",
+      "squares": [
+        { "items": [{ "type": "tokens", "amount": 400, "label": "+400 Tokens" }] },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        { "items": [{ "type": "tokens", "amount": 800, "label": "+800 Tokens" }] },
+        { "items": [{ "type": "double", "label": "Double Your Tokens" }] },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        { "items": [{ "type": "steal", "amount": 500, "label": "Steal 500 Tokens" }] },
+        {
+          "items": [
+            { "type": "tokens", "amount": 300, "label": "+300 Tokens" },
+            { "type": "tokens", "amount": 900, "label": "+900 Tokens" }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "choice_tokens_or_cure",
+              "amount": 600,
+              "label": "Take 600 Tokens or Remove a Hallucination"
+            }
+          ]
+        },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        { "items": [{ "type": "free_spin", "label": "Free Spin" }] },
+        { "items": [{ "type": "tokens", "amount": 1200, "label": "+1200 Tokens" }] },
+        {
+          "items": [
+            { "type": "choice_swap_or_free_spin", "label": "Swap Scores or Free Spin" }
+          ]
+        },
+        { "items": [{ "type": "tokens", "amount": 500, "label": "+500 Tokens" }] },
+        { "items": [{ "type": "hallucination", "label": "HALLUCINATION!" }] },
+        {
+          "items": [
+            { "type": "tokens", "amount": 700, "label": "+700 Tokens" },
+            { "type": "double", "label": "Double Your Tokens" }
+          ]
+        },
+        { "items": [{ "type": "steal", "amount": 400, "label": "Steal 400 Tokens" }] },
+        { "items": [{ "type": "tokens", "amount": 1500, "label": "+1500 Tokens" }] },
+        { "items": [{ "type": "tokens", "amount": 3000, "label": "Big Tokens! +3000" }] }
+      ]
+    }
+  ]
+}
