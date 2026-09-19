@@ -92,8 +92,16 @@ Required structure, in order of how central it is:
    a refresh or a shared link restores the same tab. `switchView(v)` sets
    `currentView`, toggles `hidden` on each `#view-*` section, updates the
    URL via `history.replaceState`, and shows/hides the tab buttons
-   themselves (Control should be the only place the game can be operated
-   from — Main and any player view are read-only).
+   themselves. Control should always be able to operate the whole game
+   as a host override — but a player view can also be legitimately
+   interactive (self-serve) when the game's own mechanic calls for it,
+   e.g. Big Tokens' player views each have their own spin/stop button
+   and choice/target pickers for the player currently up, with Control
+   offering the same actions as a fallback if their device fails. Don't
+   make a player view interactive by default — only when the design
+   explicitly calls for self-serve play; Speed Points and Squad
+   Squabble's player-facing views are read-only, and that's still the
+   right default.
 2. **Collapsible header on Main only** (`Hide header` → shows a small
    `#mini-header` with just a connection-status LED and a `Show header`
    button; state persisted to `localStorage`). Control always keeps the

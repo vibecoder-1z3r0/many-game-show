@@ -64,22 +64,23 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 38 | we're going to make the board configurable and we can pick which board… | 21:36:08 | 1m 32s | 4m 30s | 10 | 14,133 | 850,524 | 560,836 |
 | 39 | the current round is something that only ends when all players halluci… | 21:42:10 | 4m 58s | 0s | 14 | 24,220 | 20,019 | 2,018,181 |
 | 40 | oooh we should have a "take this money amount" or "lose a hallucinatio… | 21:47:08 | 4m 22s | 39s | 16 | 21,129 | 24,311 | 2,380,465 |
-| 41 | did you want to make up a few boards to add and just go with it? | 21:52:09 | 12m 53s | — | 231 | 152,888 | 211,320 | 42,187,524 |
+| 41 | did you want to make up a few boards to add and just go with it? | 21:52:09 | 13m 24s | 50m 60s ⏳ | 245 | 155,313 | 223,442 | 45,108,474 |
+| 42 | What are you waiting on me for? | 22:56:32 | 9m 11s | — | 152 | 90,785 | 189,726 | 35,635,880 |
 
-**Total turns:** 41  
-**Total agent time spent (excl. flagged):** 2h 17m  
+**Total turns:** 42  
+**Total agent time spent (excl. flagged):** 2h 27m  
 **Total human think time (excl. outliers):** 44m 15s  
 **Average human think time (excl. outliers):** 1m 29s  
-**Think-time outliers (> 15 min):** 10  
-**Total input tokens:** 2,886  
-**Total output tokens:** 1,259,627  
-**Total cache-write tokens:** 6,872,914  
-**Total cache-read tokens:** 488,645,363  
+**Think-time outliers (> 15 min):** 11  
+**Total input tokens:** 3,052  
+**Total output tokens:** 1,352,837  
+**Total cache-write tokens:** 7,074,762  
+**Total cache-read tokens:** 527,202,193  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
 
 ⚠ Turn(s) 31 had an 'agent time spent' over 30 min (total 43m 27s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
 
-⏳ Turn(s) 7, 15, 17, 18, 25, 27, 34, 35, 36, 37 had a 'human think time' over 15 min (total 375h 8m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 7, 15, 17, 18, 25, 27, 34, 35, 36, 37, 41 had a 'human think time' over 15 min (total 375h 59m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
 ---
 
@@ -87,11 +88,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 15 (the known-duplicate boundary) to SESSION_LOG_prior_totals.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 95  
-**Combined agent time spent (excl. flagged):** 3h 59m  
+**Combined total turns:** 96  
+**Combined agent time spent (excl. flagged):** 4h 9m  
 **Combined human think time (excl. outliers):** 2h 22m  
-**Combined think-time outliers:** 13  
-**Total input tokens (since tracking began, this file only):** 2,494  
-**Total output tokens (since tracking began, this file only):** 1,187,660  
-**Total cache-write tokens (since tracking began, this file only):** 6,335,386  
-**Total cache-read tokens (since tracking began, this file only):** 465,531,350
+**Combined think-time outliers:** 14  
+**Total input tokens (since tracking began, this file only):** 2,660  
+**Total output tokens (since tracking began, this file only):** 1,280,870  
+**Total cache-write tokens (since tracking began, this file only):** 6,537,234  
+**Total cache-read tokens (since tracking began, this file only):** 504,088,180

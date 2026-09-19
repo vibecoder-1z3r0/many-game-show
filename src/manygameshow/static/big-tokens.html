@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Big Tokens, No Hallucinations</title>
+    <style>
+      /* Self-hosted (not Google Fonts CDN) so the display font still loads
+         on flaky/offline conference wifi — see UI_LOOK_AND_FEEL.md. */
+      @font-face {
+        font-family: "Orbitron";
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+        src: url("/fonts/orbitron-600.ttf") format("truetype");
+      }
+
+      @font-face {
+        font-family: "Orbitron";
+        font-weight: 800;
+        font-style: normal;
+        font-display: swap;
+        src: url("/fonts/orbitron-800.ttf") format("truetype");
+      }
+
+      :root {
+        --bg: #0b1220;
+        --panel: #131c2e;
+        --panel-2: #1a2540;
+        --text: #f5f7fa;
+        --text-dim: #9aa5b8;
+        --accent: #ffcc00;
+        --border: #263252;
+        --win-green: #2ecc71;
+        --danger: #ff4d4d;
+      }
+
+      [data-theme="stage"] {
+        --bg: #05060a;
+        --panel: #12141c;
+        --panel-2: #1b1f2b;
+        --text: #f2f2f5;
+        --text-dim: #8b8f9c;
+        --accent: #00e5ff;
+        --border: #2a2f3d;
+      }
+
+      [data-theme="bright"] {
+        --bg: #fef6e4;
+        --panel: #ffffff;
+        --panel-2: #fff1d6;
+        --text: #1b1b1b;
+        --text-dim: #6b6b6b;
+        --accent: #ff5a3c;
+        --border: #f0d9b5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, sans-serif;
+      }
+
+      .display-num {
+        font-family: "Orbitron", system-ui, sans-serif;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+
+      header h1 {
+        font-size: 1rem;
+        margin: 0;
+        margin-right: auto;
+      }
+
+      .breadcrumb a {
+        color: var(--text-dim);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
+      .crumb-sep {
+        color: var(--text-dim);
+        margin: 0 0.3rem;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .tabs button {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      .tabs button.active {
+        background: var(--accent);
+        color: #10131a;
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+
+      select {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .conn-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+
+      .conn-badge.ok {
+        background: #1e4d2b;
+        color: #7cf29c;
+      }
+
+      .conn-badge.lost {
+        background: #4d1e1e;
+        color: #f29c7c;
+      }
+
+      .icon-btn {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.6rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      #mini-header {
+        position: fixed;
+        top: 0.6rem;
+        right: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.35rem 0.5rem 0.35rem 0.7rem;
+        z-index: 100;
+      }
+
+      .mini-led {
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 50%;
+      }
+
+      .mini-led.ok {
+        background: #2ecc71;
+        box-shadow: 0 0 8px 1px rgba(46, 204, 113, 0.7);
+      }
+
+      .mini-led.lost {
+        background: #ff4d4d;
+        box-shadow: 0 0 8px 1px rgba(255, 77, 77, 0.7);
+      }
+
+      main {
+        padding: 1rem;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      button {
+        font-family: inherit;
+      }
+
+      button.primary {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+      }
+
+      button.primary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      button.primary.active {
+        background: var(--accent);
+        color: #10131a;
+        font-weight: 700;
+        border-color: var(--accent);
+      }
+
+      button.danger {
+        border-color: var(--danger);
+        color: var(--danger);
+        background: transparent;
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+      }
+
+      fieldset {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      legend {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        padding: 0 0.4rem;
+      }
+
+      input[type="text"],
+      input[type="number"] {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.4rem 0.6rem;
+      }
+
+      .status-line {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      /* ---------- Board grid: 6 across, 5 down, perimeter only ---------- */
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        gap: 0.4rem;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .square {
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        background: var(--panel-2);
+        padding: 0.4rem;
+        font-size: clamp(0.55rem, 1.6vw, 0.75rem);
+        min-height: clamp(3.2rem, 8vw, 4.5rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.15;
+      }
+
+      .square.chase-lit {
+        background: var(--accent);
+        color: #10131a;
+        font-weight: 700;
+        border-color: var(--accent);
+      }
+
+      .square.landed {
+        border-color: var(--win-green);
+        box-shadow: 0 0 0 2px var(--win-green) inset;
+      }
+
+      .square.hallucination {
+        color: var(--danger);
+      }
+
+      /* ---------- Scoreboard: 3 player cards ---------- */
+
+      .scoreboard {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin: 1rem auto;
+        max-width: 720px;
+      }
+
+      .player-card {
+        flex: 1;
+        min-width: 9rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.6rem;
+        background: var(--panel);
+      }
+
+      .player-card.active-turn {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent) inset;
+      }
+
+      .player-card.is-out {
+        opacity: 0.55;
+      }
+
+      .player-card .p-name {
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+      }
+
+      .player-card .p-tokens {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .player-card .p-spins {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+      }
+
+      .p-hallucinations {
+        display: flex;
+        gap: 0.2rem;
+        margin-top: 0.3rem;
+      }
+
+      .p-hallucinations .strike {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        border: 1.5px solid var(--text-dim);
+        font-size: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-dim);
+      }
+
+      .p-hallucinations .strike.hit {
+        border-color: var(--danger);
+        color: var(--danger);
+        background: rgba(255, 77, 77, 0.15);
+      }
+
+      .out-badge {
+        display: inline-block;
+        margin-top: 0.3rem;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        background: var(--danger);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      /* ---------- Main view ---------- */
+
+      #view-main {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      #main-turn-status {
+        text-align: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.2rem, 3vw, 1.8rem);
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      #main-awaiting {
+        text-align: center;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        min-height: 1.2rem;
+      }
+
+      /* ---------- Control / Player views ---------- */
+
+      #view-control,
+      .player-view {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      .control-players {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .control-player-row {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .control-player-row .row-line {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .control-player-row input[type="number"] {
+        width: 5.5rem;
+      }
+
+      .spin-btn {
+        display: block;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        padding: 1.2rem;
+        font-size: 1.3rem;
+        font-weight: 800;
+        border-radius: 0.6rem;
+        cursor: pointer;
+        border: 2px solid var(--accent);
+        background: var(--accent);
+        color: #10131a;
+      }
+
+      .spin-btn.stop {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: #fff;
+      }
+
+      .spin-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: var(--panel-2);
+        color: var(--text-dim);
+        border-color: var(--border);
+      }
+
+      .choice-row,
+      .target-row {
+        display: flex;
+        gap: 0.6rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .my-stats {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 class="breadcrumb">
+        <a href="/">Many Game Show</a>
+        <span class="crumb-sep">›</span>
+        Big Tokens, No Hallucinations
+      </h1>
+      <div class="tabs">
+        <button id="tab-main" onclick="switchView('main')">Main</button>
+        <button id="tab-control" onclick="switchView('control')">Control</button>
+        <button id="tab-player1" onclick="switchView('player1')">Player 1</button>
+        <button id="tab-player2" onclick="switchView('player2')">Player 2</button>
+        <button id="tab-player3" onclick="switchView('player3')">Player 3</button>
+      </div>
+      <select id="theme-select" onchange="applyTheme(this.value)">
+        <option value="default">Default</option>
+        <option value="stage">Stage</option>
+        <option value="bright">Bright</option>
+      </select>
+      <span id="conn-badge" class="conn-badge ok">Connected</span>
+      <button id="header-collapse-btn"
+              class="icon-btn"
+              onclick="collapseHeader()"
+              hidden>Hide header</button>
+    </header>
+    <div id="mini-header" hidden>
+      <span id="mini-led" class="mini-led ok"></span>
+      <button class="icon-btn" onclick="expandHeader()">Show header</button>
+    </div>
+    <main>
+      <section id="view-main">
+        <div id="main-turn-status">Waiting to start</div>
+        <div id="main-awaiting"></div>
+        <div id="main-board" class="board"></div>
+        <div id="main-scoreboard" class="scoreboard"></div>
+      </section>
+      <section id="view-control">
+        <fieldset>
+          <legend>Round</legend>
+          <div class="status-line" id="control-round-status"></div>
+          <button class="primary" onclick="startRound()">Start New Round</button>
+          <button class="danger" onclick="resetGame()">Reset Game</button>
+        </fieldset>
+        <fieldset>
+          <legend>Players</legend>
+          <div class="control-players" id="control-players"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Active turn</legend>
+          <div class="row-line">
+            <button class="primary" onclick="setActivePlayer('player1')">Make Player 1 Active</button>
+            <button class="primary" onclick="setActivePlayer('player2')">Make Player 2 Active</button>
+            <button class="primary" onclick="setActivePlayer('player3')">Make Player 3 Active</button>
+          </div>
+          <div class="status-line" id="control-turn-status"></div>
+          <div class="row-line">
+            <button class="primary" onclick="startSpin()">Start Spin (override)</button>
+            <button class="primary" onclick="stopSpin()">Force Stop (override)</button>
+          </div>
+          <div id="control-resolution"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Board</legend>
+          <div id="control-board" class="board"></div>
+        </fieldset>
+        <div class="status-line" id="control-status-line"></div>
+      </section>
+      <section id="view-player1" class="player-view">
+        <div id="player1-body"></div>
+      </section>
+      <section id="view-player2" class="player-view">
+        <div id="player2-body"></div>
+      </section>
+      <section id="view-player3" class="player-view">
+        <div id="player3-body"></div>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const gameId = params.get("id");
+      let currentView = params.get("view") || "main";
+      let state = null;
+      let lastStateJson = null;
+      let failCount = 0;
+
+      const PLAYERS = ["player1", "player2", "player3"];
+      const PLAYER_LABELS = { player1: "Player 1", player2: "Player 2", player3: "Player 3" };
+
+      // Walking the 6x5 perimeter clockwise from the top-left corner —
+      // index i's [row, col] in the 6-wide/5-tall CSS grid.
+      const SQUARE_GRID_POS = [
+        [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5],
+        [1, 5], [2, 5], [3, 5], [4, 5],
+        [4, 4], [4, 3], [4, 2], [4, 1], [4, 0],
+        [3, 0], [2, 0], [1, 0],
+      ];
+
+      let headerCollapsed = localStorage.getItem("mgsHeaderCollapsed") === "1";
+
+      if (!gameId) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#f29c7c">No game id in URL. Create a game from the lobby first.</p>';
+        throw new Error("missing game id");
+      }
+
+      function applyTheme(t) {
+        document.documentElement.setAttribute("data-theme", t);
+        localStorage.setItem("mgsTheme", t);
+        document.getElementById("theme-select").value = t;
+      }
+      applyTheme(localStorage.getItem("mgsTheme") || "default");
+
+      function switchView(v) {
+        currentView = v;
+        document.getElementById("view-main").hidden = v !== "main";
+        document.getElementById("view-control").hidden = v !== "control";
+        for (const p of PLAYERS) {
+          document.getElementById(`view-${p}`).hidden = v !== p;
+          document.getElementById(`tab-${p}`).classList.toggle("active", v === p);
+        }
+        document.getElementById("tab-main").classList.toggle("active", v === "main");
+        document.getElementById("tab-control").classList.toggle("active", v === "control");
+        const url = new URL(location.href);
+        url.searchParams.set("view", v);
+        history.replaceState(null, "", url);
+        updateHeaderChrome();
+        poll();
+      }
+      switchView(currentView);
+
+      function updateHeaderChrome() {
+        const collapseBtn = document.getElementById("header-collapse-btn");
+        const header = document.querySelector("header");
+        const miniHeader = document.getElementById("mini-header");
+
+        if (currentView !== "main") {
+          collapseBtn.hidden = true;
+          header.hidden = false;
+          miniHeader.hidden = true;
+          return;
+        }
+
+        collapseBtn.hidden = false;
+        header.hidden = headerCollapsed;
+        miniHeader.hidden = !headerCollapsed;
+      }
+
+      function collapseHeader() {
+        headerCollapsed = true;
+        localStorage.setItem("mgsHeaderCollapsed", "1");
+        updateHeaderChrome();
+      }
+
+      function expandHeader() {
+        headerCollapsed = false;
+        localStorage.setItem("mgsHeaderCollapsed", "0");
+        updateHeaderChrome();
+      }
+
+      function setConnStatus(ok) {
+        const badge = document.getElementById("conn-badge");
+        badge.textContent = ok ? "Connected" : "Signal Lost";
+        badge.className = "conn-badge " + (ok ? "ok" : "lost");
+        document.getElementById("mini-led").className = "mini-led " + (ok ? "ok" : "lost");
+      }
+
+      async function api(path, options) {
+        const resp = await fetch(`/api/big-tokens/games/${gameId}${path}`, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${resp.status}`);
+        }
+        return resp.json();
+      }
+
+      async function patch(path, body) {
+        try {
+          const newState = await api(path, {
+            method: "PATCH",
+            body: JSON.stringify(body === undefined ? {} : body),
+          });
+          applyState(newState);
+          setStatus("");
+        } catch (e) {
+          setStatus(String(e.message || e));
+        }
+      }
+
+      function setStatus(msg) {
+        document.getElementById("control-status-line").textContent = msg;
+      }
+
+      function applyState(newState) {
+        const json = JSON.stringify(newState);
+        if (json === lastStateJson) return;
+        lastStateJson = json;
+        state = newState;
+        render();
+      }
+
+      async function poll() {
+        try {
+          const newState = await api("", { method: "GET" });
+          failCount = 0;
+          setConnStatus(true);
+          applyState(newState);
+        } catch (e) {
+          failCount++;
+          if (failCount >= 3) setConnStatus(false);
+        }
+      }
+
+      function startRound() {
+        patch("/start-round");
+      }
+
+      function resetGame() {
+        if (!confirm("Reset this game? All scores and progress will be cleared.")) return;
+        patch("/reset");
+      }
+
+      function setActivePlayer(player) {
+        patch("/active-player", { player });
+      }
+
+      function startSpin() {
+        patch("/start-spin");
+      }
+
+      function stopSpin() {
+        patch("/stop-spin");
+      }
+
+      function choose(choiceValue) {
+        patch("/choose", { choice: choiceValue });
+      }
+
+      function chooseTarget(targetPlayer) {
+        patch("/target", { target: targetPlayer });
+      }
+
+      function spinAgain() {
+        patch("/start-spin");
+      }
+
+      function passSpins() {
+        patch("/pass-spins");
+      }
+
+      function grantSpins(player) {
+        const input = document.getElementById(`grant-spins-${player}`);
+        const amount = parseInt(input.value, 10);
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const current = state.players[player].spins_remaining;
+        patch("/adjust-player", { player, spins_remaining: current + amount });
+        input.value = "";
+      }
+
+      function setTokens(player) {
+        const input = document.getElementById(`set-tokens-${player}`);
+        const amount = parseInt(input.value, 10);
+        if (!Number.isFinite(amount)) return;
+        patch("/adjust-player", { player, token_total: amount });
+      }
+
+      function revivePlayer(player) {
+        patch("/adjust-player", { player, is_out: false, out_reason: null });
+      }
+
+      // ----- Rendering -----
+
+      function boardHtml(highlightSquare) {
+        return state.squares
+          .map((sq, i) => {
+            const [row, col] = SQUARE_GRID_POS[i];
+            const classes = ["square"];
+            if (sq.type === "hallucination") classes.push("hallucination");
+            if (state.chase_position === i) classes.push("chase-lit");
+            if (state.pending_square_index === i) classes.push("landed");
+            if (highlightSquare === i) classes.push("landed");
+            return (
+              `<div class="${classes.join(" ")}" ` +
+              `style="grid-row:${row + 1};grid-column:${col + 1}">${sq.label}</div>`
+            );
+          })
+          .join("");
+      }
+
+      function hallucinationDotsHtml(count, max) {
+        let html = "";
+        for (let i = 0; i < max; i++) {
+          html += `<span class="strike${i < count ? " hit" : ""}">${i < count ? "!" : ""}</span>`;
+        }
+        return html;
+      }
+
+      function playerCardHtml(player) {
+        const p = state.players[player];
+        const classes = ["player-card"];
+        if (state.current_player === player) classes.push("active-turn");
+        if (p.is_out) classes.push("is-out");
+        return `
+          <div class="${classes.join(" ")}">
+            <div class="p-name">${p.name}</div>
+            <div class="p-tokens display-num">${p.token_total}</div>
+            <div class="p-spins">${p.spins_remaining} spin(s)${
+              p.mandatory_spins > 0 ? ` (${p.mandatory_spins} mandatory)` : ""
+            }</div>
+            <div class="p-hallucinations">${hallucinationDotsHtml(
+              p.hallucination_count,
+              p.max_hallucinations
+            )}</div>
+            ${p.is_out ? `<div class="out-badge">${p.out_reason === "hallucinated" ? "Hallucinated" : "Out of spins"}</div>` : ""}
+          </div>`;
+      }
+
+      function turnStatusText() {
+        if (!state.current_player) return "Waiting to start";
+        return `${state.players[state.current_player].name}'s turn`;
+      }
+
+      function awaitingText() {
+        if (!state.current_player) return "";
+        const name = state.players[state.current_player].name;
+        if (state.chase_position !== null && state.awaiting === null && state.pending_square_index === null) {
+          return `${name} is spinning...`;
+        }
+        if (state.awaiting === "choice") return `${name} is choosing...`;
+        if (state.awaiting === "target") return `${name} is picking a target...`;
+        return "";
+      }
+
+      function render() {
+        if (!state) return;
+        renderMain();
+        renderControl();
+        for (const p of PLAYERS) renderPlayerView(p);
+      }
+
+      function renderMain() {
+        document.getElementById("main-turn-status").textContent = turnStatusText();
+        document.getElementById("main-awaiting").textContent = awaitingText();
+        document.getElementById("main-board").innerHTML = boardHtml();
+        document.getElementById("main-scoreboard").innerHTML = PLAYERS.map(
+          playerCardHtml
+        ).join("");
+      }
+
+      function renderControl() {
+        document.getElementById("control-round-status").textContent =
+          `Round ${state.round_number} · Board: ${state.board_name} (${state.elimination_scope}-scoped elimination)`;
+        document.getElementById("control-turn-status").textContent = turnStatusText();
+        document.getElementById("control-board").innerHTML = boardHtml();
+
+        document.getElementById("control-players").innerHTML = PLAYERS.map((player) => {
+          const p = state.players[player];
+          return `
+            <div class="control-player-row">
+              <strong>${p.name}</strong> — ${p.token_total} tokens, ${p.spins_remaining} spins,
+              ${p.hallucination_count}/${p.max_hallucinations} hallucinations
+              ${p.is_out ? `<span class="out-badge">${p.out_reason}</span>` : ""}
+              <div class="row-line">
+                <input type="number" id="grant-spins-${player}" placeholder="Grant spins" min="1" />
+                <button class="primary" onclick="grantSpins('${player}')">Grant</button>
+                <input type="number" id="set-tokens-${player}" placeholder="Set tokens" value="${p.token_total}" />
+                <button class="primary" onclick="setTokens('${player}')">Set Tokens</button>
+                ${p.is_out ? `<button class="primary" onclick="revivePlayer('${player}')">Revive</button>` : ""}
+              </div>
+            </div>`;
+        }).join("");
+
+        const resolutionEl = document.getElementById("control-resolution");
+        resolutionEl.innerHTML = resolutionControlsHtml();
+      }
+
+      function resolutionControlsHtml() {
+        if (state.awaiting === "choice") {
+          const item = state.squares[state.pending_square_index];
+          const options =
+            item.type === "choice_swap_or_free_spin"
+              ? [["swap_scores", "Swap Scores"], ["free_spin", "Free Spin"]]
+              : [["tokens", `Take ${item.amount} Tokens`], ["cure", "Remove a Hallucination"]];
+          return (
+            '<div class="choice-row">' +
+            options
+              .map(([val, label]) => `<button class="primary" onclick="choose('${val}')">${label}</button>`)
+              .join("") +
+            "</div>"
+          );
+        }
+        if (state.awaiting === "target") {
+          const others = PLAYERS.filter((p) => p !== state.current_player);
+          return (
+            '<div class="target-row">' +
+            others
+              .map(
+                (p) =>
+                  `<button class="primary" onclick="chooseTarget('${p}')">Target ${state.players[p].name}</button>`
+              )
+              .join("") +
+            "</div>"
+          );
+        }
+        return "";
+      }
+
+      function renderPlayerView(player) {
+        const body = document.getElementById(`${player}-body`);
+        const p = state.players[player];
+        const isMyTurn = state.current_player === player;
+
+        let controlsHtml = "";
+        if (p.is_out) {
+          controlsHtml = `<div class="out-badge">${
+            p.out_reason === "hallucinated" ? "Hallucinated — out" : "Out of spins"
+          }</div>`;
+        } else if (isMyTurn) {
+          if (state.chase_position !== null) {
+            controlsHtml = `<button class="spin-btn stop" onclick="stopSpin()">STOP</button>`;
+          } else if (state.awaiting === "choice") {
+            controlsHtml = resolutionControlsHtml();
+          } else if (state.awaiting === "target") {
+            controlsHtml = resolutionControlsHtml();
+          } else if (p.spins_remaining > 0) {
+            const passBtn =
+              p.mandatory_spins === 0
+                ? `<button class="primary" onclick="passSpins()">Pass Remaining Spins</button>`
+                : "";
+            controlsHtml = `
+              <button class="spin-btn" onclick="spinAgain()">SPIN</button>
+              <div class="row-line" style="justify-content:center;margin-top:0.5rem">${passBtn}</div>`;
+          } else {
+            controlsHtml = `<div class="status-line">Waiting for your next turn...</div>`;
+          }
+        } else {
+          controlsHtml = `<div class="status-line">${
+            state.current_player ? `Waiting for ${state.players[state.current_player].name}...` : "Waiting for the host to start a turn."
+          }</div>`;
+        }
+
+        body.innerHTML = `
+          <div class="my-stats">
+            <div class="p-tokens display-num">${p.token_total} tokens</div>
+            <div class="p-spins">${p.spins_remaining} spin(s)${
+              p.mandatory_spins > 0 ? ` (${p.mandatory_spins} mandatory)` : ""
+            }</div>
+            <div class="p-hallucinations" style="justify-content:center">${hallucinationDotsHtml(
+              p.hallucination_count,
+              p.max_hallucinations
+            )}</div>
+          </div>
+          <div class="board">${boardHtml()}</div>
+          <div>${controlsHtml}</div>
+          <div class="scoreboard">${PLAYERS.map(playerCardHtml).join("")}</div>
+        `;
+      }
+
+      poll();
+      setInterval(poll, 200);
+    </script>
+  </body>
+</html>
