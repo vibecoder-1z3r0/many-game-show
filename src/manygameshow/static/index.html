@@ -142,6 +142,8 @@
     <div class="create-buttons">
       <button onclick="createSquadSquabbleGame()">New Squad Squabble Game</button>
       <button onclick="createSpeedPointsGame()">New Speed Points Game</button>
+      <select id="big-tokens-board-select"></select>
+      <button onclick="createBigTokensGame()">New Big Tokens Game</button>
     </div>
     <div class="games" id="games"></div>
     <script>
@@ -151,7 +153,18 @@
       const GAME_TYPES = [
         { key: "squad-squabble", label: "Squad Squabble", render: renderSquadSquabbleCard },
         { key: "speed-points", label: "Speed Points", render: renderSpeedPointsCard },
+        { key: "big-tokens", label: "Big Tokens", render: renderBigTokensCard },
       ];
+
+      async function loadBoardOptions() {
+        const resp = await fetch("/api/big-tokens/games/boards");
+        const boards = await resp.json();
+        const select = document.getElementById("big-tokens-board-select");
+        select.innerHTML = boards
+          .map((b) => `<option value="${b.id}">${b.name}</option>`)
+          .join("");
+      }
+      loadBoardOptions();
 
       async function createSquadSquabbleGame() {
         const resp = await fetch("/api/squad-squabble/games/", {
@@ -171,6 +184,17 @@
         });
         const game = await resp.json();
         location.href = `/speed-points.html?id=${game.id}&view=host`;
+      }
+
+      async function createBigTokensGame() {
+        const boardId = document.getElementById("big-tokens-board-select").value;
+        const resp = await fetch("/api/big-tokens/games/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ board_id: boardId }),
+        });
+        const game = await resp.json();
+        location.href = `/big-tokens.html?id=${game.id}&view=control`;
       }
 
       function controllingLabel(g) {
@@ -232,6 +256,34 @@
               <a href="/speed-points.html?id=${g.id}&view=host">Host</a>
               <a href="/speed-points.html?id=${g.id}&view=judge">Judge</a>
               <button class="danger" onclick="deleteGame('speed-points', '${g.id}')">Delete</button>
+            </div>
+          </div>`;
+      }
+
+      function bigTokensTurnLabel(g) {
+        if (!g.current_player) return "Not started";
+        return `${g.players[g.current_player].name}'s turn`;
+      }
+
+      function renderBigTokensCard(g) {
+        const totals = ["player1", "player2", "player3"]
+          .map((p) => `${g.players[p].name}: ${g.players[p].token_total}`)
+          .join(" · ");
+        return `
+          <div class="game-card">
+            <div>
+              <div class="game-type">Big Tokens</div>
+              <strong>${g.board_name}</strong>
+              <div class="meta">${totals}</div>
+              <div class="meta">Round ${g.round_number} · ${bigTokensTurnLabel(g)}</div>
+            </div>
+            <div class="links">
+              <a href="/big-tokens.html?id=${g.id}&view=main">Main</a>
+              <a href="/big-tokens.html?id=${g.id}&view=control">Control</a>
+              <a href="/big-tokens.html?id=${g.id}&view=player1">P1</a>
+              <a href="/big-tokens.html?id=${g.id}&view=player2">P2</a>
+              <a href="/big-tokens.html?id=${g.id}&view=player3">P3</a>
+              <button class="danger" onclick="deleteGame('big-tokens', '${g.id}')">Delete</button>
             </div>
           </div>`;
       }
