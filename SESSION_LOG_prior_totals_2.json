@@ -1,0 +1,7 @@
+{
+  "_comment": "Frozen totals from SESSION_LOG_2.md's 'Combined Summary' footer (which already merges SESSION_LOG.md's turns 1-69 with SESSION_LOG_2.md's own turns 16-42), for scripts/session_timing.py --prior-summary going forward from SESSION_LOG_3.md. Transcribed from that already-rounded printed footer, not recomputed from source — SESSION_LOG_2.md's raw source JSONL no longer has full precision available (see its own frozen header). Token usage isn't included: the combined total in that footer was itself only a since-tracking-began partial figure, not reliable to carry forward as a baseline.",
+  "turns": 96,
+  "agent_seconds": 14940,
+  "think_seconds": 8520,
+  "think_outliers": 14
+}

@@ -160,6 +160,7 @@ def test_tokens_square_resolves_immediately(
     assert body["pending_square_index"] is None
     assert body["awaiting"] is None
     assert body["current_player"] == "player1"
+    assert body["last_landed_square_index"] == 0
 
 
 def test_double_square_doubles_token_total(
@@ -481,6 +482,56 @@ def test_start_round_preserves_game_scoped_eliminations(client: TestClient) -> N
     p1 = resp.json()["players"]["player1"]
     assert p1["is_out"] is True
     assert p1["hallucination_count"] == 3
+
+
+def test_last_landed_square_persists_after_immediate_resolution(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=2)
+    body = _spin_and_land(client, game_id, monkeypatch, 5)  # +1000 Tokens
+    assert body["last_landed_square_index"] == 5
+    # A second, unrelated mutation shouldn't clear it.
+    body = _adjust(client, game_id, "player2", token_total=10)
+    assert body["last_landed_square_index"] == 5
+
+
+def test_last_landed_square_persists_through_pending_resolution(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=1)
+    body = _spin_and_land(client, game_id, monkeypatch, 8)  # Steal 300 Tokens
+    assert body["last_landed_square_index"] == 8
+    body = _target(client, game_id, "player2")
+    assert body["last_landed_square_index"] == 8
+
+
+def test_starting_a_new_spin_clears_the_previous_highlight(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=2)
+    _spin_and_land(client, game_id, monkeypatch, 0)
+    body = _start_spin(client, game_id)
+    assert body["last_landed_square_index"] is None
+
+
+def test_clear_highlight_endpoint(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=1)
+    body = _spin_and_land(client, game_id, monkeypatch, 0)
+    assert body["last_landed_square_index"] == 0
+
+    resp = client.patch(f"/api/big-tokens/games/{game_id}/clear-highlight")
+    assert resp.status_code == 200
+    assert resp.json()["last_landed_square_index"] is None
 
 
 def test_reset_game_clears_state_but_keeps_names(client: TestClient) -> None:

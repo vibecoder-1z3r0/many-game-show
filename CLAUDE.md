@@ -17,21 +17,27 @@ frontend conventions, and AI attribution respectively.
   `Vibe-Coder 1.z3r0 <243014891+vibecoder-1z3r0@users.noreply.github.com>`.
 - Branch for this Claude agent: `claude/conference-demo-app-h3448o`.
   Push with `git push -u origin claude/conference-demo-app-h3448o`.
-- **Refresh `SESSION_LOG_2.md` as part of every commit+push.** Regenerate
+- **Refresh `SESSION_LOG_3.md` as part of every commit+push.** Regenerate
   it with:
   ```
   python3 scripts/session_timing.py <session_id> \
-    --skip-duplicate 15 --prior-summary SESSION_LOG_prior_totals.json
+    --skip-duplicate 9 --prior-summary SESSION_LOG_prior_totals_2.json
   ```
   (see the script's docstring for what it reports and what those flags
   do) before pushing, so the log stays current rather than needing to be
-  asked each time. `SESSION_LOG.md` is a frozen historical snapshot (see
-  its own header) — don't regenerate over it, and don't edit
-  `SESSION_LOG_prior_totals.json` (it's derived from that frozen file's
-  footer and should stay fixed). The script overwrites the whole file,
-  including the "continued from" header note — re-add that note (copy it
-  from the file's git history if needed) after every regeneration, don't
-  just let it silently disappear.
+  asked each time. `SESSION_LOG.md` and `SESSION_LOG_2.md` are frozen
+  historical snapshots (see each file's own header — both were frozen by
+  the same failure mode: a container reset truncating the live
+  transcript) — don't regenerate over either one, and don't edit
+  `SESSION_LOG_prior_totals.json` or `SESSION_LOG_prior_totals_2.json`
+  (each is derived from its corresponding frozen file's footer and
+  should stay fixed). If this happens again, freeze `SESSION_LOG_3.md`
+  the same way (add a frozen-historical header, derive a
+  `SESSION_LOG_prior_totals_3.json` from its last "Combined Summary"
+  footer) and start a `SESSION_LOG_4.md`. The script overwrites the whole
+  file, including the "continued from" header note — re-add that note
+  (copy it from the file's git history if needed) after every
+  regeneration, don't just let it silently disappear.
 
 ## Before committing
 

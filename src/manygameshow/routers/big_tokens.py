@@ -73,6 +73,7 @@ def _to_read(game: BigTokensGame) -> BigTokensGameRead:
         chase_position=chase_position(game),
         awaiting=awaiting(game),
         pending_square_index=game.pending_square_index,
+        last_landed_square_index=game.last_landed_square_index,
         elimination_scope=board.elimination_scope,
         status=game.status,
         created_at=game.created_at,
@@ -154,6 +155,7 @@ def start_round(game_id: str, session: SessionDep) -> BigTokensGameRead:
     game.chase_started_at = None
     game.pending_square_index = None
     game.pending_choice = None
+    game.last_landed_square_index = None
     for player in ALL_PLAYERS:
         state = player_state(game, player)
         state.spins_remaining = 0
@@ -238,6 +240,7 @@ def start_spin(game_id: str, session: SessionDep) -> BigTokensGameRead:
     if game.chase_started_at is not None or game.pending_square_index is not None:
         raise HTTPException(status_code=400, detail="A spin is already in progress")
     game.chase_started_at = datetime.now(UTC).replace(tzinfo=None)
+    game.last_landed_square_index = None
     return _to_read(_save(game, session))
 
 
@@ -358,6 +361,7 @@ def stop_spin(game_id: str, session: SessionDep) -> BigTokensGameRead:
     game.chase_started_at = None
     game.pending_square_index = locked_index
     game.pending_choice = None
+    game.last_landed_square_index = locked_index
     _pay_spin_cost(game, player)
 
     # Landing cascades the square for FUTURE spins, but resolution below
@@ -487,4 +491,15 @@ def reset_game(game_id: str, session: SessionDep) -> BigTokensGameRead:
     game.chase_started_at = None
     game.pending_square_index = None
     game.pending_choice = None
+    game.last_landed_square_index = None
+    return _to_read(_save(game, session))
+
+
+@router.patch("/{game_id}/clear-highlight", response_model=BigTokensGameRead)
+def clear_highlight(game_id: str, session: SessionDep) -> BigTokensGameRead:
+    """Host action: stop showing the last-landed square as highlighted,
+    without otherwise touching game state. The highlight also clears
+    itself automatically the next time a spin starts."""
+    game = _get_game(game_id, session)
+    game.last_landed_square_index = None
     return _to_read(_save(game, session))

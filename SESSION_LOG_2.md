@@ -1,24 +1,27 @@
 # Session Timing Report (continued)
 
-Continuation of [SESSION_LOG.md](./SESSION_LOG.md), which is frozen as of
-turn 69 after a container reset truncated the transcript this report is
-generated from. This is the log to keep regenerating with
-`python3 scripts/session_timing.py <session_id> --skip-duplicate 15 --prior-summary SESSION_LOG_prior_totals.json`
-going forward (see the script's own docstring for what those flags do).
+**Historical / frozen.** The container running this session was reset
+again partway through (same failure mode as the first reset — see
+[SESSION_LOG.md](./SESSION_LOG.md)'s header), which truncated the raw
+transcript this report was generated from. This file is the last full
+snapshot from just before that happened (turns 1–42, continuing
+SESSION_LOG.md's turns 1–69) and is no longer regenerated — don't
+overwrite it with `scripts/session_timing.py`. See
+[SESSION_LOG_3.md](./SESSION_LOG_3.md) for the continuation from this
+reset onward — note that its rows 1–9 duplicate this file's rows 34–42
+(see its header for why), so don't double-count those when totaling
+across all three files.
 
-**Rows 1-15 below duplicate [SESSION_LOG.md](./SESSION_LOG.md)'s rows
-55-69** — the post-reset transcript this report reads from turned out to
-still contain that tail of turns rather than starting completely empty,
-so the same 15 turns got logged twice under different row numbers. The
-"Combined Summary" section at the bottom already accounts for this
-(it adds only rows 16+ here to SESSION_LOG.md's totals) — don't also
-double-count rows 1-15 yourself.
+Rows 1-15 below duplicate [SESSION_LOG.md](./SESSION_LOG.md)'s rows
+55-69 (that file's own header explains why) — the "Combined Summary"
+section below already accounts for this, so don't double-count rows
+1-15 yourself when reading this file in isolation either.
 
 Token-usage columns (Input/Output/Cache Write/Cache Read) were added
-starting this file's regeneration on 2026-09-08 — SESSION_LOG.md (the
-frozen turns 1-69 file) predates that and doesn't have them, so the
-Combined Summary's token totals only cover "since tracking began," not
-the whole session.
+starting this file's first regeneration on 2026-09-08 — SESSION_LOG.md
+(the frozen turns 1-69 file) predates that and doesn't have them, so the
+Combined Summary's token totals below only cover "since tracking began,"
+not the whole session.
 
 Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bdab-7caf46e1dd84.jsonl`
 
