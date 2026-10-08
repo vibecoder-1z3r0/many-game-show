@@ -547,6 +547,7 @@
         <fieldset>
           <legend>Board</legend>
           <div id="control-board" class="board"></div>
+          <button class="primary" onclick="clearHighlight()">Clear Selected Square Highlighting</button>
         </fieldset>
         <div class="status-line" id="control-status-line"></div>
       </section>
@@ -719,6 +720,10 @@
         patch("/stop-spin");
       }
 
+      function clearHighlight() {
+        patch("/clear-highlight");
+      }
+
       function choose(choiceValue) {
         patch("/choose", { choice: choiceValue });
       }
@@ -757,15 +762,14 @@
 
       // ----- Rendering -----
 
-      function boardHtml(highlightSquare) {
+      function boardHtml() {
         return state.squares
           .map((sq, i) => {
             const [row, col] = SQUARE_GRID_POS[i];
             const classes = ["square"];
             if (sq.type === "hallucination") classes.push("hallucination");
             if (state.chase_position === i) classes.push("chase-lit");
-            if (state.pending_square_index === i) classes.push("landed");
-            if (highlightSquare === i) classes.push("landed");
+            if (state.last_landed_square_index === i) classes.push("landed");
             return (
               `<div class="${classes.join(" ")}" ` +
               `style="grid-row:${row + 1};grid-column:${col + 1}">${sq.label}</div>`

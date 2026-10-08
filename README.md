@@ -105,5 +105,8 @@ in CI on every push/PR.
   (frozen: a container reset truncated the transcript this is generated
   from — see the file's own header)
 - [SESSION_LOG_2.md](./SESSION_LOG_2.md) — continuation of the above from
-  the reset onward (turn numbering restarts at 1, since it's a separate
+  the reset onward, turns 1–42 (also frozen: a second reset truncated the
+  transcript again — see the file's own header)
+- [SESSION_LOG_3.md](./SESSION_LOG_3.md) — continuation from the second
+  reset onward (turn numbering restarts at 1, since it's a separate
   transcript file)

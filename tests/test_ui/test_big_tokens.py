@@ -236,3 +236,36 @@ def test_reset_game_clears_scores(live_server: str, page: Page) -> None:
     page.once("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Reset Game", exact=True).click()
     expect(page.locator("#control-players")).to_contain_text("0 tokens")
+
+
+def test_landed_square_stays_highlighted_until_new_spin_or_cleared(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _adjust(live_server, page, game_id, "player1", spins_remaining=2)
+    _set_active(live_server, page, game_id, "player1")
+    _goto(live_server, page, game_id, "player1")
+
+    page.click(".spin-btn")
+    expect(page.locator(".spin-btn")).to_contain_text("STOP")
+    page.wait_for_timeout(int(0.5 * CHASE_STEP_S * 1000))  # land on square 0
+    page.click(".spin-btn.stop")
+
+    landed = page.locator("#player1-body .square.landed")
+    expect(landed).to_have_count(1)
+    # Stays highlighted across ordinary poll ticks after resolution.
+    page.wait_for_timeout(600)
+    expect(landed).to_have_count(1)
+
+    # Clearing from Control removes it everywhere.
+    _goto(live_server, page, game_id, "control")
+    expect(page.locator("#control-board .square.landed")).to_have_count(1)
+    page.get_by_role("button", name="Clear Selected Square Highlighting").click()
+    expect(page.locator("#control-board .square.landed")).to_have_count(0)
+
+    # Starting a new spin also clears it (re-grant a spin first).
+    _adjust(live_server, page, game_id, "player1", spins_remaining=1)
+    _goto(live_server, page, game_id, "player1")
+    page.wait_for_timeout(300)
+    page.click(".spin-btn")
+    expect(page.locator("#player1-body .square.landed")).to_have_count(0)

@@ -103,6 +103,13 @@ class BigTokensGame(SQLModel, table=True):
     pending_square_index: int | None = Field(default=None)
     pending_choice: str | None = Field(default=None)
 
+    # Which square the board should keep showing as "landed on", for
+    # display purposes — set alongside pending_square_index at stop-spin
+    # time, but (unlike it) stays set after resolution completes. Only
+    # cleared by starting a new spin or an explicit host
+    # PATCH .../clear-highlight.
+    last_landed_square_index: int | None = Field(default=None)
+
     status: str = Field(default="active")
 
     created_at: datetime = Field(default_factory=_utcnow)
@@ -145,6 +152,7 @@ class BigTokensGameRead(SQLModel):
     chase_position: int | None
     awaiting: str | None
     pending_square_index: int | None
+    last_landed_square_index: int | None
     elimination_scope: str
     status: str
     created_at: datetime
