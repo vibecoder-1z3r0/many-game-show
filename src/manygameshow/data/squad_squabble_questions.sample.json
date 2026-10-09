@@ -97,6 +97,38 @@
         { "text": "A link no one clicks", "points": 6 },
         { "text": "Office parking complaint", "points": 4 }
       ]
+    },
+    {
+      "id": "tech-bash-passwords",
+      "prompt": "We asked 100 developers @TechBash: common places people put passwords where they're not suppose to",
+      "answers": [
+        { "text": "ANSWER 1", "points": 55 },
+        { "text": "ANSWER 2", "points": 45 }
+      ]
+    },
+    {
+      "id": "tech-bash-code-review-comment",
+      "prompt": "We asked 100 developers @TechBash: name a reason someone leaves a code review comment",
+      "answers": [
+        { "text": "ANSWER 1", "points": 55 },
+        { "text": "ANSWER 2", "points": 45 }
+      ]
+    },
+    {
+      "id": "tech-bash-build-failed",
+      "prompt": "We asked 100 developers @TechBash: name a reason as to why the build failed",
+      "answers": [
+        { "text": "ANSWER 1", "points": 55 },
+        { "text": "ANSWER 2", "points": 45 }
+      ]
+    },
+    {
+      "id": "tech-bash-favorite-thing-at-techbash",
+      "prompt": "We asked 100 developers @TechBash: what is your favorite thing at TechBash",
+      "answers": [
+        { "text": "ANSWER 1", "points": 55 },
+        { "text": "ANSWER 2", "points": 45 }
+      ]
     }
   ]
 }
