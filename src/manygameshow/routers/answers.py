@@ -338,9 +338,25 @@ def reveal_clue(game_id: str, session: SessionDep) -> AnswersGameRead:
         raise HTTPException(status_code=400, detail="No clue is selected")
     if clue_phase(game) == "revealed":
         raise HTTPException(status_code=400, detail="Clue is already revealed")
-    if is_selected_context_clue(game) and game.context_clue_wager is None:
-        raise HTTPException(status_code=400, detail="Set the wager before revealing")
+    board_control = game.board_control
+    if is_selected_context_clue(game):
+        if game.context_clue_wager is None:
+            raise HTTPException(
+                status_code=400, detail="Set the wager before revealing"
+            )
+        if board_control is None:
+            raise HTTPException(
+                status_code=400, detail="No one holds board control to answer it"
+            )
     game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
+    if is_selected_context_clue(game) and board_control is not None:
+        # Context Clue is still timed — it just skips the ring-in race
+        # since only the board-control holder can answer it. Reuse the
+        # same buzzed_player/answer-timer machinery as a regular buzz.
+        game.buzzed_player = board_control
+        game.buzz_answer_started_at = game.clue_revealed_at
+        game.buzz_timer_remaining_ms = answer_time_for(game, board_control)
+        game.buzz_timer_running = True
     return _to_read(_save(game, session), show_all=True)
 
 

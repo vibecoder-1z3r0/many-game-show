@@ -179,6 +179,34 @@ def test_reveal_requires_wager_for_context_clue(client: TestClient) -> None:
     assert resp.status_code == 400
 
 
+def test_reveal_requires_board_control_for_context_clue(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 4)  # the context clue
+    client.patch(f"/api/answers/games/{game_id}/context-wager", json={"wager": 500})
+    resp = client.patch(f"/api/answers/games/{game_id}/reveal-clue")
+    assert resp.status_code == 400
+
+
+def test_context_clue_is_timed_once_revealed(client: TestClient) -> None:
+    game_id = _create_game(client)
+    client.patch(
+        f"/api/answers/games/{game_id}/board-control", json={"player": "player1"}
+    )
+    _select_clue(client, game_id, 0, 4)
+    client.patch(f"/api/answers/games/{game_id}/context-wager", json={"wager": 500})
+    body = _reveal_clue(client, game_id)
+    assert body["buzzed_player"] == "player1"
+    assert body["answer_timer_running"] is True
+    # Close to the full duration — a couple ms may have ticked by already.
+    full_duration = body["players"]["player1"]["answer_time_ms"]
+    assert full_duration - 100 <= body["buzz_remaining_ms"] <= full_duration
+
+    # Host timer controls work on it the same as a regular clue.
+    resp = client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
+    assert resp.status_code == 200
+    assert resp.json()["answer_timer_running"] is False
+
+
 def test_context_wager_rejected_for_regular_clue(client: TestClient) -> None:
     game_id = _create_game(client)
     _select_clue(client, game_id, 0, 0)
@@ -428,7 +456,9 @@ def test_context_clue_no_buzzing(client: TestClient) -> None:
     client.patch(f"/api/answers/games/{game_id}/context-wager", json={"wager": 500})
     _reveal_clue(client, game_id)
     body = _buzz(client, game_id, "player2")
-    assert body["buzzed_player"] is None
+    # player2's buzz is a no-op — player1 (board control) is already
+    # the one "answering" (timed, just without a ring-in race).
+    assert body["buzzed_player"] == "player1"
 
 
 def test_board_control_manual_override(client: TestClient) -> None:
