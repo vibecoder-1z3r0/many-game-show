@@ -175,17 +175,29 @@ class FinalEntryRead(SQLModel):
     correct: bool | None
 
 
+class PlayerStatusRead(SQLModel):
+    name: str
+    score: int
+    can_ring_in: bool
+    ring_in_start_delay_ms: int
+    ring_in_window_ms: int
+    answer_time_ms: int
+
+
 class AnswersGameRead(SQLModel):
     id: str
     current_round: RoundName
     categories: list[CategoryRead]
-    players: dict[str, PlayerScore]
+    players: dict[str, PlayerStatusRead]
     board_control: Player | None
     selected_category_index: int | None
     selected_clue_index: int | None
     clue_phase: str | None
     buzzed_player: Player | None
     context_clue_wager: int | None
+    ring_in_elapsed_ms: int | None
+    buzz_elapsed_ms: int | None
+    no_one_can_answer: bool
     ring_in_start_delay_ms: int
     ring_in_window_ms: int
     answer_time_ms: int
@@ -380,6 +392,20 @@ def ring_in_window_expired(game: AnswersGame, now: datetime | None = None) -> bo
         return elapsed_ms > start + window
 
     return all(window_closed(p) for p in remaining)
+
+
+def ring_in_elapsed_ms(game: AnswersGame, now: datetime | None = None) -> int | None:
+    if game.clue_revealed_at is None:
+        return None
+    now = now if now is not None else _utcnow()
+    return int((now - game.clue_revealed_at).total_seconds() * 1000)
+
+
+def buzz_elapsed_ms(game: AnswersGame, now: datetime | None = None) -> int | None:
+    if game.buzz_answer_started_at is None:
+        return None
+    now = now if now is not None else _utcnow()
+    return int((now - game.buzz_answer_started_at).total_seconds() * 1000)
 
 
 def final_entries(game: AnswersGame) -> dict[Player, FinalEntry]:
