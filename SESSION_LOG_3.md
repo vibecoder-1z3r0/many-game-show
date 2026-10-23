@@ -40,17 +40,17 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 18 | Yes scores can go negative and can be adjusted manually like the other… | 00:49:00 | 7s | 4s | 4 | 1,146 | 830 | 1,250,290 |
 | 19 | Oh right - I added them :). I still commit outside of the LLM from tim… | 00:49:11 | 3s | 14s | 4 | 480 | 428 | 1,252,266 |
 | 20 | What else do we need to hash out? | 00:49:28 | 1m 44s | 24s | 12 | 14,920 | 6,772 | 3,768,334 |
-| 21 | So let it be written, so let it be done! | 00:51:35 | 5m 31s | — | 96 | 81,625 | 78,885 | 32,260,715 |
+| 21 | So let it be written, so let it be done! | 00:51:35 | 11m 11s | — | 248 | 157,611 | 175,825 | 85,693,070 |
 
 **Total turns:** 21  
-**Total agent time spent (excl. flagged):** 1h 30m  
+**Total agent time spent (excl. flagged):** 1h 36m  
 **Total human think time (excl. outliers):** 24m 3s  
 **Average human think time (excl. outliers):** 2m 0s  
 **Think-time outliers (> 15 min):** 8  
-**Total input tokens:** 1,397  
-**Total output tokens:** 651,786  
-**Total cache-write tokens:** 5,333,641  
-**Total cache-read tokens:** 277,337,595  
+**Total input tokens:** 1,549  
+**Total output tokens:** 727,772  
+**Total cache-write tokens:** 5,430,581  
+**Total cache-read tokens:** 330,769,950  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
 ⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14 had a 'human think time' over 15 min (total 1063h 58m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
@@ -62,10 +62,10 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
 **Combined total turns:** 108  
-**Combined agent time spent (excl. flagged):** 4h 35m  
+**Combined agent time spent (excl. flagged):** 4h 41m  
 **Combined human think time (excl. outliers):** 2h 40m  
 **Combined think-time outliers:** 16  
-**Total input tokens (since tracking began, this file only):** 498  
-**Total output tokens (since tracking began, this file only):** 209,063  
-**Total cache-write tokens (since tracking began, this file only):** 2,786,602  
-**Total cache-read tokens (since tracking began, this file only):** 145,295,086
+**Total input tokens (since tracking began, this file only):** 650  
+**Total output tokens (since tracking began, this file only):** 285,049  
+**Total cache-write tokens (since tracking began, this file only):** 2,883,542  
+**Total cache-read tokens (since tracking began, this file only):** 198,727,441
