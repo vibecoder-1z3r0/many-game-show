@@ -8,7 +8,7 @@ from manygameshow.models.answers import (
     RoundName,
     TimingOverride,
     answer_time_for,
-    buzz_elapsed_ms,
+    buzz_remaining_ms,
     can_ring_in,
     categories_revealed,
     clear_answer_time_overrides,
@@ -294,15 +294,39 @@ def test_final_bank_content() -> None:
     assert "Ada Lovelace" in answer
 
 
-def test_buzz_elapsed_ms_none_when_no_one_buzzed() -> None:
+def test_buzz_remaining_ms_none_when_no_one_buzzed() -> None:
     game = AnswersGame()
-    assert buzz_elapsed_ms(game) is None
+    assert buzz_remaining_ms(game) is None
 
 
-def test_buzz_elapsed_ms_frozen_stays_fixed_regardless_of_now() -> None:
+def test_buzz_remaining_ms_counts_down_while_running() -> None:
     game = AnswersGame(
+        buzzed_player=Player.PLAYER1,
         buzz_answer_started_at=datetime(2024, 1, 1, 0, 0, 0),
-        buzz_timer_frozen_ms=1234,
+        buzz_timer_remaining_ms=8000,
+        buzz_timer_running=True,
+    )
+    now = datetime(2024, 1, 1, 0, 0, 3)
+    assert buzz_remaining_ms(game, now=now) == 5000
+
+
+def test_buzz_remaining_ms_clamped_to_zero() -> None:
+    game = AnswersGame(
+        buzzed_player=Player.PLAYER1,
+        buzz_answer_started_at=datetime(2024, 1, 1, 0, 0, 0),
+        buzz_timer_remaining_ms=1000,
+        buzz_timer_running=True,
+    )
+    now = datetime(2024, 1, 1, 0, 0, 5)
+    assert buzz_remaining_ms(game, now=now) == 0
+
+
+def test_buzz_remaining_ms_frozen_while_paused() -> None:
+    game = AnswersGame(
+        buzzed_player=Player.PLAYER1,
+        buzz_answer_started_at=datetime(2024, 1, 1, 0, 0, 0),
+        buzz_timer_remaining_ms=4321,
+        buzz_timer_running=False,
     )
     now = datetime(2024, 1, 1, 0, 5, 0)
-    assert buzz_elapsed_ms(game, now=now) == 1234
+    assert buzz_remaining_ms(game, now=now) == 4321

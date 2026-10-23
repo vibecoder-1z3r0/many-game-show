@@ -869,12 +869,24 @@
         patch("/no-one-answered");
       }
 
+      function playAnswerTimer() {
+        patch("/play-answer-timer");
+      }
+
+      function pauseAnswerTimer() {
+        patch("/pause-answer-timer");
+      }
+
       function stopAnswerTimer() {
         patch("/stop-answer-timer");
       }
 
-      function resumeAnswerTimer() {
-        patch("/resume-answer-timer");
+      function resetAnswerTimer() {
+        patch("/reset-answer-timer");
+      }
+
+      function clearAnswerTimer() {
+        patch("/clear-answer-timer");
       }
 
       function setBoardControl(player) {
@@ -1059,13 +1071,13 @@
           return;
         }
         if (gs.buzzed_player) {
-          const name = gs.players[gs.buzzed_player].name;
-          const pct = gs.answer_time_ms
-            ? Math.max(0, 100 - (100 * (gs.buzz_elapsed_ms || 0)) / gs.answer_time_ms)
+          const p = gs.players[gs.buzzed_player];
+          const pct = p.answer_time_ms
+            ? Math.min(100, (100 * (gs.buzz_remaining_ms || 0)) / p.answer_time_ms)
             : 0;
           bar.hidden = false;
           bar.innerHTML =
-            `<div class="status-name">${name}</div>` + countdownBarHtml(pct, "answer");
+            `<div class="status-name">${p.name}</div>` + countdownBarHtml(pct, "answer");
           return;
         }
         bar.hidden = true;
@@ -1189,11 +1201,16 @@
             <div class="row-line">
               <button class="primary" onclick="judge(true)">Correct</button>
               <button class="primary" onclick="judge(false)">Incorrect</button>
+            </div>
+            <div class="row-line">
               ${
-                gs.answer_timer_stopped
-                  ? `<button class="primary" onclick="resumeAnswerTimer()">Resume Timer</button>`
-                  : `<button class="primary" onclick="stopAnswerTimer()">Stop Timer</button>`
+                gs.answer_timer_running
+                  ? `<button class="primary" onclick="pauseAnswerTimer()">Pause</button>`
+                  : `<button class="primary" onclick="playAnswerTimer()">Play</button>`
               }
+              <button class="primary" onclick="stopAnswerTimer()">Stop</button>
+              <button class="primary" onclick="resetAnswerTimer()">Reset</button>
+              <button class="primary" onclick="clearAnswerTimer()">Clear</button>
             </div>`;
         } else {
           html += `<div class="status-line">Waiting for a ring-in...</div>`;
@@ -1267,7 +1284,7 @@
         const me = gs.players[player];
         if (gs.buzzed_player === player) {
           const pct = me.answer_time_ms
-            ? Math.max(0, 100 - (100 * (gs.buzz_elapsed_ms || 0)) / me.answer_time_ms)
+            ? Math.min(100, (100 * (gs.buzz_remaining_ms || 0)) / me.answer_time_ms)
             : 0;
           return (
             `<div class="status-line" style="text-align:center">You're up! Answer now.</div>` +

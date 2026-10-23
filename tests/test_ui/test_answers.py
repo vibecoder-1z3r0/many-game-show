@@ -189,9 +189,11 @@ def test_select_reveal_buzz_judge_correct_awards_points_and_board_control(
     expect(page.locator("#control-clue-fieldset")).to_be_hidden()
 
 
-def test_stop_timer_button_freezes_bar_then_resume_unfreezes(
-    live_server: str, page: Page
-) -> None:
+def _get_state(live_server: str, page: Page, game_id: str) -> dict:
+    return page.request.get(f"{live_server}/api/answers/games/{game_id}").json()
+
+
+def test_answer_timer_play_pause_stop_reset_clear(live_server: str, page: Page) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
 
@@ -203,19 +205,40 @@ def test_stop_timer_button_freezes_bar_then_resume_unfreezes(
     _buzz(page, "player1")
 
     _goto(live_server, page, game_id, "control")
-    page.get_by_role("button", name="Stop Timer").click()
+    clue_status = page.locator("#control-clue-status")
 
-    frozen = page.request.get(f"{live_server}/api/answers/games/{game_id}").json()[
-        "buzz_elapsed_ms"
-    ]
+    # Pause freezes the remaining time in place.
+    clue_status.get_by_role("button", name="Pause", exact=True).click()
+    frozen = _get_state(live_server, page, game_id)["buzz_remaining_ms"]
     page.wait_for_timeout(250)
-    still_frozen = page.request.get(
-        f"{live_server}/api/answers/games/{game_id}"
-    ).json()["buzz_elapsed_ms"]
-    assert still_frozen == frozen
+    assert _get_state(live_server, page, game_id)["buzz_remaining_ms"] == frozen
 
-    page.get_by_role("button", name="Resume Timer").click()
-    expect(page.get_by_role("button", name="Stop Timer")).to_be_visible()
+    # Play resumes counting down from there.
+    clue_status.get_by_role("button", name="Play", exact=True).click()
+    expect(clue_status.get_by_role("button", name="Pause", exact=True)).to_be_visible()
+
+    # Stop zeroes it out and pauses.
+    clue_status.get_by_role("button", name="Stop", exact=True).click()
+    stopped = _get_state(live_server, page, game_id)
+    assert stopped["buzz_remaining_ms"] == 0
+    assert stopped["answer_timer_running"] is False
+    expect(clue_status.get_by_role("button", name="Play", exact=True)).to_be_visible()
+
+    # Reset restores the full duration.
+    clue_status.get_by_role("button", name="Reset", exact=True).click()
+    reset_state = _get_state(live_server, page, game_id)
+    assert (
+        reset_state["buzz_remaining_ms"]
+        == reset_state["players"]["player1"]["answer_time_ms"]
+    )
+
+    # Clear cancels the attempt and reopens ring-in for everyone.
+    clue_status.get_by_role("button", name="Clear", exact=True).click()
+    cleared = _get_state(live_server, page, game_id)
+    assert cleared["buzzed_player"] is None
+    expect(page.locator("#control-clue-status")).to_contain_text(
+        "Waiting for a ring-in"
+    )
 
 
 def test_judge_incorrect_locks_out_player_and_reopens_ring_in(

@@ -112,13 +112,16 @@ class AnswersGame(SQLModel, table=True):
     selected_clue_index: int | None = Field(default=None)
     clue_revealed_at: datetime | None = Field(default=None)
 
-    # Regular-clue ring-in state.
+    # Regular-clue ring-in state. The answer countdown is tracked as
+    # time *remaining* (counts down), not elapsed: buzz_timer_remaining_ms
+    # is the remaining-ms value as of buzz_answer_started_at while
+    # running, or the frozen remaining value directly while paused —
+    # see buzz_remaining_ms() below. Host transport controls (Play/
+    # Pause/Stop/Reset/Clear) all just manipulate these three fields.
     buzzed_player: Player | None = Field(default=None)
     buzz_answer_started_at: datetime | None = Field(default=None)
-    # Set by the host to freeze the answer countdown bar in place (e.g.
-    # once the contestant has visibly started talking) without affecting
-    # judging. Cleared whenever a new answer attempt starts.
-    buzz_timer_frozen_ms: int | None = Field(default=None)
+    buzz_timer_remaining_ms: int | None = Field(default=None)
+    buzz_timer_running: bool = Field(default=True)
 
     # Context Clue (Daily Double) wager, entered by the host before reveal.
     context_clue_wager: int | None = Field(default=None)
@@ -200,8 +203,8 @@ class AnswersGameRead(SQLModel):
     buzzed_player: Player | None
     context_clue_wager: int | None
     ring_in_elapsed_ms: int | None
-    buzz_elapsed_ms: int | None
-    answer_timer_stopped: bool
+    buzz_remaining_ms: int | None
+    answer_timer_running: bool
     no_one_can_answer: bool
     ring_in_start_delay_ms: int
     ring_in_window_ms: int
@@ -276,6 +279,8 @@ def reset_board_for_round(game: AnswersGame, round_name: RoundName) -> None:
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
+    game.buzz_timer_remaining_ms = None
+    game.buzz_timer_running = True
     game.context_clue_wager = None
 
 
@@ -406,13 +411,17 @@ def ring_in_elapsed_ms(game: AnswersGame, now: datetime | None = None) -> int | 
     return int((now - game.clue_revealed_at).total_seconds() * 1000)
 
 
-def buzz_elapsed_ms(game: AnswersGame, now: datetime | None = None) -> int | None:
-    if game.buzz_answer_started_at is None:
+def buzz_remaining_ms(game: AnswersGame, now: datetime | None = None) -> int | None:
+    """Time left on the answering player's countdown. None if no one's
+    currently answering. Counts down from answer_time_for(player) to 0
+    while running; frozen at buzz_timer_remaining_ms while paused."""
+    if game.buzzed_player is None or game.buzz_timer_remaining_ms is None:
         return None
-    if game.buzz_timer_frozen_ms is not None:
-        return game.buzz_timer_frozen_ms
+    if not game.buzz_timer_running or game.buzz_answer_started_at is None:
+        return max(0, game.buzz_timer_remaining_ms)
     now = now if now is not None else _utcnow()
-    return int((now - game.buzz_answer_started_at).total_seconds() * 1000)
+    elapsed_ms = int((now - game.buzz_answer_started_at).total_seconds() * 1000)
+    return max(0, game.buzz_timer_remaining_ms - elapsed_ms)
 
 
 def final_entries(game: AnswersGame) -> dict[Player, FinalEntry]:

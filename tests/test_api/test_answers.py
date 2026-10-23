@@ -219,54 +219,111 @@ def test_second_buzz_ignored_once_someone_already_in(client: TestClient) -> None
     assert body["buzzed_player"] == "player1"
 
 
-def test_stop_answer_timer_freezes_elapsed_ms(client: TestClient) -> None:
-    game_id = _create_game(client)
+def _buzz_and_select(client: TestClient, game_id: str, player: str = "player1") -> None:
     _set_fast_ring_in(client, game_id)
     _select_clue(client, game_id, 0, 0)
     _reveal_clue(client, game_id)
-    _buzz(client, game_id, "player1")
+    _buzz(client, game_id, player)
+
+
+def test_pause_answer_timer_freezes_remaining_ms(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _buzz_and_select(client, game_id)
     time.sleep(0.05)
 
-    resp = client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
+    resp = client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["answer_timer_stopped"] is True
-    frozen = body["buzz_elapsed_ms"]
+    assert body["answer_timer_running"] is False
+    frozen = body["buzz_remaining_ms"]
     assert frozen is not None
 
     time.sleep(0.05)
     body = _get(client, game_id)
-    assert body["buzz_elapsed_ms"] == frozen
+    assert body["buzz_remaining_ms"] == frozen
 
 
-def test_stop_answer_timer_requires_someone_answering(client: TestClient) -> None:
+def test_pause_answer_timer_requires_someone_answering(client: TestClient) -> None:
     game_id = _create_game(client)
     _select_clue(client, game_id, 0, 0)
     _reveal_clue(client, game_id)
-    resp = client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
+    resp = client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
     assert resp.status_code == 400
 
 
-def test_resume_answer_timer_clears_frozen_flag(client: TestClient) -> None:
+def test_pause_answer_timer_rejected_when_already_paused(client: TestClient) -> None:
     game_id = _create_game(client)
-    _set_fast_ring_in(client, game_id)
-    _select_clue(client, game_id, 0, 0)
-    _reveal_clue(client, game_id)
-    _buzz(client, game_id, "player1")
+    _buzz_and_select(client, game_id)
+    client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
+    resp = client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
+    assert resp.status_code == 400
+
+
+def test_play_answer_timer_resumes_from_paused_remaining(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _buzz_and_select(client, game_id)
+    client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
+    paused_remaining = _get(client, game_id)["buzz_remaining_ms"]
+
+    resp = client.patch(f"/api/answers/games/{game_id}/play-answer-timer")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["answer_timer_running"] is True
+    # Resumes from (approximately) where it was paused — a few ms of
+    # real wall-clock time pass between the two requests.
+    assert abs(body["buzz_remaining_ms"] - paused_remaining) < 100
+
+
+def test_play_answer_timer_rejected_when_already_running(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _buzz_and_select(client, game_id)
+    resp = client.patch(f"/api/answers/games/{game_id}/play-answer-timer")
+    assert resp.status_code == 400
+
+
+def test_stop_answer_timer_zeroes_and_pauses(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _buzz_and_select(client, game_id)
+
+    resp = client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["buzz_remaining_ms"] == 0
+    assert body["answer_timer_running"] is False
+
+
+def test_reset_answer_timer_restores_full_duration_and_keeps_running(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _buzz_and_select(client, game_id)
     client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
 
-    resp = client.patch(f"/api/answers/games/{game_id}/resume-answer-timer")
+    resp = client.patch(f"/api/answers/games/{game_id}/reset-answer-timer")
     assert resp.status_code == 200
-    assert resp.json()["answer_timer_stopped"] is False
+    body = resp.json()
+    assert body["buzz_remaining_ms"] == body["players"]["player1"]["answer_time_ms"]
+    # Reset doesn't change the running/paused state — it was paused (by Stop).
+    assert body["answer_timer_running"] is False
 
 
-def test_resume_answer_timer_rejected_when_not_stopped(client: TestClient) -> None:
+def test_clear_answer_timer_unbuzzes_and_reopens_ring_in(client: TestClient) -> None:
     game_id = _create_game(client)
-    _set_fast_ring_in(client, game_id)
+    _buzz_and_select(client, game_id)
+
+    resp = client.patch(f"/api/answers/games/{game_id}/clear-answer-timer")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["buzzed_player"] is None
+    assert body["buzz_remaining_ms"] is None
+    assert body["players"]["player2"]["can_ring_in"] is True
+
+
+def test_clear_answer_timer_requires_someone_answering(client: TestClient) -> None:
+    game_id = _create_game(client)
     _select_clue(client, game_id, 0, 0)
     _reveal_clue(client, game_id)
-    _buzz(client, game_id, "player1")
-    resp = client.patch(f"/api/answers/games/{game_id}/resume-answer-timer")
+    resp = client.patch(f"/api/answers/games/{game_id}/clear-answer-timer")
     assert resp.status_code == 400
 
 
@@ -626,4 +683,4 @@ def test_timing_fields_present_for_frontend_countdown_math(client: TestClient) -
     assert body["ring_in_elapsed_ms"] is not None
     time.sleep(0.05)
     body = _buzz(client, game_id, "player1")
-    assert body["buzz_elapsed_ms"] is not None
+    assert body["buzz_remaining_ms"] is not None
