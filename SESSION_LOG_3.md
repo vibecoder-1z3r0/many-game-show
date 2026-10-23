@@ -36,17 +36,21 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 14 | I guess that's what I get for trying to work on this over months when … | 03:16:07 | 5s | 357h 10m ⏳ | 4 | 656 | 158 | 1,190,964 |
 | 15 | The conference talk session went really well :) | 00:27:06 | 7s | 10m 23s | 2 | 145 | 598,766 | 0 |
 | 16 | Let’s implement Jeopardy!  Maybe with a different name as we’ve been d… | 00:37:36 | 10m 16s | 4s | 18 | 33,115 | 33,514 | 5,427,039 |
-| 17 | Oh we still need to track turn info like we have been in session markd… | 00:47:56 | 15s | — | 10 | 2,623 | 11,785 | 3,067,588 |
+| 17 | Oh we still need to track turn info like we have been in session markd… | 00:47:56 | 1m 1s | 3s | 48 | 9,869 | 28,358 | 14,851,594 |
+| 18 | Yes scores can go negative and can be adjusted manually like the other… | 00:49:00 | 7s | 4s | 4 | 1,146 | 830 | 1,250,290 |
+| 19 | Oh right - I added them :). I still commit outside of the LLM from tim… | 00:49:11 | 3s | 14s | 4 | 480 | 428 | 1,252,266 |
+| 20 | What else do we need to hash out? | 00:49:28 | 1m 44s | 24s | 12 | 14,920 | 6,772 | 3,768,334 |
+| 21 | So let it be written, so let it be done! | 00:51:35 | 5m 31s | — | 96 | 81,625 | 78,885 | 32,260,715 |
 
-**Total turns:** 17  
-**Total agent time spent (excl. flagged):** 1h 22m  
-**Total human think time (excl. outliers):** 23m 19s  
-**Average human think time (excl. outliers):** 2m 55s  
+**Total turns:** 21  
+**Total agent time spent (excl. flagged):** 1h 30m  
+**Total human think time (excl. outliers):** 24m 3s  
+**Average human think time (excl. outliers):** 2m 0s  
 **Think-time outliers (> 15 min):** 8  
-**Total input tokens:** 1,243  
-**Total output tokens:** 546,369  
-**Total cache-write tokens:** 5,230,153  
-**Total cache-read tokens:** 227,021,984  
+**Total input tokens:** 1,397  
+**Total output tokens:** 651,786  
+**Total cache-write tokens:** 5,333,641  
+**Total cache-read tokens:** 277,337,595  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
 ⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14 had a 'human think time' over 15 min (total 1063h 58m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
@@ -57,11 +61,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 104  
-**Combined agent time spent (excl. flagged):** 4h 27m  
+**Combined total turns:** 108  
+**Combined agent time spent (excl. flagged):** 4h 35m  
 **Combined human think time (excl. outliers):** 2h 40m  
 **Combined think-time outliers:** 16  
-**Total input tokens (since tracking began, this file only):** 344  
-**Total output tokens (since tracking began, this file only):** 103,646  
-**Total cache-write tokens (since tracking began, this file only):** 2,683,114  
-**Total cache-read tokens (since tracking began, this file only):** 94,979,475
+**Total input tokens (since tracking began, this file only):** 498  
+**Total output tokens (since tracking began, this file only):** 209,063  
+**Total cache-write tokens (since tracking began, this file only):** 2,786,602  
+**Total cache-read tokens (since tracking began, this file only):** 145,295,086
