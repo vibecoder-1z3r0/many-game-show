@@ -4,14 +4,14 @@ from playwright.sync_api import Page, expect
 
 
 def _create_game(live_server: str, page: Page) -> str:
-    resp = page.request.post(f"{live_server}/api/peril/games/", data={})
+    resp = page.request.post(f"{live_server}/api/overdrive/games/", data={})
     assert resp.ok
     game_id: str = resp.json()["id"]
     return game_id
 
 
 def _goto(live_server: str, page: Page, game_id: str, view: str) -> None:
-    page.goto(f"{live_server}/peril.html?id={game_id}&view={view}")
+    page.goto(f"{live_server}/overdrive.html?id={game_id}&view={view}")
 
 
 def _select_clue(page: Page, category_index: int, clue_index: int) -> None:
@@ -31,7 +31,7 @@ def _buzz(page: Page, player: str) -> None:
 
 def _wait_for_ring_in_open(live_server: str, page: Page, game_id: str) -> None:
     for _ in range(100):
-        resp = page.request.get(f"{live_server}/api/peril/games/{game_id}")
+        resp = page.request.get(f"{live_server}/api/overdrive/games/{game_id}")
         players = resp.json()["players"]
         if any(p["can_ring_in"] for p in players.values()):
             return
@@ -39,20 +39,20 @@ def _wait_for_ring_in_open(live_server: str, page: Page, game_id: str) -> None:
     raise AssertionError("ring-in window never opened")
 
 
-def test_lobby_create_peril_button_navigates_to_control(
+def test_lobby_create_overdrive_button_navigates_to_control(
     live_server: str, page: Page
 ) -> None:
     page.goto(live_server)
-    page.get_by_role("button", name="New Peril Game").click()
-    page.wait_for_url("**/peril.html?id=*&view=control")
+    page.get_by_role("button", name="New Overdrive Game").click()
+    page.wait_for_url("**/overdrive.html?id=*&view=control")
     expect(page.locator("#tab-control")).to_have_class("active")
 
 
 def test_lobby_bank_selects_list_all_sample_banks(live_server: str, page: Page) -> None:
     page.goto(live_server)
-    expect(page.locator("#peril-round1-select option")).to_have_count(3)
-    expect(page.locator("#peril-round2-select option")).to_have_count(3)
-    expect(page.locator("#peril-final-select option")).to_have_count(5)
+    expect(page.locator("#overdrive-round1-select option")).to_have_count(3)
+    expect(page.locator("#overdrive-round2-select option")).to_have_count(3)
+    expect(page.locator("#overdrive-final-select option")).to_have_count(5)
 
 
 def test_control_shows_board_and_all_three_players(
@@ -190,7 +190,7 @@ def test_select_reveal_buzz_judge_correct_awards_points_and_board_control(
 
 
 def _get_state(live_server: str, page: Page, game_id: str) -> dict:
-    return page.request.get(f"{live_server}/api/peril/games/{game_id}").json()
+    return page.request.get(f"{live_server}/api/overdrive/games/{game_id}").json()
 
 
 def test_answer_timer_play_pause_stop_reset_clear(live_server: str, page: Page) -> None:
@@ -295,21 +295,21 @@ def test_no_one_answered_reveals_clue_with_no_scoring(
     expect(page.locator("#control-players")).to_contain_text("0")
 
 
-def test_stake_stacker_announcement_phase_before_wager_and_reveal(
+def test_crit_boost_announcement_phase_before_wager_and_reveal(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
     page.get_by_role("button", name="P1 Control").click()
 
-    # Git Happens / index 4 (1000 points) is the Stake Stacker in the sample bank.
+    # Git Happens / index 4 (1000 points) is the Crit Boost in the sample bank.
     _select_clue(page, 0, 4)
 
     # Main announces it, with no clue text and no point value yet.
     _goto(live_server, page, game_id, "main")
     overlay = page.locator("#clue-overlay")
-    expect(overlay.locator(".overlay-stake-stacker-announce")).to_contain_text(
-        "Stake Stacker!"
+    expect(overlay.locator(".overlay-crit-boost-announce")).to_contain_text(
+        "Crit Boost!"
     )
     expect(overlay.locator(".overlay-value")).to_have_count(0)
     status_bar = page.locator("#clue-status-bar")
@@ -320,27 +320,27 @@ def test_stake_stacker_announcement_phase_before_wager_and_reveal(
     # Player 1 (board control) sees the same pre-wager prompt.
     _goto(live_server, page, game_id, "player1")
     expect(page.locator("#player1-body")).to_contain_text(
-        "Your Stake Stacker — state your wager!"
+        "Your Crit Boost — state your wager!"
     )
 
     # Player 2 (not board control) sees nothing about it.
     _goto(live_server, page, game_id, "player2")
-    expect(page.locator("#player2-body")).not_to_contain_text("Stake Stacker")
+    expect(page.locator("#player2-body")).not_to_contain_text("Crit Boost")
 
     # Once wagered and revealed, it flips over to the clue text.
     _goto(live_server, page, game_id, "control")
-    page.fill("#stake-stacker-wager-input", "500")
+    page.fill("#crit-boost-wager-input", "500")
     page.get_by_role("button", name="Set Wager").click()
     _reveal_clue(page)
 
     _goto(live_server, page, game_id, "main")
-    expect(overlay.locator(".overlay-stake-stacker-announce")).to_have_count(0)
+    expect(overlay.locator(".overlay-crit-boost-announce")).to_have_count(0)
     expect(overlay.locator(".overlay-text-big")).to_be_visible()
     expect(status_bar).to_contain_text("Player 1")
     expect(status_bar).not_to_contain_text("Answering")
 
 
-def test_stake_stacker_wager_reveal_and_judge_correct(
+def test_crit_boost_wager_reveal_and_judge_correct(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
@@ -351,9 +351,9 @@ def test_stake_stacker_wager_reveal_and_judge_correct(
         "Board control: Player 1"
     )
 
-    # Git Happens / index 4 (1000 points) is the Stake Stacker in the sample bank.
+    # Git Happens / index 4 (1000 points) is the Crit Boost in the sample bank.
     _select_clue(page, 0, 4)
-    page.fill("#stake-stacker-wager-input", "500")
+    page.fill("#crit-boost-wager-input", "500")
     page.get_by_role("button", name="Set Wager").click()
     _reveal_clue(page)
 
@@ -367,16 +367,14 @@ def test_stake_stacker_wager_reveal_and_judge_correct(
     )
 
 
-def test_stake_stacker_is_timed_but_starts_manually(
-    live_server: str, page: Page
-) -> None:
+def test_crit_boost_is_timed_but_starts_manually(live_server: str, page: Page) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
     page.get_by_role("button", name="P1 Control").click()
 
-    # Git Happens / index 4 (1000 points) is the Stake Stacker in the sample bank.
+    # Git Happens / index 4 (1000 points) is the Crit Boost in the sample bank.
     _select_clue(page, 0, 4)
-    page.fill("#stake-stacker-wager-input", "500")
+    page.fill("#crit-boost-wager-input", "500")
     page.get_by_role("button", name="Set Wager").click()
     _reveal_clue(page)
 
@@ -394,7 +392,7 @@ def test_stake_stacker_is_timed_but_starts_manually(
 
     _goto(live_server, page, game_id, "player1")
     expect(page.locator("#player1-body")).to_contain_text(
-        "Your Stake Stacker — answer now!"
+        "Your Crit Boost — answer now!"
     )
     expect(page.locator("#player1-body .countdown-track")).to_have_count(1)
 
@@ -414,7 +412,7 @@ def test_final_exam_self_serve_submit_reveal_and_judge(
 ) -> None:
     game_id = _create_game(live_server, page)
     resp = page.request.patch(
-        f"{live_server}/api/peril/games/{game_id}/adjust-score",
+        f"{live_server}/api/overdrive/games/{game_id}/adjust-score",
         data={"player": "player1", "score": 1000},
     )
     assert resp.ok
@@ -458,7 +456,7 @@ def test_board_control_manual_override_visible_on_main(
 def test_reset_game_clears_scores_and_board(live_server: str, page: Page) -> None:
     game_id = _create_game(live_server, page)
     resp = page.request.patch(
-        f"{live_server}/api/peril/games/{game_id}/adjust-score",
+        f"{live_server}/api/overdrive/games/{game_id}/adjust-score",
         data={"player": "player1", "score": 777},
     )
     assert resp.ok

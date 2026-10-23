@@ -1,4 +1,4 @@
-"""Board content loading for Peril (Jeopardy-style). Content is data,
+"""Board content loading for Overdrive (Jeopardy-style). Content is data,
 not code — same content-as-data pattern as the other games' loaders —
 so categories/clues/wording can be authored without touching game
 logic. Each round type (round1, round2, final) has its own bank file
@@ -15,24 +15,24 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-_DEFAULT_ROUND1_PATH = Path(__file__).parent / "data" / "peril_round1.sample.json"
-_DEFAULT_ROUND2_PATH = Path(__file__).parent / "data" / "peril_round2.sample.json"
-_DEFAULT_FINAL_PATH = Path(__file__).parent / "data" / "peril_final.sample.json"
+_DEFAULT_ROUND1_PATH = Path(__file__).parent / "data" / "overdrive_round1.sample.json"
+_DEFAULT_ROUND2_PATH = Path(__file__).parent / "data" / "overdrive_round2.sample.json"
+_DEFAULT_FINAL_PATH = Path(__file__).parent / "data" / "overdrive_final.sample.json"
 
-# 0 = never a Stake Stacker. 1 = usable as round 1's single Stake Stacker or
+# 0 = never a Crit Boost. 1 = usable as round 1's single Crit Boost or
 # as one of round 2's two. 2 = usable only as one of round 2's two. This
 # is purely a content-authoring convenience for building a shared clue
 # pool across banks — whichever clues end up with a nonzero value in
 # whichever bank is actually loaded for a round ARE that round's Stake
 # Stacker(s); the engine doesn't treat 1 vs 2 differently at runtime.
-StakeStackerFlag = Literal[0, 1, 2]
+CritBoostFlag = Literal[0, 1, 2]
 
 
 class ClueContent(BaseModel):
     text: str
     answer: str
     value: int
-    stake_stacker: StakeStackerFlag = 0
+    crit_boost: CritBoostFlag = 0
 
 
 class CategoryContent(BaseModel):
@@ -55,17 +55,17 @@ class FinalBank(BaseModel):
 
 
 def _round1_path() -> Path:
-    override = os.environ.get("PERIL_ROUND1_BANKS_PATH")
+    override = os.environ.get("OVERDRIVE_ROUND1_BANKS_PATH")
     return Path(override) if override else _DEFAULT_ROUND1_PATH
 
 
 def _round2_path() -> Path:
-    override = os.environ.get("PERIL_ROUND2_BANKS_PATH")
+    override = os.environ.get("OVERDRIVE_ROUND2_BANKS_PATH")
     return Path(override) if override else _DEFAULT_ROUND2_PATH
 
 
 def _final_path() -> Path:
-    override = os.environ.get("PERIL_FINAL_BANKS_PATH")
+    override = os.environ.get("OVERDRIVE_FINAL_BANKS_PATH")
     return Path(override) if override else _DEFAULT_FINAL_PATH
 
 

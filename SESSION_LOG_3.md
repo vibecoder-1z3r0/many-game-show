@@ -58,17 +58,18 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 36 | Remove state your wager, and any other “helper” text from the main dis… | 11:04:51 | 4m 58s | 2s | 82 | 13,829 | 1,045,376 | 22,165,862 |
 | 37 | Context clue technically is timed as well | 11:09:51 | 5m 16s | 2m 37s | 152 | 40,523 | 76,714 | 45,269,325 |
 | 38 | The countdown starts when the answer is revealed?  It should start whe… | 11:17:45 | 2m 48s | 2h 12m ⏳ | 56 | 14,002 | 23,936 | 17,368,664 |
-| 39 | I want to rename this from Answers to Peril and the Context Clue to St… | 13:32:41 | 7m 48s | — | 278 | 60,197 | 1,318,264 | 92,681,031 |
+| 39 | I want to rename this from Answers to Peril and the Context Clue to St… | 13:32:41 | 8m 13s | 53s | 296 | 64,138 | 1,327,944 | 99,089,004 |
+| 40 | Ok changing to “Overdrive” as game name and then “Crit Boost” for the … | 13:41:47 | 3m 56s | — | 130 | 33,347 | 48,032 | 47,336,373 |
 
-**Total turns:** 39  
-**Total agent time spent (excl. flagged):** 2h 27m  
-**Total human think time (excl. outliers):** 38m 58s  
-**Average human think time (excl. outliers):** 1m 30s  
+**Total turns:** 40  
+**Total agent time spent (excl. flagged):** 2h 32m  
+**Total human think time (excl. outliers):** 39m 51s  
+**Average human think time (excl. outliers):** 1m 29s  
 **Think-time outliers (> 15 min):** 12  
-**Total input tokens:** 3,739  
-**Total output tokens:** 1,314,058  
-**Total cache-write tokens:** 9,918,497  
-**Total cache-read tokens:** 814,966,992  
+**Total input tokens:** 3,887  
+**Total output tokens:** 1,351,346  
+**Total cache-write tokens:** 9,976,209  
+**Total cache-read tokens:** 868,711,338  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
 
 ⚠ Turn(s) 21 had an 'agent time spent' over 30 min (total 30m 1s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
@@ -81,11 +82,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 126  
-**Combined agent time spent (excl. flagged):** 5h 33m  
-**Combined human think time (excl. outliers):** 2h 55m  
+**Combined total turns:** 127  
+**Combined agent time spent (excl. flagged):** 5h 37m  
+**Combined human think time (excl. outliers):** 2h 56m  
 **Combined think-time outliers:** 20  
-**Total input tokens (since tracking began, this file only):** 2,840  
-**Total output tokens (since tracking began, this file only):** 871,335  
-**Total cache-write tokens (since tracking began, this file only):** 7,371,458  
-**Total cache-read tokens (since tracking began, this file only):** 682,924,483
+**Total input tokens (since tracking began, this file only):** 2,988  
+**Total output tokens (since tracking began, this file only):** 908,623  
+**Total cache-write tokens (since tracking began, this file only):** 7,429,170  
+**Total cache-read tokens (since tracking began, this file only):** 736,668,829

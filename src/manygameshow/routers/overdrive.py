@@ -1,4 +1,4 @@
-"""Peril — /api/peril/games/* endpoints."""
+"""Overdrive — /api/overdrive/games/* endpoints."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -7,15 +7,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Field, Session, SQLModel, select
 
 from manygameshow.database import get_session
-from manygameshow.models.peril import (
+from manygameshow.models.overdrive import (
     ALL_PLAYERS,
     CategoryRead,
     ClueRead,
     FinalEntry,
     FinalEntryRead,
-    PerilGame,
-    PerilGameCreate,
-    PerilGameRead,
+    OverdriveGame,
+    OverdriveGameCreate,
+    OverdriveGameRead,
     Player,
     PlayerScore,
     PlayerStatusRead,
@@ -32,7 +32,7 @@ from manygameshow.models.peril import (
     current_bank,
     final_bank_content,
     final_entry,
-    is_selected_stake_stacker,
+    is_selected_crit_boost,
     player_score,
     reset_board_for_round,
     ring_in_elapsed_ms,
@@ -47,25 +47,25 @@ from manygameshow.models.peril import (
     set_player_score,
     set_ring_in_override,
 )
-from manygameshow.peril_banks import (
+from manygameshow.overdrive_banks import (
     list_final_banks,
     list_round1_banks,
     list_round2_banks,
 )
 
-router = APIRouter(prefix="/api/peril/games", tags=["peril"])
+router = APIRouter(prefix="/api/overdrive/games", tags=["overdrive"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-def _get_game(game_id: str, session: Session) -> PerilGame:
-    game = session.get(PerilGame, game_id)
+def _get_game(game_id: str, session: Session) -> OverdriveGame:
+    game = session.get(OverdriveGame, game_id)
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")
     return game
 
 
-def _save(game: PerilGame, session: Session) -> PerilGame:
+def _save(game: OverdriveGame, session: Session) -> OverdriveGame:
     game.updated_at = datetime.now(UTC).replace(tzinfo=None)
     session.add(game)
     session.commit()
@@ -84,7 +84,7 @@ def _final_entry_read(entry: FinalEntry) -> FinalEntryRead:
     )
 
 
-def _categories_read(game: PerilGame, *, show_all: bool) -> list[CategoryRead]:
+def _categories_read(game: OverdriveGame, *, show_all: bool) -> list[CategoryRead]:
     if game.current_round == RoundName.FINAL:
         return []
     bank = current_bank(game)
@@ -106,13 +106,13 @@ def _categories_read(game: PerilGame, *, show_all: bool) -> list[CategoryRead]:
             )
             answer_visible = show_all or cell.played
             context_visible = show_all or cell.played or is_current
-            is_stake_stacker = clue.stake_stacker != 0 if context_visible else False
+            is_crit_boost = clue.crit_boost != 0 if context_visible else False
             clue_reads.append(
                 ClueRead(
                     category_index=cat_idx,
                     clue_index=clue_idx,
                     value=clue.value,
-                    is_stake_stacker=is_stake_stacker,
+                    is_crit_boost=is_crit_boost,
                     played=cell.played,
                     locked_out=cell.locked_out,
                     text=clue.text if text_visible else None,
@@ -130,7 +130,7 @@ def _categories_read(game: PerilGame, *, show_all: bool) -> list[CategoryRead]:
     return out
 
 
-def _to_read(game: PerilGame, *, show_all: bool = False) -> PerilGameRead:
+def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRead:
     final_category: str | None = None
     final_text: str | None = None
     if game.current_round == RoundName.FINAL:
@@ -148,7 +148,7 @@ def _to_read(game: PerilGame, *, show_all: bool = False) -> PerilGameRead:
             answer_time_ms=answer_time_for(game, player),
         )
 
-    return PerilGameRead(
+    return OverdriveGameRead(
         id=game.id,
         current_round=game.current_round,
         categories=_categories_read(game, show_all=show_all),
@@ -158,7 +158,7 @@ def _to_read(game: PerilGame, *, show_all: bool = False) -> PerilGameRead:
         selected_clue_index=game.selected_clue_index,
         clue_phase=clue_phase(game),
         buzzed_player=game.buzzed_player,
-        stake_stacker_wager=game.stake_stacker_wager,
+        crit_boost_wager=game.crit_boost_wager,
         ring_in_elapsed_ms=ring_in_elapsed_ms(game),
         buzz_remaining_ms=buzz_remaining_ms(game),
         answer_timer_running=game.buzz_timer_running,
@@ -197,9 +197,9 @@ def get_bank_options() -> BankOptionsRead:
     )
 
 
-@router.post("/", response_model=PerilGameRead)
-def create_game(body: PerilGameCreate, session: SessionDep) -> PerilGameRead:
-    game = PerilGame(
+@router.post("/", response_model=OverdriveGameRead)
+def create_game(body: OverdriveGameCreate, session: SessionDep) -> OverdriveGameRead:
+    game = OverdriveGame(
         round1_bank_id=body.round1_bank_id,
         round2_bank_id=body.round2_bank_id,
         final_bank_id=body.final_bank_id,
@@ -214,19 +214,19 @@ def create_game(body: PerilGameCreate, session: SessionDep) -> PerilGameRead:
     return _to_read(_save(game, session))
 
 
-@router.get("/", response_model=list[PerilGameRead])
-def list_games(session: SessionDep) -> list[PerilGameRead]:
-    games = session.exec(select(PerilGame)).all()
+@router.get("/", response_model=list[OverdriveGameRead])
+def list_games(session: SessionDep) -> list[OverdriveGameRead]:
+    games = session.exec(select(OverdriveGame)).all()
     return [_to_read(g) for g in games]
 
 
-@router.get("/{game_id}", response_model=PerilGameRead)
-def get_game(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.get("/{game_id}", response_model=OverdriveGameRead)
+def get_game(game_id: str, session: SessionDep) -> OverdriveGameRead:
     return _to_read(_get_game(game_id, session))
 
 
-@router.get("/{game_id}/control", response_model=PerilGameRead)
-def get_control_game(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.get("/{game_id}/control", response_model=OverdriveGameRead)
+def get_control_game(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Host-only view: every clue's text and answer are always visible
     (the host needs the answer key to judge), regardless of whether
     that clue's been selected/revealed/played yet. Final Exam entries
@@ -248,10 +248,10 @@ class PlayersBody(SQLModel):
     player3_name: str | None = None
 
 
-@router.patch("/{game_id}/players", response_model=PerilGameRead)
+@router.patch("/{game_id}/players", response_model=OverdriveGameRead)
 def update_players(
     game_id: str, body: PlayersBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     names = [body.player1_name, body.player2_name, body.player3_name]
     for player, name in zip(ALL_PLAYERS, names, strict=True):
@@ -267,10 +267,10 @@ class CategoryRevealBody(SQLModel):
     revealed: bool
 
 
-@router.patch("/{game_id}/category-reveal", response_model=PerilGameRead)
+@router.patch("/{game_id}/category-reveal", response_model=OverdriveGameRead)
 def set_category_reveal(
     game_id: str, body: CategoryRevealBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     revealed = categories_revealed(game)
     if not (0 <= body.category_index < len(revealed)):
@@ -285,10 +285,10 @@ class SelectClueBody(SQLModel):
     clue_index: int
 
 
-@router.patch("/{game_id}/select-clue", response_model=PerilGameRead)
+@router.patch("/{game_id}/select-clue", response_model=OverdriveGameRead)
 def select_clue(
     game_id: str, body: SelectClueBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     if game.current_round == RoundName.FINAL:
         raise HTTPException(status_code=400, detail="No board in Final Exam")
@@ -310,37 +310,37 @@ def select_clue(
     game.buzz_answer_started_at = None
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
-    game.stake_stacker_wager = None
+    game.crit_boost_wager = None
     return _to_read(_save(game, session), show_all=True)
 
 
-class StakeStackerWagerBody(SQLModel):
+class CritBoostWagerBody(SQLModel):
     wager: int = Field(ge=0)
 
 
-@router.patch("/{game_id}/stake-stacker-wager", response_model=PerilGameRead)
-def set_stake_stacker_wager(
-    game_id: str, body: StakeStackerWagerBody, session: SessionDep
-) -> PerilGameRead:
+@router.patch("/{game_id}/crit-boost-wager", response_model=OverdriveGameRead)
+def set_crit_boost_wager(
+    game_id: str, body: CritBoostWagerBody, session: SessionDep
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
-    if game.selected_category_index is None or not is_selected_stake_stacker(game):
-        raise HTTPException(status_code=400, detail="No Stake Stacker is selected")
+    if game.selected_category_index is None or not is_selected_crit_boost(game):
+        raise HTTPException(status_code=400, detail="No Crit Boost is selected")
     if clue_phase(game) == "revealed":
         raise HTTPException(status_code=400, detail="Clue is already revealed")
-    game.stake_stacker_wager = body.wager
+    game.crit_boost_wager = body.wager
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/reveal-clue", response_model=PerilGameRead)
-def reveal_clue(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/reveal-clue", response_model=OverdriveGameRead)
+def reveal_clue(game_id: str, session: SessionDep) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     if game.selected_category_index is None:
         raise HTTPException(status_code=400, detail="No clue is selected")
     if clue_phase(game) == "revealed":
         raise HTTPException(status_code=400, detail="Clue is already revealed")
     board_control = game.board_control
-    if is_selected_stake_stacker(game):
-        if game.stake_stacker_wager is None:
+    if is_selected_crit_boost(game):
+        if game.crit_boost_wager is None:
             raise HTTPException(
                 status_code=400, detail="Set the wager before revealing"
             )
@@ -349,8 +349,8 @@ def reveal_clue(game_id: str, session: SessionDep) -> PerilGameRead:
                 status_code=400, detail="No one holds board control to answer it"
             )
     game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
-    if is_selected_stake_stacker(game) and board_control is not None:
-        # Stake Stacker is still timed — it just skips the ring-in race
+    if is_selected_crit_boost(game) and board_control is not None:
+        # Crit Boost is still timed — it just skips the ring-in race
         # since only the board-control holder can answer it. Reuses the
         # same buzzed_player/answer-timer machinery as a regular buzz,
         # but the clock doesn't start on its own: the host reads the
@@ -366,10 +366,10 @@ class BuzzBody(SQLModel):
     player: Player
 
 
-@router.patch("/{game_id}/buzz", response_model=PerilGameRead)
-def buzz(game_id: str, body: BuzzBody, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/buzz", response_model=OverdriveGameRead)
+def buzz(game_id: str, body: BuzzBody, session: SessionDep) -> OverdriveGameRead:
     """A buzz outside the valid window (too early, too late, already
-    someone else's, locked out, or a Stake Stacker in play) is silently
+    someone else's, locked out, or a Crit Boost in play) is silently
     ignored — the state just comes back unchanged, no error."""
     game = _get_game(game_id, session)
     if can_ring_in(game, body.player):
@@ -381,14 +381,14 @@ def buzz(game_id: str, body: BuzzBody, session: SessionDep) -> PerilGameRead:
     return _to_read(game)
 
 
-def _require_answering(game: PerilGame) -> Player:
+def _require_answering(game: OverdriveGame) -> Player:
     if game.buzzed_player is None:
         raise HTTPException(status_code=400, detail="No one is currently answering")
     return game.buzzed_player
 
 
-@router.patch("/{game_id}/play-answer-timer", response_model=PerilGameRead)
-def play_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/play-answer-timer", response_model=OverdriveGameRead)
+def play_answer_timer(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Resumes a paused (or stopped-at-zero) countdown from wherever it
     was left off."""
     game = _get_game(game_id, session)
@@ -400,8 +400,8 @@ def play_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/pause-answer-timer", response_model=PerilGameRead)
-def pause_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/pause-answer-timer", response_model=OverdriveGameRead)
+def pause_answer_timer(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Freezes the countdown in place — e.g. once the contestant's
     visibly started talking, the host doesn't want the bar to keep
     ticking down while they're still answering. Resumable with Play.
@@ -415,8 +415,8 @@ def pause_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/stop-answer-timer", response_model=PerilGameRead)
-def stop_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/stop-answer-timer", response_model=OverdriveGameRead)
+def stop_answer_timer(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Zeroes the countdown out immediately — "time's up" — and pauses
     it there. Resumable with Play (resumes from 0, i.e. stays expired
     until Reset)."""
@@ -427,8 +427,8 @@ def stop_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/reset-answer-timer", response_model=PerilGameRead)
-def reset_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/reset-answer-timer", response_model=OverdriveGameRead)
+def reset_answer_timer(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Restarts the countdown at the player's full answer duration,
     keeping whatever running/paused state it was already in."""
     game = _get_game(game_id, session)
@@ -439,8 +439,8 @@ def reset_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/clear-answer-timer", response_model=PerilGameRead)
-def clear_answer_timer(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/clear-answer-timer", response_model=OverdriveGameRead)
+def clear_answer_timer(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Cancels this player's answer attempt entirely — un-buzzes them
     and reopens a fresh ring-in window for everyone else, with no
     scoring change. For when a buzz was a mistake (wrong button,
@@ -459,9 +459,9 @@ class JudgeBody(SQLModel):
     correct: bool
 
 
-@router.patch("/{game_id}/judge", response_model=PerilGameRead)
-def judge(game_id: str, body: JudgeBody, session: SessionDep) -> PerilGameRead:
-    """Rules on the currently in-play clue — a Stake Stacker is judged
+@router.patch("/{game_id}/judge", response_model=OverdriveGameRead)
+def judge(game_id: str, body: JudgeBody, session: SessionDep) -> OverdriveGameRead:
+    """Rules on the currently in-play clue — a Crit Boost is judged
     against whoever holds board control (no buzz race); a regular clue
     is judged against whoever's currently buzzed in. Wrong on a regular
     clue just locks that player out of this clue and reopens ring-ins
@@ -475,14 +475,14 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> PerilGameRead:
     cat_idx, clue_idx = game.selected_category_index, game.selected_clue_index
     assert cat_idx is not None and clue_idx is not None
 
-    if is_selected_stake_stacker(game):
+    if is_selected_crit_boost(game):
         if game.board_control is None:
             raise HTTPException(status_code=400, detail="No one holds board control")
-        if game.stake_stacker_wager is None:
+        if game.crit_boost_wager is None:
             raise HTTPException(status_code=400, detail="No wager has been set")
         player = game.board_control
         score = player_score(game, player)
-        wager = game.stake_stacker_wager
+        wager = game.crit_boost_wager
         score.score += wager if body.correct else -wager
         set_player_score(game, player, score)
         cell.played = True
@@ -518,7 +518,7 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> PerilGameRead:
     return _to_read(_save(game, session), show_all=True)
 
 
-def _clear_selected(game: PerilGame) -> None:
+def _clear_selected(game: OverdriveGame) -> None:
     game.selected_category_index = None
     game.selected_clue_index = None
     game.clue_revealed_at = None
@@ -526,11 +526,11 @@ def _clear_selected(game: PerilGame) -> None:
     game.buzz_answer_started_at = None
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
-    game.stake_stacker_wager = None
+    game.crit_boost_wager = None
 
 
-@router.patch("/{game_id}/no-one-answered", response_model=PerilGameRead)
-def no_one_answered(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/no-one-answered", response_model=OverdriveGameRead)
+def no_one_answered(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Host bails on the current clue — the ring-in window closed (or
     the host just wants to move on) with no one holding the floor.
     Reveals the answer, no scoring, board control unchanged."""
@@ -552,24 +552,24 @@ class BoardControlBody(SQLModel):
     player: Player | None = None
 
 
-@router.patch("/{game_id}/board-control", response_model=PerilGameRead)
+@router.patch("/{game_id}/board-control", response_model=OverdriveGameRead)
 def set_board_control(
     game_id: str, body: BoardControlBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     game.board_control = body.player
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/start-round2", response_model=PerilGameRead)
-def start_round2(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/start-round2", response_model=OverdriveGameRead)
+def start_round2(game_id: str, session: SessionDep) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     reset_board_for_round(game, RoundName.ROUND2)
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/start-final", response_model=PerilGameRead)
-def start_final(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/start-final", response_model=OverdriveGameRead)
+def start_final(game_id: str, session: SessionDep) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     game.current_round = RoundName.FINAL
     _clear_selected(game)
@@ -586,10 +586,10 @@ class FinalSubmitBody(SQLModel):
     answer: str
 
 
-@router.patch("/{game_id}/final-submit", response_model=PerilGameRead)
+@router.patch("/{game_id}/final-submit", response_model=OverdriveGameRead)
 def final_submit(
     game_id: str, body: FinalSubmitBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     """Self-serve: the player's own device submits their wager+answer
     once. Hidden from everyone — Main, Control, and the other players —
     until the host triggers final-reveal for this player."""
@@ -614,10 +614,10 @@ class FinalPlayerBody(SQLModel):
     player: Player
 
 
-@router.patch("/{game_id}/final-reveal", response_model=PerilGameRead)
+@router.patch("/{game_id}/final-reveal", response_model=OverdriveGameRead)
 def final_reveal(
     game_id: str, body: FinalPlayerBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     entry = final_entry(game, body.player)
     if not entry.submitted:
@@ -632,10 +632,10 @@ class FinalJudgeBody(SQLModel):
     correct: bool
 
 
-@router.patch("/{game_id}/final-judge", response_model=PerilGameRead)
+@router.patch("/{game_id}/final-judge", response_model=OverdriveGameRead)
 def final_judge(
     game_id: str, body: FinalJudgeBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     entry = final_entry(game, body.player)
     if not entry.revealed:
@@ -656,10 +656,10 @@ class RingInSettingsBody(SQLModel):
     window_ms: int | None = Field(default=None, ge=100)
 
 
-@router.patch("/{game_id}/ring-in-settings", response_model=PerilGameRead)
+@router.patch("/{game_id}/ring-in-settings", response_model=OverdriveGameRead)
 def set_ring_in_settings(
     game_id: str, body: RingInSettingsBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     if body.start_delay_ms is not None:
         game.ring_in_start_delay_ms = body.start_delay_ms
@@ -674,10 +674,10 @@ class RingInOverrideBody(SQLModel):
     window_ms: int | None = None
 
 
-@router.patch("/{game_id}/ring-in-override", response_model=PerilGameRead)
+@router.patch("/{game_id}/ring-in-override", response_model=OverdriveGameRead)
 def set_ring_in_player_override(
     game_id: str, body: RingInOverrideBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     set_ring_in_override(
         game,
@@ -687,8 +687,10 @@ def set_ring_in_player_override(
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/ring-in-override-clear", response_model=PerilGameRead)
-def clear_ring_in_player_overrides(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/ring-in-override-clear", response_model=OverdriveGameRead)
+def clear_ring_in_player_overrides(
+    game_id: str, session: SessionDep
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     clear_ring_in_overrides(game)
     return _to_read(_save(game, session), show_all=True)
@@ -698,10 +700,10 @@ class AnswerTimeSettingsBody(SQLModel):
     window_ms: int = Field(ge=100)
 
 
-@router.patch("/{game_id}/answer-time-settings", response_model=PerilGameRead)
+@router.patch("/{game_id}/answer-time-settings", response_model=OverdriveGameRead)
 def set_answer_time_settings(
     game_id: str, body: AnswerTimeSettingsBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     game.answer_time_ms = body.window_ms
     return _to_read(_save(game, session), show_all=True)
@@ -712,19 +714,19 @@ class AnswerTimeOverrideBody(SQLModel):
     window_ms: int | None = None
 
 
-@router.patch("/{game_id}/answer-time-override", response_model=PerilGameRead)
+@router.patch("/{game_id}/answer-time-override", response_model=OverdriveGameRead)
 def set_answer_time_player_override(
     game_id: str, body: AnswerTimeOverrideBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     set_answer_time_override(game, body.player, body.window_ms)
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/answer-time-override-clear", response_model=PerilGameRead)
+@router.patch("/{game_id}/answer-time-override-clear", response_model=OverdriveGameRead)
 def clear_answer_time_player_overrides(
     game_id: str, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     clear_answer_time_overrides(game)
     return _to_read(_save(game, session), show_all=True)
@@ -735,10 +737,10 @@ class AdjustScoreBody(SQLModel):
     score: int
 
 
-@router.patch("/{game_id}/adjust-score", response_model=PerilGameRead)
+@router.patch("/{game_id}/adjust-score", response_model=OverdriveGameRead)
 def adjust_score(
     game_id: str, body: AdjustScoreBody, session: SessionDep
-) -> PerilGameRead:
+) -> OverdriveGameRead:
     game = _get_game(game_id, session)
     score = player_score(game, body.player)
     score.score = body.score
@@ -746,8 +748,8 @@ def adjust_score(
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/reset", response_model=PerilGameRead)
-def reset_game(game_id: str, session: SessionDep) -> PerilGameRead:
+@router.patch("/{game_id}/reset", response_model=OverdriveGameRead)
+def reset_game(game_id: str, session: SessionDep) -> OverdriveGameRead:
     """Full reset: fresh players (names kept), round 1 board, board
     control cleared."""
     game = _get_game(game_id, session)

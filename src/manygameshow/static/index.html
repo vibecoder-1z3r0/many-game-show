@@ -144,10 +144,10 @@
       <button onclick="createSpeedPointsGame()">New Speed Points Game</button>
       <select id="big-tokens-board-select"></select>
       <button onclick="createBigTokensGame()">New Big Tokens Game</button>
-      <select id="peril-round1-select"></select>
-      <select id="peril-round2-select"></select>
-      <select id="peril-final-select"></select>
-      <button onclick="createPerilGame()">New Peril Game</button>
+      <select id="overdrive-round1-select"></select>
+      <select id="overdrive-round2-select"></select>
+      <select id="overdrive-final-select"></select>
+      <button onclick="createOverdriveGame()">New Overdrive Game</button>
     </div>
     <div class="games" id="games"></div>
     <script>
@@ -158,7 +158,7 @@
         { key: "squad-squabble", label: "Squad Squabble", render: renderSquadSquabbleCard },
         { key: "speed-points", label: "Speed Points", render: renderSpeedPointsCard },
         { key: "big-tokens", label: "Big Tokens", render: renderBigTokensCard },
-        { key: "peril", label: "Peril", render: renderPerilCard },
+        { key: "overdrive", label: "Overdrive", render: renderOverdriveCard },
       ];
 
       async function loadBoardOptions() {
@@ -171,19 +171,19 @@
       }
       loadBoardOptions();
 
-      async function loadPerilBankOptions() {
-        const resp = await fetch("/api/peril/games/banks");
+      async function loadOverdriveBankOptions() {
+        const resp = await fetch("/api/overdrive/games/banks");
         const banks = await resp.json();
         const fill = (selectId, options) => {
           document.getElementById(selectId).innerHTML = options
             .map((b) => `<option value="${b.id}">${b.name}</option>`)
             .join("");
         };
-        fill("peril-round1-select", banks.round1);
-        fill("peril-round2-select", banks.round2);
-        fill("peril-final-select", banks.final);
+        fill("overdrive-round1-select", banks.round1);
+        fill("overdrive-round2-select", banks.round2);
+        fill("overdrive-final-select", banks.final);
       }
-      loadPerilBankOptions();
+      loadOverdriveBankOptions();
 
       async function createSquadSquabbleGame() {
         const resp = await fetch("/api/squad-squabble/games/", {
@@ -216,11 +216,11 @@
         location.href = `/big-tokens.html?id=${game.id}&view=control`;
       }
 
-      async function createPerilGame() {
-        const round1BankId = document.getElementById("peril-round1-select").value;
-        const round2BankId = document.getElementById("peril-round2-select").value;
-        const finalBankId = document.getElementById("peril-final-select").value;
-        const resp = await fetch("/api/peril/games/", {
+      async function createOverdriveGame() {
+        const round1BankId = document.getElementById("overdrive-round1-select").value;
+        const round2BankId = document.getElementById("overdrive-round2-select").value;
+        const finalBankId = document.getElementById("overdrive-final-select").value;
+        const resp = await fetch("/api/overdrive/games/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -230,7 +230,7 @@
           }),
         });
         const game = await resp.json();
-        location.href = `/peril.html?id=${game.id}&view=control`;
+        location.href = `/overdrive.html?id=${game.id}&view=control`;
       }
 
       function controllingLabel(g) {
@@ -324,30 +324,30 @@
           </div>`;
       }
 
-      function perilRoundLabel(round) {
+      function overdriveRoundLabel(round) {
         if (round === "round1") return "Round 1";
         if (round === "round2") return "Round 2";
         return "Final Exam";
       }
 
-      function renderPerilCard(g) {
+      function renderOverdriveCard(g) {
         const scores = ["player1", "player2", "player3"]
           .map((p) => `${g.players[p].name}: ${g.players[p].score}`)
           .join(" · ");
         return `
           <div class="game-card">
             <div>
-              <div class="game-type">Peril</div>
-              <strong>${perilRoundLabel(g.current_round)}</strong>
+              <div class="game-type">Overdrive</div>
+              <strong>${overdriveRoundLabel(g.current_round)}</strong>
               <div class="meta">${scores}</div>
             </div>
             <div class="links">
-              <a href="/peril.html?id=${g.id}&view=main">Main</a>
-              <a href="/peril.html?id=${g.id}&view=control">Control</a>
-              <a href="/peril.html?id=${g.id}&view=player1">P1</a>
-              <a href="/peril.html?id=${g.id}&view=player2">P2</a>
-              <a href="/peril.html?id=${g.id}&view=player3">P3</a>
-              <button class="danger" onclick="deleteGame('peril', '${g.id}')">Delete</button>
+              <a href="/overdrive.html?id=${g.id}&view=main">Main</a>
+              <a href="/overdrive.html?id=${g.id}&view=control">Control</a>
+              <a href="/overdrive.html?id=${g.id}&view=player1">P1</a>
+              <a href="/overdrive.html?id=${g.id}&view=player2">P2</a>
+              <a href="/overdrive.html?id=${g.id}&view=player3">P3</a>
+              <button class="danger" onclick="deleteGame('overdrive', '${g.id}')">Delete</button>
             </div>
           </div>`;
       }
