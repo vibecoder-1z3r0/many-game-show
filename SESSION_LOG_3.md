@@ -31,20 +31,25 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 9 | What are you waiting on me for? | 22:56:32 | 9m 46s | 11h 36m ⏳ | 166 | 93,480 | 201,287 | 39,229,368 |
 | 10 | Why did you just go and implement when we had outstanding questions?  … | 10:42:40 | 55s | 3m 37s | 4 | 7,088 | 950,366 | 90,866 |
 | 11 | I have normally given you clear directive when it's time to build thou… | 10:47:12 | 11s | 424h 17m ⏳ | 4 | 1,406 | 7,208 | 1,041,232 |
-| 12 | Ok a couple of things before we get going here - we probably lost a bu… | 03:05:08 | 6m 3s | — | 262 | 47,222 | 1,067,398 | 72,365,792 |
+| 12 | Ok a couple of things before we get going here - we probably lost a bu… | 03:05:08 | 6m 32s | 33s | 288 | 51,577 | 1,073,964 | 80,018,415 |
+| 13 | Was I correct on the session log data being lost?  How much overlap is… | 03:12:12 | 23s | 3m 33s | 14 | 7,036 | 7,353 | 4,143,371 |
+| 14 | I guess that's what I get for trying to work on this over months when … | 03:16:07 | 5s | 357h 10m ⏳ | 4 | 656 | 158 | 1,190,964 |
+| 15 | The conference talk session went really well :) | 00:27:06 | 7s | 10m 23s | 2 | 145 | 598,766 | 0 |
+| 16 | Let’s implement Jeopardy!  Maybe with a different name as we’ve been d… | 00:37:36 | 10m 16s | 4s | 18 | 33,115 | 33,514 | 5,427,039 |
+| 17 | Oh we still need to track turn info like we have been in session markd… | 00:47:56 | 15s | — | 10 | 2,623 | 11,785 | 3,067,588 |
 
-**Total turns:** 12  
-**Total agent time spent (excl. flagged):** 1h 10m  
-**Total human think time (excl. outliers):** 8m 47s  
-**Average human think time (excl. outliers):** 2m 12s  
-**Think-time outliers (> 15 min):** 7  
-**Total input tokens:** 1,169  
-**Total output tokens:** 498,439  
-**Total cache-write tokens:** 4,572,011  
-**Total cache-read tokens:** 205,540,399  
+**Total turns:** 17  
+**Total agent time spent (excl. flagged):** 1h 22m  
+**Total human think time (excl. outliers):** 23m 19s  
+**Average human think time (excl. outliers):** 2m 55s  
+**Think-time outliers (> 15 min):** 8  
+**Total input tokens:** 1,243  
+**Total output tokens:** 546,369  
+**Total cache-write tokens:** 5,230,153  
+**Total cache-read tokens:** 227,021,984  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
-⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11 had a 'human think time' over 15 min (total 706h 47m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14 had a 'human think time' over 15 min (total 1063h 58m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
 ---
 
@@ -52,11 +57,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 99  
-**Combined agent time spent (excl. flagged):** 4h 16m  
-**Combined human think time (excl. outliers):** 2h 25m  
-**Combined think-time outliers:** 15  
-**Total input tokens (since tracking began, this file only):** 270  
-**Total output tokens (since tracking began, this file only):** 55,716  
-**Total cache-write tokens (since tracking began, this file only):** 2,024,972  
-**Total cache-read tokens (since tracking began, this file only):** 73,497,890
+**Combined total turns:** 104  
+**Combined agent time spent (excl. flagged):** 4h 27m  
+**Combined human think time (excl. outliers):** 2h 40m  
+**Combined think-time outliers:** 16  
+**Total input tokens (since tracking began, this file only):** 344  
+**Total output tokens (since tracking began, this file only):** 103,646  
+**Total cache-write tokens (since tracking began, this file only):** 2,683,114  
+**Total cache-read tokens (since tracking began, this file only):** 94,979,475
