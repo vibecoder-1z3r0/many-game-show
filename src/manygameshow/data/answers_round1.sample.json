@@ -7,182 +7,61 @@
         {
           "name": "Git Happens",
           "clues": [
-            {
-              "text": "This single command stages every change in the current directory.",
-              "answer": "What is git add .",
-              "value": 200
-            },
-            {
-              "text": "This command creates a new branch and switches to it in one step.",
-              "answer": "What is git checkout -b",
-              "value": 400
-            },
-            {
-              "text": "This three-way operation combines changes from two branches, possibly leaving markers like <<<<<<< behind.",
-              "answer": "What is a merge",
-              "value": 600
-            },
-            {
-              "text": "This command rewrites commit history onto a new base, often described as \"replaying\" commits.",
-              "answer": "What is rebase",
-              "value": 800
-            },
-            {
-              "text": "This command un-stages a file without discarding its changes, the opposite of git add.",
-              "answer": "What is git reset (or git restore --staged)",
-              "value": 1000,
-              "context_clue": 1
-            }
+            { "text": "This single command stages every change in the current directory.", "answer": "What is git add .", "value": 200 },
+            { "text": "This command creates a new branch and switches to it in one step.", "answer": "What is git checkout -b", "value": 400 },
+            { "text": "This three-way operation combines changes from two branches, possibly leaving markers like <<<<<<< behind.", "answer": "What is a merge", "value": 600 },
+            { "text": "This command rewrites commit history onto a new base, often described as \"replaying\" commits.", "answer": "What is rebase", "value": 800 },
+            { "text": "This command un-stages a file without discarding its changes, the opposite of git add.", "answer": "What is git reset (or git restore --staged)", "value": 1000, "context_clue": 1 }
           ]
         },
         {
           "name": "HTTP Status Quo",
           "clues": [
-            {
-              "text": "This status code means the request succeeded.",
-              "answer": "What is 200",
-              "value": 200
-            },
-            {
-              "text": "This status code means the requested resource could not be found.",
-              "answer": "What is 404",
-              "value": 400
-            },
-            {
-              "text": "This status code means you're not authenticated at all.",
-              "answer": "What is 401",
-              "value": 600
-            },
-            {
-              "text": "This status code means the server understood the request but refuses to authorize it.",
-              "answer": "What is 403",
-              "value": 800
-            },
-            {
-              "text": "This status code range (500-599) always means the server, not the client, is at fault.",
-              "answer": "What is 5xx",
-              "value": 1000
-            }
+            { "text": "This status code means the request succeeded.", "answer": "What is 200", "value": 200 },
+            { "text": "This status code means the requested resource could not be found.", "answer": "What is 404", "value": 400 },
+            { "text": "This status code means you're not authenticated at all.", "answer": "What is 401", "value": 600 },
+            { "text": "This status code means the server understood the request but refuses to authorize it.", "answer": "What is 403", "value": 800 },
+            { "text": "This status code range (500-599) always means the server, not the client, is at fault.", "answer": "What is 5xx", "value": 1000 }
           ]
         },
         {
           "name": "Regex Pain",
           "clues": [
-            {
-              "text": "This character matches any single character except a newline.",
-              "answer": "What is . (dot)",
-              "value": 200
-            },
-            {
-              "text": "This quantifier means \"zero or more\" of the preceding element.",
-              "answer": "What is *",
-              "value": 400
-            },
-            {
-              "text": "This anchor matches the start of a line.",
-              "answer": "What is ^",
-              "value": 600
-            },
-            {
-              "text": "This construct lets you capture a matched group for later reuse.",
-              "answer": "What are parentheses (a capture group)",
-              "value": 800
-            },
-            {
-              "text": "This term describes a regex that can take exponential time on certain inputs, sometimes called \"catastrophic\" this.",
-              "answer": "What is backtracking",
-              "value": 1000
-            }
+            { "text": "This character matches any single character except a newline.", "answer": "What is . (dot)", "value": 200 },
+            { "text": "This quantifier means \"zero or more\" of the preceding element.", "answer": "What is *", "value": 400 },
+            { "text": "This anchor matches the start of a line.", "answer": "What is ^", "value": 600 },
+            { "text": "This construct lets you capture a matched group for later reuse.", "answer": "What are parentheses (a capture group)", "value": 800 },
+            { "text": "This term describes a regex that can take exponential time on certain inputs, sometimes called \"catastrophic\" this.", "answer": "What is backtracking", "value": 1000 }
           ]
         },
         {
           "name": "The Cloud",
           "clues": [
-            {
-              "text": "This acronym describes paying only for compute you actually use, no servers to provision.",
-              "answer": "What is serverless",
-              "value": 200
-            },
-            {
-              "text": "This AWS service stores objects like files and images, organized into \"buckets.\"",
-              "answer": "What is S3",
-              "value": 400
-            },
-            {
-              "text": "This practice defines and provisions infrastructure through machine-readable config files instead of manual setup.",
-              "answer": "What is Infrastructure as Code",
-              "value": 600
-            },
-            {
-              "text": "This term describes automatically adding or removing servers based on current load.",
-              "answer": "What is autoscaling",
-              "value": 800
-            },
-            {
-              "text": "This unexpected monthly surprise is the subject of countless engineering memes.",
-              "answer": "What is the cloud bill",
-              "value": 1000
-            }
+            { "text": "This acronym describes paying only for compute you actually use, no servers to provision.", "answer": "What is serverless", "value": 200 },
+            { "text": "This AWS service stores objects like files and images, organized into \"buckets.\"", "answer": "What is S3", "value": 400 },
+            { "text": "This practice defines and provisions infrastructure through machine-readable config files instead of manual setup.", "answer": "What is Infrastructure as Code", "value": 600 },
+            { "text": "This term describes automatically adding or removing servers based on current load.", "answer": "What is autoscaling", "value": 800 },
+            { "text": "This unexpected monthly surprise is the subject of countless engineering memes.", "answer": "What is the cloud bill", "value": 1000 }
           ]
         },
         {
           "name": "Stand-Up Speak",
           "clues": [
-            {
-              "text": "This phrase means a developer is still figuring out why something broke.",
-              "answer": "What is \"investigating\"",
-              "value": 200
-            },
-            {
-              "text": "Saying you're \"blocked on\" this means you're waiting on someone else's work.",
-              "answer": "What is a code review (or a dependency)",
-              "value": 400
-            },
-            {
-              "text": "This ritual at the start of a sprint decides what gets worked on.",
-              "answer": "What is sprint planning",
-              "value": 600
-            },
-            {
-              "text": "This unit, often a Fibonacci number, estimates relative effort rather than hours.",
-              "answer": "What is a story point",
-              "value": 800
-            },
-            {
-              "text": "This meeting at the end of a sprint shows stakeholders what got built.",
-              "answer": "What is a sprint review (demo)",
-              "value": 1000
-            }
+            { "text": "This phrase means a developer is still figuring out why something broke.", "answer": "What is \"investigating\"", "value": 200 },
+            { "text": "Saying you're \"blocked on\" this means you're waiting on someone else's work.", "answer": "What is a code review (or a dependency)", "value": 400 },
+            { "text": "This ritual at the start of a sprint decides what gets worked on.", "answer": "What is sprint planning", "value": 600 },
+            { "text": "This unit, often a Fibonacci number, estimates relative effort rather than hours.", "answer": "What is a story point", "value": 800 },
+            { "text": "This meeting at the end of a sprint shows stakeholders what got built.", "answer": "What is a sprint review (demo)", "value": 1000 }
           ]
         },
         {
           "name": "Naming Things",
           "clues": [
-            {
-              "text": "This programming problem is, along with cache invalidation, famously one of the two hard things in computer science.",
-              "answer": "What is naming things",
-              "value": 200
-            },
-            {
-              "text": "This naming convention writes compound words with no spaces, each word capitalized after the first.",
-              "answer": "What is camelCase",
-              "value": 400
-            },
-            {
-              "text": "This naming convention separates words with underscores, all lowercase.",
-              "answer": "What is snake_case",
-              "value": 600
-            },
-            {
-              "text": "Variables named x, y, tmp, and foo are jokingly blamed on this lack of effort.",
-              "answer": "What is laziness (poor naming)",
-              "value": 800
-            },
-            {
-              "text": "This classic variable name, often paired with \"baz\", traces back to military slang and old hacker culture.",
-              "answer": "What is foo (or bar)",
-              "value": 1000
-            }
+            { "text": "This programming problem is, along with cache invalidation, famously one of the two hard things in computer science.", "answer": "What is naming things", "value": 200 },
+            { "text": "This naming convention writes compound words with no spaces, each word capitalized after the first.", "answer": "What is camelCase", "value": 400 },
+            { "text": "This naming convention separates words with underscores, all lowercase.", "answer": "What is snake_case", "value": 600 },
+            { "text": "Variables named x, y, tmp, and foo are jokingly blamed on this lack of effort.", "answer": "What is laziness (poor naming)", "value": 800 },
+            { "text": "This classic variable name, often paired with \"baz\", traces back to military slang and old hacker culture.", "answer": "What is foo (or bar)", "value": 1000 }
           ]
         }
       ]
@@ -194,182 +73,61 @@
         {
           "name": "Blockbusters",
           "clues": [
-            {
-              "text": "This 1975 Steven Spielberg film about a great white shark is often called the first summer blockbuster.",
-              "answer": "What is Jaws",
-              "value": 200
-            },
-            {
-              "text": "This 1977 space opera from George Lucas launched a franchise with Luke, Leia, and Han Solo.",
-              "answer": "What is Star Wars",
-              "value": 400
-            },
-            {
-              "text": "This 1997 James Cameron film about a doomed ocean liner became the first movie to earn $1 billion worldwide.",
-              "answer": "What is Titanic",
-              "value": 600
-            },
-            {
-              "text": "This 2009 James Cameron film about the Na'vi people of Pandora overtook Titanic as the highest-grossing film ever.",
-              "answer": "What is Avatar",
-              "value": 800
-            },
-            {
-              "text": "This 2019 Marvel film, the culmination of the Infinity Saga, briefly became the highest-grossing film of all time.",
-              "answer": "What is Avengers: Endgame",
-              "value": 1000,
-              "context_clue": 1
-            }
+            { "text": "This 1975 Steven Spielberg film about a great white shark is often called the first summer blockbuster.", "answer": "What is Jaws", "value": 200 },
+            { "text": "This 1977 space opera from George Lucas launched a franchise with Luke, Leia, and Han Solo.", "answer": "What is Star Wars", "value": 400 },
+            { "text": "This 1997 James Cameron film about a doomed ocean liner became the first movie to earn $1 billion worldwide.", "answer": "What is Titanic", "value": 600 },
+            { "text": "This 2009 James Cameron film about the Na'vi people of Pandora overtook Titanic as the highest-grossing film ever.", "answer": "What is Avatar", "value": 800 },
+            { "text": "This 2019 Marvel film, the culmination of the Infinity Saga, briefly became the highest-grossing film of all time.", "answer": "What is Avengers: Endgame", "value": 1000, "context_clue": 1 }
           ]
         },
         {
           "name": "Best Picture Winners",
           "clues": [
-            {
-              "text": "This 1972 Francis Ford Coppola film about the Corleone crime family won Best Picture.",
-              "answer": "What is The Godfather",
-              "value": 200
-            },
-            {
-              "text": "This 1994 film starring Tom Hanks as a slow-witted but kind-hearted Alabama man won Best Picture.",
-              "answer": "What is Forrest Gump",
-              "value": 400
-            },
-            {
-              "text": "This 2003 fantasy epic, the third in its trilogy, won all eleven Oscars it was nominated for, including Best Picture.",
-              "answer": "What is The Lord of the Rings: The Return of the King",
-              "value": 600
-            },
-            {
-              "text": "This 2019 South Korean film about class disparity became the first non-English-language film to win Best Picture.",
-              "answer": "What is Parasite",
-              "value": 800
-            },
-            {
-              "text": "This 1939 Civil War epic starring Vivien Leigh and Clark Gable held the box-office record (adjusted for inflation) for decades.",
-              "answer": "What is Gone with the Wind",
-              "value": 1000
-            }
+            { "text": "This 1972 Francis Ford Coppola film about the Corleone crime family won Best Picture.", "answer": "What is The Godfather", "value": 200 },
+            { "text": "This 1994 film starring Tom Hanks as a slow-witted but kind-hearted Alabama man won Best Picture.", "answer": "What is Forrest Gump", "value": 400 },
+            { "text": "This 2003 fantasy epic, the third in its trilogy, won all eleven Oscars it was nominated for, including Best Picture.", "answer": "What is The Lord of the Rings: The Return of the King", "value": 600 },
+            { "text": "This 2019 South Korean film about class disparity became the first non-English-language film to win Best Picture.", "answer": "What is Parasite", "value": 800 },
+            { "text": "This 1939 Civil War epic starring Vivien Leigh and Clark Gable held the box-office record (adjusted for inflation) for decades.", "answer": "What is Gone with the Wind", "value": 1000 }
           ]
         },
         {
           "name": "Movie Quotes",
           "clues": [
-            {
-              "text": "In The Wizard of Oz, Dorothy says there's no place like this.",
-              "answer": "What is home",
-              "value": 200
-            },
-            {
-              "text": "This classic Jaws line, spoken by Chief Brody upon first seeing the shark, warns they'll need a bigger one.",
-              "answer": "What is \"You're gonna need a bigger boat\"",
-              "value": 400
-            },
-            {
-              "text": "In The Godfather, this is the kind of offer Vito Corleone says he'll make that can't be refused.",
-              "answer": "What is \"an offer he can't refuse\"",
-              "value": 600
-            },
-            {
-              "text": "This Darth Vader line to Luke in The Empire Strikes Back is one of cinema's most famous, and most misquoted.",
-              "answer": "What is \"No, I am your father\"",
-              "value": 800
-            },
-            {
-              "text": "This Dorothy line, said to her dog upon arriving in Oz, remarks that they're clearly not in this place anymore.",
-              "answer": "What is \"Toto, I've a feeling we're not in Kansas anymore\"",
-              "value": 1000
-            }
+            { "text": "In The Wizard of Oz, Dorothy says there's no place like this.", "answer": "What is home", "value": 200 },
+            { "text": "This classic Jaws line, spoken by Chief Brody upon first seeing the shark, warns they'll need a bigger one.", "answer": "What is \"You're gonna need a bigger boat\"", "value": 400 },
+            { "text": "In The Godfather, this is the kind of offer Vito Corleone says he'll make that can't be refused.", "answer": "What is \"an offer he can't refuse\"", "value": 600 },
+            { "text": "This Darth Vader line to Luke in The Empire Strikes Back is one of cinema's most famous, and most misquoted.", "answer": "What is \"No, I am your father\"", "value": 800 },
+            { "text": "This Dorothy line, said to her dog upon arriving in Oz, remarks that they're clearly not in this place anymore.", "answer": "What is \"Toto, I've a feeling we're not in Kansas anymore\"", "value": 1000 }
           ]
         },
         {
           "name": "Pixar & Animation",
           "clues": [
-            {
-              "text": "This 1995 film was the first feature-length movie made entirely with computer animation.",
-              "answer": "What is Toy Story",
-              "value": 200
-            },
-            {
-              "text": "This Pixar film follows an old man who ties balloons to his house to fly to South America.",
-              "answer": "What is Up",
-              "value": 400
-            },
-            {
-              "text": "This Pixar film is set inside the mind of a young girl named Riley, personifying emotions like Joy and Sadness.",
-              "answer": "What is Inside Out",
-              "value": 600
-            },
-            {
-              "text": "This Pixar film follows a rat named Remy who dreams of becoming a chef in Paris.",
-              "answer": "What is Ratatouille",
-              "value": 800
-            },
-            {
-              "text": "This Pixar film, set after humanity has left a trash-covered Earth, follows a lonely robot who falls for a sleek probe named EVE.",
-              "answer": "What is WALL-E",
-              "value": 1000
-            }
+            { "text": "This 1995 film was the first feature-length movie made entirely with computer animation.", "answer": "What is Toy Story", "value": 200 },
+            { "text": "This Pixar film follows an old man who ties balloons to his house to fly to South America.", "answer": "What is Up", "value": 400 },
+            { "text": "This Pixar film is set inside the mind of a young girl named Riley, personifying emotions like Joy and Sadness.", "answer": "What is Inside Out", "value": 600 },
+            { "text": "This Pixar film follows a rat named Remy who dreams of becoming a chef in Paris.", "answer": "What is Ratatouille", "value": 800 },
+            { "text": "This Pixar film, set after humanity has left a trash-covered Earth, follows a lonely robot who falls for a sleek probe named EVE.", "answer": "What is WALL-E", "value": 1000 }
           ]
         },
         {
           "name": "Movie Villains",
           "clues": [
-            {
-              "text": "This Star Wars villain, voiced by James Earl Jones, famously breathes heavily behind a black mask.",
-              "answer": "Who is Darth Vader",
-              "value": 200
-            },
-            {
-              "text": "This Lord of the Rings villain is a disembodied eye seeking the One Ring.",
-              "answer": "Who is Sauron",
-              "value": 400
-            },
-            {
-              "text": "This Batman villain, played by Heath Ledger in an Oscar-winning role, just wants to watch the world burn.",
-              "answer": "Who is the Joker",
-              "value": 600
-            },
-            {
-              "text": "This Harry Potter villain is so feared that characters often call him \"He Who Must Not Be Named.\"",
-              "answer": "Who is Voldemort",
-              "value": 800
-            },
-            {
-              "text": "This Silence of the Lambs villain is a cultured, cannibalistic psychiatrist played by Anthony Hopkins.",
-              "answer": "Who is Hannibal Lecter",
-              "value": 1000
-            }
+            { "text": "This Star Wars villain, voiced by James Earl Jones, famously breathes heavily behind a black mask.", "answer": "Who is Darth Vader", "value": 200 },
+            { "text": "This Lord of the Rings villain is a disembodied eye seeking the One Ring.", "answer": "Who is Sauron", "value": 400 },
+            { "text": "This Batman villain, played by Heath Ledger in an Oscar-winning role, just wants to watch the world burn.", "answer": "Who is the Joker", "value": 600 },
+            { "text": "This Harry Potter villain is so feared that characters often call him \"He Who Must Not Be Named.\"", "answer": "Who is Voldemort", "value": 800 },
+            { "text": "This Silence of the Lambs villain is a cultured, cannibalistic psychiatrist played by Anthony Hopkins.", "answer": "Who is Hannibal Lecter", "value": 1000 }
           ]
         },
         {
           "name": "Soundtrack & Score",
           "clues": [
-            {
-              "text": "This composer wrote the iconic two-note shark theme for Jaws and the fanfare for Star Wars.",
-              "answer": "Who is John Williams",
-              "value": 200
-            },
-            {
-              "text": "This 1977 disco-era film's soundtrack, featuring the Bee Gees, became one of the best-selling albums ever.",
-              "answer": "What is Saturday Night Fever",
-              "value": 400
-            },
-            {
-              "text": "This Whitney Houston ballad from The Bodyguard, originally written by Dolly Parton, became one of the best-selling singles of all time.",
-              "answer": "What is \"I Will Always Love You\"",
-              "value": 600
-            },
-            {
-              "text": "This Hans Zimmer score for a 2010 Christopher Nolan heist film about dream infiltration features a famous low brass blast.",
-              "answer": "What is Inception",
-              "value": 800
-            },
-            {
-              "text": "This Celine Dion ballad played over the credits of a 1997 James Cameron film about a doomed ocean liner.",
-              "answer": "What is \"My Heart Will Go On\"",
-              "value": 1000
-            }
+            { "text": "This composer wrote the iconic two-note shark theme for Jaws and the fanfare for Star Wars.", "answer": "Who is John Williams", "value": 200 },
+            { "text": "This 1977 disco-era film's soundtrack, featuring the Bee Gees, became one of the best-selling albums ever.", "answer": "What is Saturday Night Fever", "value": 400 },
+            { "text": "This Whitney Houston ballad from The Bodyguard, originally written by Dolly Parton, became one of the best-selling singles of all time.", "answer": "What is \"I Will Always Love You\"", "value": 600 },
+            { "text": "This Hans Zimmer score for a 2010 Christopher Nolan heist film about dream infiltration features a famous low brass blast.", "answer": "What is Inception", "value": 800 },
+            { "text": "This Celine Dion ballad played over the credits of a 1997 James Cameron film about a doomed ocean liner.", "answer": "What is \"My Heart Will Go On\"", "value": 1000 }
           ]
         }
       ]
@@ -381,182 +139,61 @@
         {
           "name": "World Capitals",
           "clues": [
-            {
-              "text": "This city is the capital of France.",
-              "answer": "What is Paris",
-              "value": 200
-            },
-            {
-              "text": "This city, not Sydney, is the capital of Australia.",
-              "answer": "What is Canberra",
-              "value": 400
-            },
-            {
-              "text": "This South American capital sits at an elevation of over 11,000 feet, making it the highest administrative capital in the world.",
-              "answer": "What is La Paz, Bolivia",
-              "value": 600
-            },
-            {
-              "text": "This capital city of Egypt sits along the Nile River and is the largest city in the Arab world.",
-              "answer": "What is Cairo",
-              "value": 800
-            },
-            {
-              "text": "This country has three capital cities: Pretoria (executive), Cape Town (legislative), and Bloemfontein (judicial).",
-              "answer": "What is South Africa",
-              "value": 1000
-            }
+            { "text": "This city is the capital of France.", "answer": "What is Paris", "value": 200 },
+            { "text": "This city, not Sydney, is the capital of Australia.", "answer": "What is Canberra", "value": 400 },
+            { "text": "This South American capital sits at an elevation of over 11,000 feet, making it the highest administrative capital in the world.", "answer": "What is La Paz, Bolivia", "value": 600 },
+            { "text": "This capital city of Egypt sits along the Nile River and is the largest city in the Arab world.", "answer": "What is Cairo", "value": 800 },
+            { "text": "This country has three capital cities: Pretoria (executive), Cape Town (legislative), and Bloemfontein (judicial).", "answer": "What is South Africa", "value": 1000 }
           ]
         },
         {
           "name": "Ancient History",
           "clues": [
-            {
-              "text": "This Egyptian ruler was buried in a tomb discovered largely intact by Howard Carter in 1922.",
-              "answer": "Who is Tutankhamun (King Tut)",
-              "value": 200
-            },
-            {
-              "text": "This wonder of the ancient world, the only one still standing today, is located in Giza, Egypt.",
-              "answer": "What is the Great Pyramid of Giza",
-              "value": 400
-            },
-            {
-              "text": "This ancient Roman amphitheater hosted gladiatorial contests and could hold tens of thousands of spectators.",
-              "answer": "What is the Colosseum",
-              "value": 600
-            },
-            {
-              "text": "This Greek city-state, rival to Athens, was known for its military discipline and warrior culture.",
-              "answer": "What is Sparta",
-              "value": 800
-            },
-            {
-              "text": "This Chinese emperor ordered the construction of an army of thousands of life-sized terracotta soldiers to guard his tomb.",
-              "answer": "Who is Qin Shi Huang",
-              "value": 1000,
-              "context_clue": 1
-            }
+            { "text": "This Egyptian ruler was buried in a tomb discovered largely intact by Howard Carter in 1922.", "answer": "Who is Tutankhamun (King Tut)", "value": 200 },
+            { "text": "This wonder of the ancient world, the only one still standing today, is located in Giza, Egypt.", "answer": "What is the Great Pyramid of Giza", "value": 400 },
+            { "text": "This ancient Roman amphitheater hosted gladiatorial contests and could hold tens of thousands of spectators.", "answer": "What is the Colosseum", "value": 600 },
+            { "text": "This Greek city-state, rival to Athens, was known for its military discipline and warrior culture.", "answer": "What is Sparta", "value": 800 },
+            { "text": "This Chinese emperor ordered the construction of an army of thousands of life-sized terracotta soldiers to guard his tomb.", "answer": "Who is Qin Shi Huang", "value": 1000, "context_clue": 1 }
           ]
         },
         {
           "name": "Mountains & Rivers",
           "clues": [
-            {
-              "text": "This is the longest river in the world, flowing through northeastern Africa.",
-              "answer": "What is the Nile",
-              "value": 200
-            },
-            {
-              "text": "This is the tallest mountain in the world, located on the border of Nepal and Tibet.",
-              "answer": "What is Mount Everest",
-              "value": 400
-            },
-            {
-              "text": "This South American river carries more water than any other river on Earth and flows through the world's largest rainforest.",
-              "answer": "What is the Amazon",
-              "value": 600
-            },
-            {
-              "text": "This mountain range separates Europe from Asia and runs through Russia.",
-              "answer": "What is the Ural Mountains",
-              "value": 800
-            },
-            {
-              "text": "This African lake, the second-largest freshwater lake in the world by surface area, borders Tanzania, Uganda, and Kenya.",
-              "answer": "What is Lake Victoria",
-              "value": 1000
-            }
+            { "text": "This is the longest river in the world, flowing through northeastern Africa.", "answer": "What is the Nile", "value": 200 },
+            { "text": "This is the tallest mountain in the world, located on the border of Nepal and Tibet.", "answer": "What is Mount Everest", "value": 400 },
+            { "text": "This South American river carries more water than any other river on Earth and flows through the world's largest rainforest.", "answer": "What is the Amazon", "value": 600 },
+            { "text": "This mountain range separates Europe from Asia and runs through Russia.", "answer": "What is the Ural Mountains", "value": 800 },
+            { "text": "This African lake, the second-largest freshwater lake in the world by surface area, borders Tanzania, Uganda, and Kenya.", "answer": "What is Lake Victoria", "value": 1000 }
           ]
         },
         {
           "name": "Flags",
           "clues": [
-            {
-              "text": "This country's flag features a red maple leaf centered on a white square, flanked by two red bars.",
-              "answer": "What is Canada",
-              "value": 200
-            },
-            {
-              "text": "This country's flag, the oldest national flag design still in use, is a simple white cross on a red background.",
-              "answer": "What is Denmark",
-              "value": 400
-            },
-            {
-              "text": "This country's flag features a wheel with 24 spokes, known as the Ashoka Chakra, at its center.",
-              "answer": "What is India",
-              "value": 600
-            },
-            {
-              "text": "This is the only national flag that is not rectangular or square in shape.",
-              "answer": "What is Nepal",
-              "value": 800
-            },
-            {
-              "text": "This South American country's flag features a yellow sun with a human face, known as the Sun of May.",
-              "answer": "What is Argentina",
-              "value": 1000
-            }
+            { "text": "This country's flag features a red maple leaf centered on a white square, flanked by two red bars.", "answer": "What is Canada", "value": 200 },
+            { "text": "This country's flag, the oldest national flag design still in use, is a simple white cross on a red background.", "answer": "What is Denmark", "value": 400 },
+            { "text": "This country's flag features a wheel with 24 spokes, known as the Ashoka Chakra, at its center.", "answer": "What is India", "value": 600 },
+            { "text": "This is the only national flag that is not rectangular or square in shape.", "answer": "What is Nepal", "value": 800 },
+            { "text": "This South American country's flag features a yellow sun with a human face, known as the Sun of May.", "answer": "What is Argentina", "value": 1000 }
           ]
         },
         {
           "name": "World Leaders",
           "clues": [
-            {
-              "text": "This British queen's reign, which began in 1952, became the longest of any British monarch in history.",
-              "answer": "Who is Elizabeth II",
-              "value": 200
-            },
-            {
-              "text": "This South African leader spent 27 years in prison before becoming his country's first Black president in 1994.",
-              "answer": "Who is Nelson Mandela",
-              "value": 400
-            },
-            {
-              "text": "This Indian leader led a campaign of nonviolent resistance that helped India gain independence from British rule.",
-              "answer": "Who is Mahatma Gandhi",
-              "value": 600
-            },
-            {
-              "text": "This French military leader crowned himself Emperor in 1804 and was eventually exiled to the island of Saint Helena.",
-              "answer": "Who is Napoleon Bonaparte",
-              "value": 800
-            },
-            {
-              "text": "This U.S. president delivered the Gettysburg Address in 1863, during the Civil War.",
-              "answer": "Who is Abraham Lincoln",
-              "value": 1000
-            }
+            { "text": "This British queen's reign, which began in 1952, became the longest of any British monarch in history.", "answer": "Who is Elizabeth II", "value": 200 },
+            { "text": "This South African leader spent 27 years in prison before becoming his country's first Black president in 1994.", "answer": "Who is Nelson Mandela", "value": 400 },
+            { "text": "This Indian leader led a campaign of nonviolent resistance that helped India gain independence from British rule.", "answer": "Who is Mahatma Gandhi", "value": 600 },
+            { "text": "This French military leader crowned himself Emperor in 1804 and was eventually exiled to the island of Saint Helena.", "answer": "Who is Napoleon Bonaparte", "value": 800 },
+            { "text": "This U.S. president delivered the Gettysburg Address in 1863, during the Civil War.", "answer": "Who is Abraham Lincoln", "value": 1000 }
           ]
         },
         {
           "name": "Wonders of the World",
           "clues": [
-            {
-              "text": "This ancient wonder, a massive statue, once stood at the entrance to the harbor of the Greek island of Rhodes.",
-              "answer": "What is the Colossus of Rhodes",
-              "value": 200
-            },
-            {
-              "text": "This modern wonder, a mausoleum built by Shah Jahan for his wife, is located in Agra, India.",
-              "answer": "What is the Taj Mahal",
-              "value": 400
-            },
-            {
-              "text": "This wonder, a massive fortification, stretches thousands of miles across northern China.",
-              "answer": "What is the Great Wall of China",
-              "value": 600
-            },
-            {
-              "text": "This wonder, a lost Incan city, sits high in the Andes Mountains of Peru.",
-              "answer": "What is Machu Picchu",
-              "value": 800
-            },
-            {
-              "text": "This wonder, a statue of Christ with outstretched arms, overlooks Rio de Janeiro, Brazil, from Corcovado Mountain.",
-              "answer": "What is Christ the Redeemer",
-              "value": 1000
-            }
+            { "text": "This ancient wonder, a massive statue, once stood at the entrance to the harbor of the Greek island of Rhodes.", "answer": "What is the Colossus of Rhodes", "value": 200 },
+            { "text": "This modern wonder, a mausoleum built by Shah Jahan for his wife, is located in Agra, India.", "answer": "What is the Taj Mahal", "value": 400 },
+            { "text": "This wonder, a massive fortification, stretches thousands of miles across northern China.", "answer": "What is the Great Wall of China", "value": 600 },
+            { "text": "This wonder, a lost Incan city, sits high in the Andes Mountains of Peru.", "answer": "What is Machu Picchu", "value": 800 },
+            { "text": "This wonder, a statue of Christ with outstretched arms, overlooks Rio de Janeiro, Brazil, from Corcovado Mountain.", "answer": "What is Christ the Redeemer", "value": 1000 }
           ]
         }
       ]
