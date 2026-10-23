@@ -187,7 +187,7 @@ def test_reveal_requires_board_control_for_context_clue(client: TestClient) -> N
     assert resp.status_code == 400
 
 
-def test_context_clue_is_timed_once_revealed(client: TestClient) -> None:
+def test_context_clue_is_timed_but_does_not_auto_start(client: TestClient) -> None:
     game_id = _create_game(client)
     client.patch(
         f"/api/answers/games/{game_id}/board-control", json={"player": "player1"}
@@ -196,12 +196,18 @@ def test_context_clue_is_timed_once_revealed(client: TestClient) -> None:
     client.patch(f"/api/answers/games/{game_id}/context-wager", json={"wager": 500})
     body = _reveal_clue(client, game_id)
     assert body["buzzed_player"] == "player1"
-    assert body["answer_timer_running"] is True
-    # Close to the full duration — a couple ms may have ticked by already.
-    full_duration = body["players"]["player1"]["answer_time_ms"]
-    assert full_duration - 100 <= body["buzz_remaining_ms"] <= full_duration
+    # Ready to time, but not running yet — the host starts it manually
+    # (with Play) once they're done reading the clue aloud.
+    assert body["answer_timer_running"] is False
+    assert body["buzz_remaining_ms"] == body["players"]["player1"]["answer_time_ms"]
 
-    # Host timer controls work on it the same as a regular clue.
+    # Host starts it when ready.
+    resp = client.patch(f"/api/answers/games/{game_id}/play-answer-timer")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["answer_timer_running"] is True
+
+    # And can still pause/stop/reset it like any other answer timer.
     resp = client.patch(f"/api/answers/games/{game_id}/pause-answer-timer")
     assert resp.status_code == 200
     assert resp.json()["answer_timer_running"] is False

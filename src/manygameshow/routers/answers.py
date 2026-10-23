@@ -351,12 +351,14 @@ def reveal_clue(game_id: str, session: SessionDep) -> AnswersGameRead:
     game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
     if is_selected_context_clue(game) and board_control is not None:
         # Context Clue is still timed — it just skips the ring-in race
-        # since only the board-control holder can answer it. Reuse the
-        # same buzzed_player/answer-timer machinery as a regular buzz.
+        # since only the board-control holder can answer it. Reuses the
+        # same buzzed_player/answer-timer machinery as a regular buzz,
+        # but the clock doesn't start on its own: the host reads the
+        # clue first and starts it manually with Play when ready.
         game.buzzed_player = board_control
-        game.buzz_answer_started_at = game.clue_revealed_at
+        game.buzz_answer_started_at = None
         game.buzz_timer_remaining_ms = answer_time_for(game, board_control)
-        game.buzz_timer_running = True
+        game.buzz_timer_running = False
     return _to_read(_save(game, session), show_all=True)
 
 
