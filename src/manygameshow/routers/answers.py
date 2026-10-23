@@ -258,7 +258,7 @@ def update_players(
             score = player_score(game, player)
             score.name = name
             set_player_score(game, player, score)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class CategoryRevealBody(SQLModel):
@@ -276,7 +276,7 @@ def set_category_reveal(
         raise HTTPException(status_code=422, detail="category_index out of range")
     revealed[body.category_index] = body.revealed
     set_categories_revealed(game, revealed)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class SelectClueBody(SQLModel):
@@ -308,7 +308,7 @@ def select_clue(
     game.buzzed_player = None
     game.buzz_answer_started_at = None
     game.context_clue_wager = None
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class ContextWagerBody(SQLModel):
@@ -325,7 +325,7 @@ def set_context_wager(
     if clue_phase(game) == "revealed":
         raise HTTPException(status_code=400, detail="Clue is already revealed")
     game.context_clue_wager = body.wager
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/reveal-clue", response_model=AnswersGameRead)
@@ -338,7 +338,7 @@ def reveal_clue(game_id: str, session: SessionDep) -> AnswersGameRead:
     if is_selected_context_clue(game) and game.context_clue_wager is None:
         raise HTTPException(status_code=400, detail="Set the wager before revealing")
     game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class BuzzBody(SQLModel):
@@ -416,7 +416,7 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> AnswersGameRead
     cells = clue_cells(game)
     cells[cat_idx][clue_idx] = cell
     set_clue_cells(game, cells)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 def _clear_selected(game: AnswersGame) -> None:
@@ -444,7 +444,7 @@ def no_one_answered(game_id: str, session: SessionDep) -> AnswersGameRead:
     cells[cat_idx][clue_idx].played = True
     set_clue_cells(game, cells)
     _clear_selected(game)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class BoardControlBody(SQLModel):
@@ -457,14 +457,14 @@ def set_board_control(
 ) -> AnswersGameRead:
     game = _get_game(game_id, session)
     game.board_control = body.player
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/start-round2", response_model=AnswersGameRead)
 def start_round2(game_id: str, session: SessionDep) -> AnswersGameRead:
     game = _get_game(game_id, session)
     reset_board_for_round(game, RoundName.ROUND2)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/start-final", response_model=AnswersGameRead)
@@ -476,7 +476,7 @@ def start_final(game_id: str, session: SessionDep) -> AnswersGameRead:
     for player in ALL_PLAYERS:
         eligible = player_score(game, player).score > 0
         set_final_entry(game, player, FinalEntry(eligible=eligible))
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class FinalSubmitBody(SQLModel):
@@ -523,7 +523,7 @@ def final_reveal(
         raise HTTPException(status_code=400, detail="That player hasn't submitted yet")
     entry.revealed = True
     set_final_entry(game, body.player, entry)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class FinalJudgeBody(SQLModel):
@@ -547,7 +547,7 @@ def final_judge(
     score.score += entry.wager if body.correct else -entry.wager
     set_player_score(game, body.player, score)
     set_final_entry(game, body.player, entry)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class RingInSettingsBody(SQLModel):
@@ -564,7 +564,7 @@ def set_ring_in_settings(
         game.ring_in_start_delay_ms = body.start_delay_ms
     if body.window_ms is not None:
         game.ring_in_window_ms = body.window_ms
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class RingInOverrideBody(SQLModel):
@@ -583,7 +583,7 @@ def set_ring_in_player_override(
         body.player,
         TimingOverride(start_delay_ms=body.start_delay_ms, window_ms=body.window_ms),
     )
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/ring-in-override-clear", response_model=AnswersGameRead)
@@ -592,7 +592,7 @@ def clear_ring_in_player_overrides(
 ) -> AnswersGameRead:
     game = _get_game(game_id, session)
     clear_ring_in_overrides(game)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class AnswerTimeSettingsBody(SQLModel):
@@ -605,7 +605,7 @@ def set_answer_time_settings(
 ) -> AnswersGameRead:
     game = _get_game(game_id, session)
     game.answer_time_ms = body.window_ms
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class AnswerTimeOverrideBody(SQLModel):
@@ -619,7 +619,7 @@ def set_answer_time_player_override(
 ) -> AnswersGameRead:
     game = _get_game(game_id, session)
     set_answer_time_override(game, body.player, body.window_ms)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/answer-time-override-clear", response_model=AnswersGameRead)
@@ -628,7 +628,7 @@ def clear_answer_time_player_overrides(
 ) -> AnswersGameRead:
     game = _get_game(game_id, session)
     clear_answer_time_overrides(game)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 class AdjustScoreBody(SQLModel):
@@ -644,7 +644,7 @@ def adjust_score(
     score = player_score(game, body.player)
     score.score = body.score
     set_player_score(game, body.player, score)
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/reset", response_model=AnswersGameRead)
@@ -659,4 +659,4 @@ def reset_game(game_id: str, session: SessionDep) -> AnswersGameRead:
     reset_board_for_round(game, RoundName.ROUND1)
     for player in ALL_PLAYERS:
         set_final_entry(game, player, FinalEntry())
-    return _to_read(_save(game, session))
+    return _to_read(_save(game, session), show_all=True)

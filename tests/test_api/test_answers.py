@@ -150,7 +150,10 @@ def test_selecting_clue_shows_fly_in_phase_not_yet_text(client: TestClient) -> N
     game_id = _create_game(client)
     body = _select_clue(client, game_id, 0, 0)
     assert body["clue_phase"] == "selected"
-    assert body["categories"][0]["clues"][0]["text"] is None
+    # select-clue is a Control-only action and returns the full answer key,
+    # but the public view other screens poll must still hide the text.
+    public = _get(client, game_id)
+    assert public["categories"][0]["clues"][0]["text"] is None
 
 
 def test_reveal_clue_shows_text_to_everyone(client: TestClient) -> None:
@@ -158,8 +161,9 @@ def test_reveal_clue_shows_text_to_everyone(client: TestClient) -> None:
     _select_clue(client, game_id, 0, 0)
     body = _reveal_clue(client, game_id)
     assert body["clue_phase"] == "revealed"
-    assert body["categories"][0]["clues"][0]["text"] is not None
-    assert body["categories"][0]["clues"][0]["answer"] is None  # not played yet
+    public = _get(client, game_id)
+    assert public["categories"][0]["clues"][0]["text"] is not None
+    assert public["categories"][0]["clues"][0]["answer"] is None  # not played yet
 
 
 def test_reveal_requires_wager_for_context_clue(client: TestClient) -> None:
