@@ -11,7 +11,7 @@
             { "text": "This command creates a new branch and switches to it in one step.", "answer": "What is git checkout -b", "value": 400 },
             { "text": "This three-way operation combines changes from two branches, possibly leaving markers like <<<<<<< behind.", "answer": "What is a merge", "value": 600 },
             { "text": "This command rewrites commit history onto a new base, often described as \"replaying\" commits.", "answer": "What is rebase", "value": 800 },
-            { "text": "This command un-stages a file without discarding its changes, the opposite of git add.", "answer": "What is git reset (or git restore --staged)", "value": 1000, "context_clue": 1 }
+            { "text": "This command un-stages a file without discarding its changes, the opposite of git add.", "answer": "What is git reset (or git restore --staged)", "value": 1000, "stake_stacker": 1 }
           ]
         },
         {
@@ -77,7 +77,7 @@
             { "text": "This 1977 space opera from George Lucas launched a franchise with Luke, Leia, and Han Solo.", "answer": "What is Star Wars", "value": 400 },
             { "text": "This 1997 James Cameron film about a doomed ocean liner became the first movie to earn $1 billion worldwide.", "answer": "What is Titanic", "value": 600 },
             { "text": "This 2009 James Cameron film about the Na'vi people of Pandora overtook Titanic as the highest-grossing film ever.", "answer": "What is Avatar", "value": 800 },
-            { "text": "This 2019 Marvel film, the culmination of the Infinity Saga, briefly became the highest-grossing film of all time.", "answer": "What is Avengers: Endgame", "value": 1000, "context_clue": 1 }
+            { "text": "This 2019 Marvel film, the culmination of the Infinity Saga, briefly became the highest-grossing film of all time.", "answer": "What is Avengers: Endgame", "value": 1000, "stake_stacker": 1 }
           ]
         },
         {
@@ -153,7 +153,7 @@
             { "text": "This wonder of the ancient world, the only one still standing today, is located in Giza, Egypt.", "answer": "What is the Great Pyramid of Giza", "value": 400 },
             { "text": "This ancient Roman amphitheater hosted gladiatorial contests and could hold tens of thousands of spectators.", "answer": "What is the Colosseum", "value": 600 },
             { "text": "This Greek city-state, rival to Athens, was known for its military discipline and warrior culture.", "answer": "What is Sparta", "value": 800 },
-            { "text": "This Chinese emperor ordered the construction of an army of thousands of life-sized terracotta soldiers to guard his tomb.", "answer": "Who is Qin Shi Huang", "value": 1000, "context_clue": 1 }
+            { "text": "This Chinese emperor ordered the construction of an army of thousands of life-sized terracotta soldiers to guard his tomb.", "answer": "Who is Qin Shi Huang", "value": 1000, "stake_stacker": 1 }
           ]
         },
         {

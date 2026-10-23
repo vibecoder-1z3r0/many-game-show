@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Answers</title>
+    <title>Peril</title>
     <style>
       /* Self-hosted (not Google Fonts CDN) so the display font still loads
          on flaky/offline conference wifi — see UI_LOOK_AND_FEEL.md. */
@@ -387,17 +387,17 @@
         line-height: 1.3;
       }
 
-      #clue-overlay .overlay-context-announce {
+      #clue-overlay .overlay-stake-stacker-announce {
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: clamp(2.2rem, 7vw, 5.5rem);
         font-weight: 800;
         color: var(--accent);
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        animation: context-pulse 1.1s ease-in-out infinite;
+        animation: stake-stacker-pulse 1.1s ease-in-out infinite;
       }
 
-      @keyframes context-pulse {
+      @keyframes stake-stacker-pulse {
         0%,
         100% {
           transform: scale(1);
@@ -597,7 +597,7 @@
       <h1 class="breadcrumb">
         <a href="/">Many Game Show</a>
         <span class="crumb-sep">›</span>
-        Answers
+        Peril
       </h1>
       <div class="tabs">
         <button id="tab-main" onclick="switchView('main')">Main</button>
@@ -776,7 +776,7 @@
       }
 
       async function api(path, options) {
-        const resp = await fetch(`/api/answers/games/${gameId}${path}`, {
+        const resp = await fetch(`/api/peril/games/${gameId}${path}`, {
           headers: { "Content-Type": "application/json" },
           ...options,
         });
@@ -871,11 +871,11 @@
         patch("/select-clue", { category_index: catIndex, clue_index: clueIndex });
       }
 
-      function setContextWager() {
-        const input = document.getElementById("context-wager-input");
+      function setStakeStackerWager() {
+        const input = document.getElementById("stake-stacker-wager-input");
         const wager = parseInt(input.value, 10);
         if (!Number.isFinite(wager) || wager < 0) return;
-        patch("/context-wager", { wager });
+        patch("/stake-stacker-wager", { wager });
       }
 
       function revealClue() {
@@ -1067,8 +1067,8 @@
           overlay.innerHTML = `<div class="overlay-text-big">${clue.text}</div>`;
           return;
         }
-        if (clue.is_context_clue) {
-          overlay.innerHTML = `<div class="overlay-context-announce">Context Clue!</div>`;
+        if (clue.is_stake_stacker) {
+          overlay.innerHTML = `<div class="overlay-stake-stacker-announce">Stake Stacker!</div>`;
           return;
         }
         overlay.innerHTML =
@@ -1085,7 +1085,7 @@
         }
         const cat = gs.categories[gs.selected_category_index];
         const clue = cat.clues[gs.selected_clue_index];
-        if (clue.is_context_clue && gs.clue_phase !== "revealed") {
+        if (clue.is_stake_stacker && gs.clue_phase !== "revealed") {
           // Pre-reveal announcement — no timer yet.
           const name = gs.board_control ? gs.players[gs.board_control].name : "?";
           bar.hidden = false;
@@ -1195,12 +1195,12 @@
         html += `<div class="status-line">${clue.text}</div>`;
         html += `<div class="status-line">Answer: ${clue.answer}</div>`;
 
-        if (clue.is_context_clue && gs.clue_phase !== "revealed") {
+        if (clue.is_stake_stacker && gs.clue_phase !== "revealed") {
           html += `
             <div class="row-line">
-              <input type="number" id="context-wager-input" placeholder="Wager" />
-              <button class="primary" onclick="setContextWager()">Set Wager</button>
-              <button class="primary" onclick="revealClue()" ${gs.context_clue_wager === null ? "disabled" : ""}>
+              <input type="number" id="stake-stacker-wager-input" placeholder="Wager" />
+              <button class="primary" onclick="setStakeStackerWager()">Set Wager</button>
+              <button class="primary" onclick="revealClue()" ${gs.stake_stacker_wager === null ? "disabled" : ""}>
                 Reveal Clue
               </button>
             </div>`;
@@ -1212,8 +1212,8 @@
           return html;
         }
 
-        if (clue.is_context_clue) {
-          html += `<div class="status-line">Wager: ${gs.context_clue_wager}</div>`;
+        if (clue.is_stake_stacker) {
+          html += `<div class="status-line">Wager: ${gs.stake_stacker_wager}</div>`;
         }
 
         if (gs.buzzed_player) {
@@ -1233,7 +1233,7 @@
               <button class="primary" onclick="resetAnswerTimer()">Reset</button>
               <button class="primary" onclick="clearAnswerTimer()">Clear</button>
             </div>`;
-        } else if (clue.is_context_clue) {
+        } else if (clue.is_stake_stacker) {
           // Timer was cleared — still judgeable via board control.
           html += `
             <div class="row-line">
@@ -1303,17 +1303,17 @@
         }
         const cat = gs.categories[gs.selected_category_index];
         const clue = cat.clues[gs.selected_clue_index];
-        if (clue.is_context_clue) {
+        if (clue.is_stake_stacker) {
           if (gs.board_control !== player) return "";
           if (gs.clue_phase !== "revealed") {
-            return `<div class="status-line" style="text-align:center">Your Context Clue — state your wager!</div>`;
+            return `<div class="status-line" style="text-align:center">Your Stake Stacker — state your wager!</div>`;
           }
           const me = gs.players[player];
           const pct = me.answer_time_ms
             ? Math.min(100, (100 * (gs.buzz_remaining_ms || 0)) / me.answer_time_ms)
             : 0;
           return (
-            `<div class="status-line" style="text-align:center">Your Context Clue — answer now!</div>` +
+            `<div class="status-line" style="text-align:center">Your Stake Stacker — answer now!</div>` +
             countdownBarHtml(pct, "answer")
           );
         }
