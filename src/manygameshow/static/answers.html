@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Answers</title>
+    <style>
+      /* Self-hosted (not Google Fonts CDN) so the display font still loads
+         on flaky/offline conference wifi — see UI_LOOK_AND_FEEL.md. */
+      @font-face {
+        font-family: "Orbitron";
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+        src: url("/fonts/orbitron-600.ttf") format("truetype");
+      }
+
+      @font-face {
+        font-family: "Orbitron";
+        font-weight: 800;
+        font-style: normal;
+        font-display: swap;
+        src: url("/fonts/orbitron-800.ttf") format("truetype");
+      }
+
+      :root {
+        --bg: #0b1220;
+        --panel: #131c2e;
+        --panel-2: #1a2540;
+        --text: #f5f7fa;
+        --text-dim: #9aa5b8;
+        --accent: #ffcc00;
+        --border: #263252;
+        --win-green: #2ecc71;
+        --danger: #ff4d4d;
+      }
+
+      [data-theme="stage"] {
+        --bg: #05060a;
+        --panel: #12141c;
+        --panel-2: #1b1f2b;
+        --text: #f2f2f5;
+        --text-dim: #8b8f9c;
+        --accent: #00e5ff;
+        --border: #2a2f3d;
+      }
+
+      [data-theme="bright"] {
+        --bg: #fef6e4;
+        --panel: #ffffff;
+        --panel-2: #fff1d6;
+        --text: #1b1b1b;
+        --text-dim: #6b6b6b;
+        --accent: #ff5a3c;
+        --border: #f0d9b5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, sans-serif;
+      }
+
+      .display-num {
+        font-family: "Orbitron", system-ui, sans-serif;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+
+      header h1 {
+        font-size: 1rem;
+        margin: 0;
+        margin-right: auto;
+      }
+
+      .breadcrumb a {
+        color: var(--text-dim);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
+      .crumb-sep {
+        color: var(--text-dim);
+        margin: 0 0.3rem;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .tabs button {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      .tabs button.active {
+        background: var(--accent);
+        color: #10131a;
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+
+      select {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .conn-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+
+      .conn-badge.ok {
+        background: #1e4d2b;
+        color: #7cf29c;
+      }
+
+      .conn-badge.lost {
+        background: #4d1e1e;
+        color: #f29c7c;
+      }
+
+      .icon-btn {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.6rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      #mini-header {
+        position: fixed;
+        top: 0.6rem;
+        right: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.35rem 0.5rem 0.35rem 0.7rem;
+        z-index: 100;
+      }
+
+      .mini-led {
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 50%;
+      }
+
+      .mini-led.ok {
+        background: #2ecc71;
+        box-shadow: 0 0 8px 1px rgba(46, 204, 113, 0.7);
+      }
+
+      .mini-led.lost {
+        background: #ff4d4d;
+        box-shadow: 0 0 8px 1px rgba(255, 77, 77, 0.7);
+      }
+
+      main {
+        padding: 1rem;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      button {
+        font-family: inherit;
+      }
+
+      button.primary {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+      }
+
+      button.primary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      button.primary.active {
+        background: var(--accent);
+        color: #10131a;
+        font-weight: 700;
+        border-color: var(--accent);
+      }
+
+      button.danger {
+        border-color: var(--danger);
+        color: var(--danger);
+        background: transparent;
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+      }
+
+      fieldset {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      legend {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        padding: 0 0.4rem;
+      }
+
+      input[type="text"],
+      input[type="number"] {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.4rem 0.6rem;
+      }
+
+      .status-line {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      .row-line {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      /* ---------- Board grid: categories across top, clues below ---------- */
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.35rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .cat-header {
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.4rem 0.3rem;
+        min-height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: clamp(0.55rem, 1.4vw, 0.75rem);
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .cat-header.hidden-cat {
+        color: var(--text-dim);
+      }
+
+      .clue-cell {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        min-height: clamp(2.6rem, 6vw, 3.6rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-weight: 800;
+        font-size: clamp(0.9rem, 2.4vw, 1.3rem);
+        color: var(--accent);
+        cursor: default;
+      }
+
+      .clue-cell.played {
+        color: var(--border);
+        background: var(--panel-2);
+      }
+
+      .clue-cell.clickable {
+        cursor: pointer;
+      }
+
+      .clue-cell.clickable:hover {
+        border-color: var(--accent);
+      }
+
+      .clue-cell.in-play {
+        border-color: var(--win-green);
+        box-shadow: 0 0 0 2px var(--win-green) inset;
+      }
+
+      /* ---------- Clue overlay (the fly-to-value / reveal moment) ---------- */
+
+      #clue-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 8, 16, 0.92);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2rem;
+        padding: 2rem;
+        text-align: center;
+        z-index: 50;
+        animation: overlay-in 0.25s ease-out;
+      }
+
+      @keyframes overlay-in {
+        from {
+          opacity: 0;
+          transform: scale(0.85);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      #clue-overlay .overlay-value {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(2.5rem, 8vw, 5rem);
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      #clue-overlay .overlay-category {
+        font-size: clamp(1rem, 2.6vw, 1.4rem);
+        color: var(--text-dim);
+        text-transform: uppercase;
+      }
+
+      #clue-overlay .overlay-text {
+        font-size: clamp(1.1rem, 2.8vw, 1.8rem);
+        max-width: 50rem;
+      }
+
+      #clue-overlay .overlay-answer {
+        font-size: clamp(1rem, 2.4vw, 1.4rem);
+        color: var(--win-green);
+      }
+
+      /* ---------- Ring-in / answer countdown bar: shrinks to center ---------- */
+
+      .countdown-track {
+        position: relative;
+        height: 1.2rem;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        overflow: hidden;
+        max-width: 24rem;
+        margin: 0.4rem auto;
+      }
+
+      .countdown-fill {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        background: var(--accent);
+        transition: width 0.1s linear, left 0.1s linear;
+      }
+
+      .countdown-fill.answer {
+        background: var(--win-green);
+      }
+
+      /* ---------- Scoreboard ---------- */
+
+      .scoreboard {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin: 1rem auto;
+        max-width: 900px;
+      }
+
+      .player-card {
+        flex: 1;
+        min-width: 9rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.6rem;
+        background: var(--panel);
+        text-align: center;
+      }
+
+      .player-card.in-control {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent) inset;
+      }
+
+      .player-card .p-name {
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+      }
+
+      .player-card .p-score {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .player-card .p-score.negative {
+        color: var(--danger);
+      }
+
+      /* ---------- Main view ---------- */
+
+      #view-main {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      #main-round-status {
+        text-align: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      /* ---------- Control / Player views ---------- */
+
+      #view-control,
+      .player-view {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .category-toggles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+        gap: 0.4rem;
+      }
+
+      .category-toggles button {
+        font-size: 0.75rem;
+        padding: 0.4rem;
+      }
+
+      .control-player-row {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .control-player-row input[type="number"] {
+        width: 6rem;
+      }
+
+      .buzz-btn {
+        display: block;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        padding: 1.2rem;
+        font-size: 1.3rem;
+        font-weight: 800;
+        border-radius: 0.6rem;
+        cursor: pointer;
+        border: 2px solid var(--accent);
+        background: var(--accent);
+        color: #10131a;
+      }
+
+      .buzz-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: var(--panel-2);
+        color: var(--text-dim);
+        border-color: var(--border);
+      }
+
+      .final-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 24rem;
+        margin: 0 auto;
+      }
+
+      .final-form textarea {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem;
+        font-family: inherit;
+        min-height: 4rem;
+      }
+
+      .my-status {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 class="breadcrumb">
+        <a href="/">Many Game Show</a>
+        <span class="crumb-sep">›</span>
+        Answers
+      </h1>
+      <div class="tabs">
+        <button id="tab-main" onclick="switchView('main')">Main</button>
+        <button id="tab-control" onclick="switchView('control')">Control</button>
+        <button id="tab-player1" onclick="switchView('player1')">Player 1</button>
+        <button id="tab-player2" onclick="switchView('player2')">Player 2</button>
+        <button id="tab-player3" onclick="switchView('player3')">Player 3</button>
+      </div>
+      <select id="theme-select" onchange="applyTheme(this.value)">
+        <option value="default">Default</option>
+        <option value="stage">Stage</option>
+        <option value="bright">Bright</option>
+      </select>
+      <span id="conn-badge" class="conn-badge ok">Connected</span>
+      <button id="header-collapse-btn"
+              class="icon-btn"
+              onclick="collapseHeader()"
+              hidden>Hide header</button>
+    </header>
+    <div id="mini-header" hidden>
+      <span id="mini-led" class="mini-led ok"></span>
+      <button class="icon-btn" onclick="expandHeader()">Show header</button>
+    </div>
+    <main>
+      <section id="view-main">
+        <div id="main-round-status">Round 1</div>
+        <div id="main-board" class="board"></div>
+        <div id="main-scoreboard" class="scoreboard"></div>
+      </section>
+      <section id="view-control">
+        <fieldset>
+          <legend>Round</legend>
+          <div class="status-line" id="control-round-status"></div>
+          <div class="row-line">
+            <button class="primary" onclick="startRound2()">Start Round 2</button>
+            <button class="primary" onclick="startFinal()">Start Final Exam</button>
+            <button class="danger" onclick="resetGame()">Reset Game</button>
+          </div>
+        </fieldset>
+        <fieldset id="control-categories-fieldset">
+          <legend>Categories</legend>
+          <div id="control-category-toggles" class="category-toggles"></div>
+        </fieldset>
+        <fieldset id="control-board-fieldset">
+          <legend>Board (click a clue to select it)</legend>
+          <div id="control-board" class="board"></div>
+        </fieldset>
+        <fieldset id="control-clue-fieldset" hidden>
+          <legend>Clue in play</legend>
+          <div id="control-clue-status"></div>
+        </fieldset>
+        <fieldset id="control-final-fieldset" hidden>
+          <legend>Final Exam</legend>
+          <div id="control-final"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Players</legend>
+          <div class="row-line">
+            <button class="primary" onclick="setBoardControl('player1')">P1 Control</button>
+            <button class="primary" onclick="setBoardControl('player2')">P2 Control</button>
+            <button class="primary" onclick="setBoardControl('player3')">P3 Control</button>
+            <button class="primary" onclick="setBoardControl(null)">Clear Control</button>
+          </div>
+          <div id="control-players"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Timing</legend>
+          <div class="row-line">
+            <span>Ring-in: start</span>
+            <input type="number" id="ring-start-input" placeholder="ms" />
+            <span>window</span>
+            <input type="number" id="ring-window-input" placeholder="ms" />
+            <button class="primary" onclick="applyRingInSettings()">Apply Global</button>
+          </div>
+          <div class="row-line">
+            <span>Answer time</span>
+            <input type="number" id="answer-time-input" placeholder="ms" />
+            <button class="primary" onclick="applyAnswerTimeSettings()">Apply Global</button>
+          </div>
+          <div class="row-line">
+            <button class="primary" onclick="clearRingInOverrides()">Reset Ring-in to Global (all)</button>
+            <button class="primary" onclick="clearAnswerTimeOverrides()">
+              Reset Answer Time to Global (all)
+            </button>
+          </div>
+        </fieldset>
+        <div class="status-line" id="control-status-line"></div>
+      </section>
+      <section id="view-player1" class="player-view">
+        <div id="player1-body"></div>
+      </section>
+      <section id="view-player2" class="player-view">
+        <div id="player2-body"></div>
+      </section>
+      <section id="view-player3" class="player-view">
+        <div id="player3-body"></div>
+      </section>
+    </main>
+    <div id="clue-overlay" hidden></div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const gameId = params.get("id");
+      let currentView = params.get("view") || "main";
+      let state = null; // public view: Main + Players
+      let controlState = null; // privileged view: Control only
+      let lastStateJson = null;
+      let lastControlStateJson = null;
+      let failCount = 0;
+
+      const PLAYERS = ["player1", "player2", "player3"];
+
+      let headerCollapsed = localStorage.getItem("mgsHeaderCollapsed") === "1";
+
+      if (!gameId) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#f29c7c">No game id in URL. Create a game from the lobby first.</p>';
+        throw new Error("missing game id");
+      }
+
+      function applyTheme(t) {
+        document.documentElement.setAttribute("data-theme", t);
+        localStorage.setItem("mgsTheme", t);
+        document.getElementById("theme-select").value = t;
+      }
+      applyTheme(localStorage.getItem("mgsTheme") || "default");
+
+      function switchView(v) {
+        currentView = v;
+        document.getElementById("view-main").hidden = v !== "main";
+        document.getElementById("view-control").hidden = v !== "control";
+        for (const p of PLAYERS) {
+          document.getElementById(`view-${p}`).hidden = v !== p;
+          document.getElementById(`tab-${p}`).classList.toggle("active", v === p);
+        }
+        document.getElementById("tab-main").classList.toggle("active", v === "main");
+        document.getElementById("tab-control").classList.toggle("active", v === "control");
+        const url = new URL(location.href);
+        url.searchParams.set("view", v);
+        history.replaceState(null, "", url);
+        updateHeaderChrome();
+        poll();
+      }
+      switchView(currentView);
+
+      function updateHeaderChrome() {
+        const collapseBtn = document.getElementById("header-collapse-btn");
+        const header = document.querySelector("header");
+        const miniHeader = document.getElementById("mini-header");
+
+        if (currentView !== "main") {
+          collapseBtn.hidden = true;
+          header.hidden = false;
+          miniHeader.hidden = true;
+          return;
+        }
+
+        collapseBtn.hidden = false;
+        header.hidden = headerCollapsed;
+        miniHeader.hidden = !headerCollapsed;
+      }
+
+      function collapseHeader() {
+        headerCollapsed = true;
+        localStorage.setItem("mgsHeaderCollapsed", "1");
+        updateHeaderChrome();
+      }
+
+      function expandHeader() {
+        headerCollapsed = false;
+        localStorage.setItem("mgsHeaderCollapsed", "0");
+        updateHeaderChrome();
+      }
+
+      function setConnStatus(ok) {
+        const badge = document.getElementById("conn-badge");
+        badge.textContent = ok ? "Connected" : "Signal Lost";
+        badge.className = "conn-badge " + (ok ? "ok" : "lost");
+        document.getElementById("mini-led").className = "mini-led " + (ok ? "ok" : "lost");
+      }
+
+      async function api(path, options) {
+        const resp = await fetch(`/api/answers/games/${gameId}${path}`, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${resp.status}`);
+        }
+        return resp.json();
+      }
+
+      async function patch(path, body) {
+        try {
+          const newState = await api(path, {
+            method: "PATCH",
+            body: JSON.stringify(body === undefined ? {} : body),
+          });
+          if (currentView === "control") {
+            applyControlState(newState);
+          } else {
+            applyState(newState);
+          }
+          setStatus("");
+        } catch (e) {
+          setStatus(String(e.message || e));
+        }
+      }
+
+      function setStatus(msg) {
+        document.getElementById("control-status-line").textContent = msg;
+      }
+
+      function applyState(newState) {
+        const json = JSON.stringify(newState);
+        if (json === lastStateJson) return;
+        lastStateJson = json;
+        state = newState;
+        renderMain();
+        for (const p of PLAYERS) renderPlayerView(p);
+        if (currentView !== "main") {
+          document.getElementById("clue-overlay").hidden = true;
+        }
+      }
+
+      function applyControlState(newState) {
+        const json = JSON.stringify(newState);
+        if (json === lastControlStateJson) return;
+        lastControlStateJson = json;
+        controlState = newState;
+        renderControl();
+      }
+
+      async function poll() {
+        try {
+          if (currentView === "control") {
+            const newState = await api("/control", { method: "GET" });
+            failCount = 0;
+            setConnStatus(true);
+            applyControlState(newState);
+          } else {
+            const newState = await api("", { method: "GET" });
+            failCount = 0;
+            setConnStatus(true);
+            applyState(newState);
+          }
+        } catch (e) {
+          failCount++;
+          if (failCount >= 3) setConnStatus(false);
+        }
+      }
+
+      // ----- Control actions -----
+
+      function startRound2() {
+        patch("/start-round2");
+      }
+
+      function startFinal() {
+        patch("/start-final");
+      }
+
+      function resetGame() {
+        if (!confirm("Reset this game? All scores and progress will be cleared.")) return;
+        patch("/reset");
+      }
+
+      function toggleCategory(index, revealed) {
+        patch("/category-reveal", { category_index: index, revealed });
+      }
+
+      function selectClue(catIndex, clueIndex) {
+        patch("/select-clue", { category_index: catIndex, clue_index: clueIndex });
+      }
+
+      function setContextWager() {
+        const input = document.getElementById("context-wager-input");
+        const wager = parseInt(input.value, 10);
+        if (!Number.isFinite(wager) || wager < 0) return;
+        patch("/context-wager", { wager });
+      }
+
+      function revealClue() {
+        patch("/reveal-clue");
+      }
+
+      function judge(correct) {
+        patch("/judge", { correct });
+      }
+
+      function noOneAnswered() {
+        patch("/no-one-answered");
+      }
+
+      function setBoardControl(player) {
+        patch("/board-control", { player });
+      }
+
+      function setScore(player) {
+        const input = document.getElementById(`set-score-${player}`);
+        const score = parseInt(input.value, 10);
+        if (!Number.isFinite(score)) return;
+        patch("/adjust-score", { player, score });
+      }
+
+      function applyRingInSettings() {
+        const start = document.getElementById("ring-start-input").value;
+        const window_ = document.getElementById("ring-window-input").value;
+        const body = {};
+        if (start !== "") body.start_delay_ms = parseInt(start, 10);
+        if (window_ !== "") body.window_ms = parseInt(window_, 10);
+        patch("/ring-in-settings", body);
+      }
+
+      function applyAnswerTimeSettings() {
+        const window_ = document.getElementById("answer-time-input").value;
+        if (window_ === "") return;
+        patch("/answer-time-settings", { window_ms: parseInt(window_, 10) });
+      }
+
+      function clearRingInOverrides() {
+        patch("/ring-in-override-clear");
+      }
+
+      function clearAnswerTimeOverrides() {
+        patch("/answer-time-override-clear");
+      }
+
+      function finalReveal(player) {
+        patch("/final-reveal", { player });
+      }
+
+      function finalJudge(player, correct) {
+        patch("/final-judge", { player, correct });
+      }
+
+      // ----- Player actions -----
+
+      function buzz(player) {
+        patch("/buzz", { player });
+      }
+
+      function submitFinal(player) {
+        const wagerInput = document.getElementById(`final-wager-${player}`);
+        const answerInput = document.getElementById(`final-answer-${player}`);
+        const wager = parseInt(wagerInput.value, 10);
+        if (!Number.isFinite(wager) || wager < 0) return;
+        patch("/final-submit", { player, wager, answer: answerInput.value });
+      }
+
+      // ----- Rendering helpers -----
+
+      function scoreClass(score) {
+        return score < 0 ? "p-score negative" : "p-score";
+      }
+
+      function playerCardHtml(gs, playerKey) {
+        const p = gs.players[playerKey];
+        const classes = ["player-card"];
+        if (gs.board_control === playerKey) classes.push("in-control");
+        return `
+          <div class="${classes.join(" ")}">
+            <div class="p-name">${p.name}</div>
+            <div class="${scoreClass(p.score)} display-num">${p.score}</div>
+          </div>`;
+      }
+
+      function boardHtml(gs, { clickable }) {
+        if (gs.current_round === "final") {
+          return `<div class="status-line" style="text-align:center">Final Exam in progress</div>`;
+        }
+        const headers = gs.categories
+          .map(
+            (c) =>
+              `<div class="cat-header${c.revealed ? "" : " hidden-cat"}">${c.revealed ? c.name : "???"}</div>`
+          )
+          .join("");
+        let rows = "";
+        for (let row = 0; row < 5; row++) {
+          rows += gs.categories
+            .map((c, catIdx) => {
+              const clue = c.clues[row];
+              const isCurrent =
+                gs.selected_category_index === catIdx && gs.selected_clue_index === row;
+              const classes = ["clue-cell"];
+              if (clue.played) classes.push("played");
+              if (isCurrent) classes.push("in-play");
+              if (clickable && !clue.played && gs.selected_category_index === null) {
+                classes.push("clickable");
+              }
+              const onclick =
+                clickable && !clue.played && gs.selected_category_index === null
+                  ? `onclick="selectClue(${catIdx}, ${row})"`
+                  : "";
+              const label = clue.played ? "" : `$${clue.value}`;
+              return `<div class="${classes.join(" ")}" ${onclick}>${label}</div>`;
+            })
+            .join("");
+        }
+        return headers + rows;
+      }
+
+      function roundLabel(round) {
+        if (round === "round1") return "Round 1";
+        if (round === "round2") return "Round 2";
+        return "Final Exam";
+      }
+
+      // ----- Main view -----
+
+      function renderMain() {
+        if (!state) return;
+        document.getElementById("main-round-status").textContent = roundLabel(
+          state.current_round
+        );
+        document.getElementById("main-board").innerHTML = boardHtml(state, {
+          clickable: false,
+        });
+        document.getElementById("main-scoreboard").innerHTML = PLAYERS.map((p) =>
+          playerCardHtml(state, p)
+        ).join("");
+        renderClueOverlay(state, null);
+      }
+
+      function renderClueOverlay(gs, judgeControls) {
+        const overlay = document.getElementById("clue-overlay");
+        if (gs.current_round === "final" || gs.selected_category_index === null) {
+          overlay.hidden = true;
+          overlay.innerHTML = "";
+          return;
+        }
+        overlay.hidden = false;
+        const cat = gs.categories[gs.selected_category_index];
+        const clue = cat.clues[gs.selected_clue_index];
+        const revealed = gs.clue_phase === "revealed";
+        let html = `<div class="overlay-category">${cat.name}</div>`;
+        html += `<div class="overlay-value display-num">$${clue.value}</div>`;
+        if (revealed) {
+          html += `<div class="overlay-text">${clue.text}</div>`;
+          if (clue.answer) {
+            html += `<div class="overlay-answer">${clue.answer}</div>`;
+          }
+          if (clue.is_context_clue) {
+            html += `<div class="status-line">Context Clue — wager $${gs.context_clue_wager ?? "?"}</div>`;
+          } else {
+            html += buzzStatusHtml(gs);
+          }
+        } else if (clue.is_context_clue) {
+          html += `<div class="status-line">Context Clue — setting wager...</div>`;
+        }
+        if (judgeControls) html += judgeControls;
+        overlay.innerHTML = html;
+      }
+
+      function buzzStatusHtml(gs) {
+        if (gs.buzzed_player) {
+          const name = gs.players[gs.buzzed_player].name;
+          const pct = gs.answer_time_ms
+            ? Math.max(0, 100 - (100 * (gs.buzz_elapsed_ms || 0)) / gs.answer_time_ms)
+            : 0;
+          return (
+            `<div class="status-line">${name} is answering...</div>` +
+            countdownBarHtml(pct, "answer")
+          );
+        }
+        return `<div class="status-line">Ring in!</div>`;
+      }
+
+      function countdownBarHtml(pct, extraClass) {
+        const half = pct / 2;
+        return `
+          <div class="countdown-track">
+            <div class="countdown-fill ${extraClass || ""}"
+                 style="left:${50 - half}%;width:${pct}%"></div>
+          </div>`;
+      }
+
+      // ----- Control view -----
+
+      function renderControl() {
+        if (!controlState) return;
+        const gs = controlState;
+        document.getElementById("control-round-status").textContent =
+          `${roundLabel(gs.current_round)} — Board control: ` +
+          (gs.board_control ? gs.players[gs.board_control].name : "none");
+
+        const boardFieldsets = document.getElementById("control-categories-fieldset");
+        const boardBoardFieldset = document.getElementById("control-board-fieldset");
+        const isFinal = gs.current_round === "final";
+        boardFieldsets.hidden = isFinal;
+        boardBoardFieldset.hidden = isFinal;
+        document.getElementById("control-final-fieldset").hidden = !isFinal;
+
+        if (!isFinal) {
+          document.getElementById("control-category-toggles").innerHTML = gs.categories
+            .map(
+              (c, i) => `
+              <button class="primary${c.revealed ? " active" : ""}"
+                      onclick="toggleCategory(${i}, ${!c.revealed})">
+                ${c.revealed ? c.name : `Reveal: ${c.name}`}
+              </button>`
+            )
+            .join("");
+          document.getElementById("control-board").innerHTML = boardHtml(gs, {
+            clickable: true,
+          });
+        }
+
+        const clueFieldset = document.getElementById("control-clue-fieldset");
+        if (!isFinal && gs.selected_category_index !== null) {
+          clueFieldset.hidden = false;
+          document.getElementById("control-clue-status").innerHTML = controlClueHtml(gs);
+        } else {
+          clueFieldset.hidden = true;
+        }
+
+        if (isFinal) {
+          document.getElementById("control-final").innerHTML = controlFinalHtml(gs);
+        }
+
+        document.getElementById("control-players").innerHTML = PLAYERS.map((player) => {
+          const p = gs.players[player];
+          return `
+            <div class="control-player-row">
+              <strong>${p.name}</strong> — <span class="${scoreClass(p.score)}">${p.score}</span>
+              <div class="row-line">
+                <input type="number" id="set-score-${player}" value="${p.score}" />
+                <button class="primary" onclick="setScore('${player}')">Set Score</button>
+                <span class="status-line">Ring-in ${p.ring_in_start_delay_ms}/${p.ring_in_window_ms}ms, answer ${p.answer_time_ms}ms</span>
+                <input type="number" id="ring-override-start-${player}" placeholder="start ms" />
+                <input type="number" id="ring-override-window-${player}" placeholder="window ms" />
+                <button class="primary" onclick="applyRingInOverride('${player}')">Override Ring-in</button>
+                <input type="number" id="answer-override-${player}" placeholder="answer ms" />
+                <button class="primary" onclick="applyAnswerTimeOverride('${player}')">Override Answer Time</button>
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      function applyRingInOverride(player) {
+        const startInput = document.getElementById(`ring-override-start-${player}`);
+        const windowInput = document.getElementById(`ring-override-window-${player}`);
+        const body = { player };
+        if (startInput.value !== "") body.start_delay_ms = parseInt(startInput.value, 10);
+        if (windowInput.value !== "") body.window_ms = parseInt(windowInput.value, 10);
+        patch("/ring-in-override", body);
+      }
+
+      function applyAnswerTimeOverride(player) {
+        const input = document.getElementById(`answer-override-${player}`);
+        if (input.value === "") return;
+        patch("/answer-time-override", { player, window_ms: parseInt(input.value, 10) });
+      }
+
+      function controlClueHtml(gs) {
+        const cat = gs.categories[gs.selected_category_index];
+        const clue = cat.clues[gs.selected_clue_index];
+        let html = `<div><strong>${cat.name}</strong> — $${clue.value}</div>`;
+        html += `<div class="status-line">${clue.text}</div>`;
+        html += `<div class="status-line">Answer: ${clue.answer}</div>`;
+
+        if (clue.is_context_clue && gs.clue_phase !== "revealed") {
+          html += `
+            <div class="row-line">
+              <input type="number" id="context-wager-input" placeholder="Wager" />
+              <button class="primary" onclick="setContextWager()">Set Wager</button>
+              <button class="primary" onclick="revealClue()" ${gs.context_clue_wager === null ? "disabled" : ""}>
+                Reveal Clue
+              </button>
+            </div>`;
+          return html;
+        }
+
+        if (gs.clue_phase !== "revealed") {
+          html += `<button class="primary" onclick="revealClue()">Reveal Clue</button>`;
+          return html;
+        }
+
+        if (clue.is_context_clue) {
+          html += `<div class="status-line">Wager: $${gs.context_clue_wager}</div>`;
+          html += `
+            <div class="row-line">
+              <button class="primary" onclick="judge(true)">Correct</button>
+              <button class="primary" onclick="judge(false)">Incorrect</button>
+            </div>`;
+          return html;
+        }
+
+        if (gs.buzzed_player) {
+          html += `<div class="status-line">${gs.players[gs.buzzed_player].name} is answering</div>`;
+          html += `
+            <div class="row-line">
+              <button class="primary" onclick="judge(true)">Correct</button>
+              <button class="primary" onclick="judge(false)">Incorrect</button>
+            </div>`;
+        } else {
+          html += `<div class="status-line">Waiting for a ring-in...</div>`;
+          html += `<button class="primary" onclick="noOneAnswered()">No One Answered</button>`;
+        }
+        return html;
+      }
+
+      function controlFinalHtml(gs) {
+        return (
+          `<div><strong>${gs.final_category}</strong></div>` +
+          `<div class="status-line">${gs.final_text}</div>` +
+          PLAYERS.map((player) => {
+            const e = gs.final_entries[player];
+            if (!e.eligible) return `<div class="status-line">${gs.players[player].name}: not eligible</div>`;
+            if (!e.submitted) {
+              return `<div class="status-line">${gs.players[player].name}: waiting for submission...</div>`;
+            }
+            if (!e.revealed) {
+              return `
+                <div class="row-line">
+                  <span>${gs.players[player].name}: submitted</span>
+                  <button class="primary" onclick="finalReveal('${player}')">Reveal</button>
+                </div>`;
+            }
+            if (e.correct === null) {
+              return `
+                <div class="row-line">
+                  <span>${gs.players[player].name}: wagered $${e.wager} — "${e.answer}"</span>
+                  <button class="primary" onclick="finalJudge('${player}', true)">Correct</button>
+                  <button class="primary" onclick="finalJudge('${player}', false)">Incorrect</button>
+                </div>`;
+            }
+            return `<div class="status-line">${gs.players[player].name}: ${e.correct ? "Correct" : "Incorrect"} (wagered $${e.wager})</div>`;
+          }).join("")
+        );
+      }
+
+      // ----- Player views -----
+
+      function renderPlayerView(player) {
+        const body = document.getElementById(`${player}-body`);
+        if (!state) return;
+        const p = state.players[player];
+        let html = `
+          <div class="my-status">
+            <div class="p-name">${p.name}</div>
+            <div class="${scoreClass(p.score)} display-num">${p.score}</div>
+          </div>`;
+
+        if (state.current_round === "final") {
+          html += finalPlayerHtml(state, player);
+        } else {
+          html += `<div class="board">${boardHtml(state, { clickable: false })}</div>`;
+          html += buzzPlayerHtml(state, player);
+          html += `<div class="scoreboard">${PLAYERS.map((pl) => playerCardHtml(state, pl)).join("")}</div>`;
+        }
+        body.innerHTML = html;
+      }
+
+      function buzzPlayerHtml(gs, player) {
+        if (gs.selected_category_index === null || gs.clue_phase !== "revealed") {
+          return "";
+        }
+        const cat = gs.categories[gs.selected_category_index];
+        const clue = cat.clues[gs.selected_clue_index];
+        if (clue.is_context_clue) {
+          if (gs.board_control === player) {
+            return `<div class="status-line" style="text-align:center">Your Context Clue — answer now!</div>`;
+          }
+          return "";
+        }
+        const me = gs.players[player];
+        if (gs.buzzed_player === player) {
+          const pct = me.answer_time_ms
+            ? Math.max(0, 100 - (100 * (gs.buzz_elapsed_ms || 0)) / me.answer_time_ms)
+            : 0;
+          return (
+            `<div class="status-line" style="text-align:center">You're up! Answer now.</div>` +
+            countdownBarHtml(pct, "answer")
+          );
+        }
+        if (gs.buzzed_player) {
+          return `<div class="status-line" style="text-align:center">${gs.players[gs.buzzed_player].name} is answering...</div>`;
+        }
+        const ringPct = me.ring_in_window_ms
+          ? Math.min(
+              100,
+              Math.max(0, (100 * ((gs.ring_in_elapsed_ms || 0) - me.ring_in_start_delay_ms)) / me.ring_in_window_ms)
+            )
+          : 0;
+        return `
+          <button class="buzz-btn" onclick="buzz('${player}')" ${me.can_ring_in ? "" : "disabled"}>
+            BUZZ
+          </button>
+          ${countdownBarHtml(100 - ringPct, "")}`;
+      }
+
+      function finalPlayerHtml(gs, player) {
+        const e = gs.final_entries[player];
+        if (!e.eligible) {
+          return `<div class="status-line" style="text-align:center">Not eligible for the Final Exam.</div>`;
+        }
+        if (e.revealed) {
+          return `
+            <div class="status-line" style="text-align:center">
+              Category: ${gs.final_category}<br />
+              You wagered $${e.wager} — "${e.answer}"<br />
+              ${e.correct === null ? "Waiting for judging..." : e.correct ? "Correct!" : "Incorrect."}
+            </div>`;
+        }
+        if (e.submitted) {
+          return `<div class="status-line" style="text-align:center">Submitted! Waiting for reveal...</div>`;
+        }
+        return `
+          <div class="status-line" style="text-align:center">Category: ${gs.final_category}</div>
+          <div class="final-form">
+            <input type="number" id="final-wager-${player}" placeholder="Wager (max ${gs.players[player].score})" />
+            <textarea id="final-answer-${player}" placeholder="Your answer..."></textarea>
+            <button class="primary" onclick="submitFinal('${player}')">Submit</button>
+          </div>`;
+      }
+
+      poll();
+      setInterval(poll, 200);
+    </script>
+  </body>
+</html>
