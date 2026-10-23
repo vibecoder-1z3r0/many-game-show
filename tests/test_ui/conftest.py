@@ -22,6 +22,14 @@ import pytest
 _PORT = 8811
 _BASE_URL = f"http://127.0.0.1:{_PORT}"
 _DB_PATH = Path(__file__).parent.parent.parent / "manygameshow.db"
+# Squad Squabble's live sample content gets swapped out per conference —
+# point the UI-test server at a small, stable fixture bank instead so
+# content changes never break these tests. See
+# tests/data/squad_squabble_questions.fixture.json and the matching
+# backend-test fixture in tests/test_api|test_models/test_squad_squabble.py.
+_SQUAD_SQUABBLE_FIXTURE_PATH = (
+    Path(__file__).parent.parent / "data" / "squad_squabble_questions.fixture.json"
+)
 
 
 @pytest.fixture(scope="session")
@@ -35,7 +43,13 @@ def browser_type_launch_args(browser_type_launch_args: dict) -> dict:
 @pytest.fixture(scope="session")
 def live_server() -> Iterator[str]:
     _DB_PATH.unlink(missing_ok=True)  # start every UI test run from a clean DB
-    proc = subprocess.Popen(["uvicorn", "manygameshow.main:app", "--port", str(_PORT)])
+    env = {
+        **os.environ,
+        "SQUAD_SQUABBLE_QUESTIONS_PATH": str(_SQUAD_SQUABBLE_FIXTURE_PATH),
+    }
+    proc = subprocess.Popen(
+        ["uvicorn", "manygameshow.main:app", "--port", str(_PORT)], env=env
+    )
     try:
         for _ in range(50):  # ~5s
             try:

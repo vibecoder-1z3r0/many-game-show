@@ -1,0 +1,16 @@
+{
+  "_comment": "Fixed test fixture for Squad Squabble's engine tests — deliberately separate from src/manygameshow/data/squad_squabble_questions.sample.json, which is live event content that gets swapped out per conference. Tests load this file via SQUAD_SQUABBLE_QUESTIONS_PATH so content changes never break engine tests again. Do not repurpose this file for real content, and do not change these values without updating the tests that assert against them.",
+  "questions": [
+    {
+      "id": "desk-drawer",
+      "prompt": "We asked 100 people: name something you'd find in their desk drawer",
+      "answers": [
+        { "text": "Tangled cables", "points": 32 },
+        { "text": "Snacks", "points": 27 },
+        { "text": "Batteries", "points": 18 },
+        { "text": "Rubber bands", "points": 13 },
+        { "text": "Old receipts", "points": 10 }
+      ]
+    }
+  ]
+}
