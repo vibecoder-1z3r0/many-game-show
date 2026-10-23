@@ -1,3 +1,5 @@
+import re
+
 from playwright.sync_api import Page, expect
 
 
@@ -62,26 +64,96 @@ def test_control_shows_board_and_all_three_players(
     expect(page.locator("#control-players .control-player-row")).to_have_count(3)
 
 
-def test_category_reveal_toggle_shows_and_hides_category_name(
+def test_category_header_click_reveals_and_hides_directly(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
 
-    toggle = page.locator('button[onclick="toggleCategory(1, true)"]')
-    expect(toggle).to_contain_text("Reveal: HTTP Status Quo")
-    toggle.click()
+    header = page.locator("#control-board .cat-header").nth(1)
+    expect(header).to_contain_text("???")
+    expect(header).to_have_class(re.compile("hidden-cat"))
 
-    hide_toggle = page.locator('button[onclick="toggleCategory(1, false)"]')
-    expect(hide_toggle).to_contain_text("HTTP Status Quo")
-    expect(page.locator("#control-board .cat-header").nth(1)).to_contain_text(
-        "HTTP Status Quo"
-    )
+    header.click()
+    expect(header).to_contain_text("HTTP Status Quo")
+    expect(header).not_to_have_class(re.compile("hidden-cat"))
 
-    hide_toggle.click()
-    expect(page.locator('button[onclick="toggleCategory(1, true)"]')).to_contain_text(
-        "Reveal: HTTP Status Quo"
+    header.click()
+    expect(header).to_contain_text("???")
+    expect(header).to_have_class(re.compile("hidden-cat"))
+
+
+def test_board_values_show_as_plain_points_no_dollar_sign(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+
+    cell = page.locator('.clue-cell[onclick="selectClue(1, 0)"]')
+    expect(cell).to_have_text("200")
+    expect(page.locator("#control-board")).not_to_contain_text("$")
+
+
+def test_player_view_only_shows_their_own_controls(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "player1")
+
+    body = page.locator("#player1-body")
+    expect(body).to_contain_text("Player 1")
+    expect(body.locator(".clue-cell")).to_have_count(0)
+    expect(body.locator(".player-card")).to_have_count(0)
+
+
+def test_main_overlay_shows_only_clue_text_when_revealed(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+
+    _goto(live_server, page, game_id, "main")
+    overlay = page.locator("#clue-overlay")
+    expect(overlay.locator(".overlay-text-big")).to_contain_text(
+        "This status code means the request succeeded."
     )
+    expect(overlay.locator(".overlay-value")).to_have_count(0)
+    expect(overlay.locator(".overlay-category")).to_have_count(0)
+
+
+def test_main_status_bar_shows_buzzed_player_name_and_timer(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+
+    _goto(live_server, page, game_id, "player1")
+    _wait_for_ring_in_open(live_server, page, game_id)
+    _buzz(page, "player1")
+
+    _goto(live_server, page, game_id, "main")
+    bar = page.locator("#clue-status-bar")
+    expect(bar).to_be_visible()
+    expect(bar).to_contain_text("Player 1")
+    expect(bar.locator(".countdown-track")).to_have_count(1)
+
+
+def test_control_can_rename_a_player(live_server: str, page: Page) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+
+    page.fill("#rename-input-player1", "Ada")
+    page.get_by_role("button", name="Rename").first.click()
+    expect(page.locator("#control-players")).to_contain_text("Ada")
+
+    _goto(live_server, page, game_id, "main")
+    expect(page.locator("#main-scoreboard")).to_contain_text("Ada")
 
 
 def test_select_reveal_buzz_judge_correct_awards_points_and_board_control(
@@ -173,13 +245,13 @@ def test_context_clue_wager_reveal_and_judge_correct(
         "Board control: Player 1"
     )
 
-    # Git Happens / index 4 ($1000) is the Context Clue in the sample bank.
+    # Git Happens / index 4 (1000 points) is the Context Clue in the sample bank.
     _select_clue(page, 0, 4)
     page.fill("#context-wager-input", "500")
     page.get_by_role("button", name="Set Wager").click()
     _reveal_clue(page)
 
-    expect(page.locator("#control-clue-status")).to_contain_text("Wager: $500")
+    expect(page.locator("#control-clue-status")).to_contain_text("Wager: 500")
     page.get_by_role("button", name="Correct", exact=True).click()
 
     expect(page.locator("#control-players")).to_contain_text("500")
