@@ -367,7 +367,7 @@ def test_context_clue_wager_reveal_and_judge_correct(
     )
 
 
-def test_context_clue_is_timed_with_bar_on_main_and_player_and_host_controls(
+def test_context_clue_is_timed_but_starts_manually(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
@@ -380,26 +380,31 @@ def test_context_clue_is_timed_with_bar_on_main_and_player_and_host_controls(
     page.get_by_role("button", name="Set Wager").click()
     _reveal_clue(page)
 
-    # Main shows Player 1's name with a countdown bar, same as a regular buzz.
+    # Revealed, but not running yet — Control shows Play, not Pause.
+    clue_status = page.locator("#control-clue-status")
+    expect(clue_status.get_by_role("button", name="Play", exact=True)).to_be_visible()
+    expect(clue_status.get_by_role("button", name="Pause", exact=True)).to_have_count(0)
+
+    # Main already shows the bar (full, static) and Player 1's own
+    # screen, even before the host starts the clock.
     _goto(live_server, page, game_id, "main")
     bar = page.locator("#clue-status-bar")
     expect(bar).to_contain_text("Player 1")
     expect(bar.locator(".countdown-track")).to_have_count(1)
 
-    # Player 1's own screen shows the same countdown.
     _goto(live_server, page, game_id, "player1")
     expect(page.locator("#player1-body")).to_contain_text(
         "Your Context Clue — answer now!"
     )
     expect(page.locator("#player1-body .countdown-track")).to_have_count(1)
 
-    # Control gets the full Play/Pause/Stop/Reset/Clear row, same as a
-    # regular clue's answer timer.
+    # Host starts it manually once ready, and the full Play/Pause/
+    # Stop/Reset/Clear row is there, same as a regular clue's timer.
     _goto(live_server, page, game_id, "control")
-    clue_status = page.locator("#control-clue-status")
-    clue_status.get_by_role("button", name="Pause", exact=True).click()
-    expect(clue_status.get_by_role("button", name="Play", exact=True)).to_be_visible()
-    # Judging still works after pausing.
+    clue_status.get_by_role("button", name="Play", exact=True).click()
+    expect(clue_status.get_by_role("button", name="Pause", exact=True)).to_be_visible()
+
+    # Judging still works regardless of timer state.
     clue_status.get_by_role("button", name="Correct", exact=True).click()
     expect(page.locator("#control-players")).to_contain_text("500")
 
