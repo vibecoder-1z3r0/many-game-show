@@ -6,6 +6,34 @@
       "category": "Famous Firsts in Computing",
       "text": "This programmer, working on Charles Babbage's Analytical Engine in the 1840s, is widely considered the first computer programmer.",
       "answer": "Who is Ada Lovelace"
+    },
+    {
+      "id": "moon-landing",
+      "name": "Space Exploration",
+      "category": "Space Exploration",
+      "text": "This astronaut, commander of Apollo 11, became the first person to walk on the Moon in July 1969.",
+      "answer": "Who is Neil Armstrong"
+    },
+    {
+      "id": "shakespeare",
+      "name": "Classic Literature",
+      "category": "Classic Literature",
+      "text": "This English playwright, born in Stratford-upon-Avon, wrote tragedies including Hamlet, Macbeth, and Othello.",
+      "answer": "Who is William Shakespeare"
+    },
+    {
+      "id": "seven-samurai",
+      "name": "World Cinema",
+      "category": "World Cinema",
+      "text": "This 1954 Japanese film by Akira Kurosawa, about villagers hiring warriors to defend against bandits, inspired the Western remake The Magnificent Seven.",
+      "answer": "What is Seven Samurai"
+    },
+    {
+      "id": "andes",
+      "name": "World Geography",
+      "category": "World Geography",
+      "text": "This mountain range, the longest continental mountain range in the world, runs along the western edge of South America.",
+      "answer": "What is the Andes"
     }
   ]
 }
