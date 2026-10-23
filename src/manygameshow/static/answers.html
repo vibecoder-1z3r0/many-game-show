@@ -1087,12 +1087,8 @@
         const clue = cat.clues[gs.selected_clue_index];
         if (clue.is_context_clue) {
           const name = gs.board_control ? gs.players[gs.board_control].name : "?";
-          const line =
-            gs.clue_phase === "revealed"
-              ? "Answering the Context Clue"
-              : "State your wager!";
           bar.hidden = false;
-          bar.innerHTML = `<div class="status-name">${name}</div><div class="status-line">${line}</div>`;
+          bar.innerHTML = `<div class="status-name">${name}</div>`;
           return;
         }
         if (gs.clue_phase !== "revealed") {

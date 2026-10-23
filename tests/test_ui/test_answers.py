@@ -313,8 +313,9 @@ def test_context_clue_announcement_phase_before_wager_and_reveal(
     )
     expect(overlay.locator(".overlay-value")).to_have_count(0)
     status_bar = page.locator("#clue-status-bar")
+    # Main stays bare — just the name, no instructional text.
     expect(status_bar).to_contain_text("Player 1")
-    expect(status_bar).to_contain_text("State your wager!")
+    expect(status_bar).not_to_contain_text("wager")
 
     # Player 1 (board control) sees the same pre-wager prompt.
     _goto(live_server, page, game_id, "player1")
@@ -335,7 +336,8 @@ def test_context_clue_announcement_phase_before_wager_and_reveal(
     _goto(live_server, page, game_id, "main")
     expect(overlay.locator(".overlay-context-announce")).to_have_count(0)
     expect(overlay.locator(".overlay-text-big")).to_be_visible()
-    expect(status_bar).to_contain_text("Answering the Context Clue")
+    expect(status_bar).to_contain_text("Player 1")
+    expect(status_bar).not_to_contain_text("Answering")
 
 
 def test_context_clue_wager_reveal_and_judge_correct(
