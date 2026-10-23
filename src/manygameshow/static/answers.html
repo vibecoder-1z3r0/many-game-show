@@ -387,6 +387,26 @@
         line-height: 1.3;
       }
 
+      #clue-overlay .overlay-context-announce {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(2.2rem, 7vw, 5.5rem);
+        font-weight: 800;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        animation: context-pulse 1.1s ease-in-out infinite;
+      }
+
+      @keyframes context-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.06);
+        }
+      }
+
       /* ---------- Clue status bar (Main only): who's up + their timer ---------- */
 
       #clue-status-bar {
@@ -1047,6 +1067,10 @@
           overlay.innerHTML = `<div class="overlay-text-big">${clue.text}</div>`;
           return;
         }
+        if (clue.is_context_clue) {
+          overlay.innerHTML = `<div class="overlay-context-announce">Context Clue!</div>`;
+          return;
+        }
         overlay.innerHTML =
           `<div class="overlay-category">${cat.name}</div>` +
           `<div class="overlay-value display-num">${clue.value}</div>`;
@@ -1054,11 +1078,7 @@
 
       function renderClueStatusBar(gs) {
         const bar = document.getElementById("clue-status-bar");
-        if (
-          gs.current_round === "final" ||
-          gs.selected_category_index === null ||
-          gs.clue_phase !== "revealed"
-        ) {
+        if (gs.current_round === "final" || gs.selected_category_index === null) {
           bar.hidden = true;
           bar.innerHTML = "";
           return;
@@ -1067,8 +1087,17 @@
         const clue = cat.clues[gs.selected_clue_index];
         if (clue.is_context_clue) {
           const name = gs.board_control ? gs.players[gs.board_control].name : "?";
+          const line =
+            gs.clue_phase === "revealed"
+              ? "Answering the Context Clue"
+              : "State your wager!";
           bar.hidden = false;
-          bar.innerHTML = `<div class="status-name">${name}</div><div class="status-line">Answering the Context Clue</div>`;
+          bar.innerHTML = `<div class="status-name">${name}</div><div class="status-line">${line}</div>`;
+          return;
+        }
+        if (gs.clue_phase !== "revealed") {
+          bar.hidden = true;
+          bar.innerHTML = "";
           return;
         }
         if (gs.buzzed_player) {
@@ -1271,16 +1300,21 @@
       }
 
       function buzzPlayerHtml(gs, player) {
-        if (gs.selected_category_index === null || gs.clue_phase !== "revealed") {
+        if (gs.selected_category_index === null) {
           return `<div class="status-line" style="text-align:center">Waiting for the next clue...</div>`;
         }
         const cat = gs.categories[gs.selected_category_index];
         const clue = cat.clues[gs.selected_clue_index];
         if (clue.is_context_clue) {
-          if (gs.board_control === player) {
-            return `<div class="status-line" style="text-align:center">Your Context Clue — answer now!</div>`;
-          }
-          return "";
+          if (gs.board_control !== player) return "";
+          const message =
+            gs.clue_phase === "revealed"
+              ? "Your Context Clue — answer now!"
+              : "Your Context Clue — state your wager!";
+          return `<div class="status-line" style="text-align:center">${message}</div>`;
+        }
+        if (gs.clue_phase !== "revealed") {
+          return `<div class="status-line" style="text-align:center">Waiting for the next clue...</div>`;
         }
         const me = gs.players[player];
         if (gs.buzzed_player === player) {

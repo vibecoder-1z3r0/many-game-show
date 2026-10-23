@@ -295,6 +295,49 @@ def test_no_one_answered_reveals_clue_with_no_scoring(
     expect(page.locator("#control-players")).to_contain_text("0")
 
 
+def test_context_clue_announcement_phase_before_wager_and_reveal(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    page.get_by_role("button", name="P1 Control").click()
+
+    # Git Happens / index 4 (1000 points) is the Context Clue in the sample bank.
+    _select_clue(page, 0, 4)
+
+    # Main announces it, with no clue text and no point value yet.
+    _goto(live_server, page, game_id, "main")
+    overlay = page.locator("#clue-overlay")
+    expect(overlay.locator(".overlay-context-announce")).to_contain_text(
+        "Context Clue!"
+    )
+    expect(overlay.locator(".overlay-value")).to_have_count(0)
+    status_bar = page.locator("#clue-status-bar")
+    expect(status_bar).to_contain_text("Player 1")
+    expect(status_bar).to_contain_text("State your wager!")
+
+    # Player 1 (board control) sees the same pre-wager prompt.
+    _goto(live_server, page, game_id, "player1")
+    expect(page.locator("#player1-body")).to_contain_text(
+        "Your Context Clue — state your wager!"
+    )
+
+    # Player 2 (not board control) sees nothing about it.
+    _goto(live_server, page, game_id, "player2")
+    expect(page.locator("#player2-body")).not_to_contain_text("Context Clue")
+
+    # Once wagered and revealed, it flips over to the clue text.
+    _goto(live_server, page, game_id, "control")
+    page.fill("#context-wager-input", "500")
+    page.get_by_role("button", name="Set Wager").click()
+    _reveal_clue(page)
+
+    _goto(live_server, page, game_id, "main")
+    expect(overlay.locator(".overlay-context-announce")).to_have_count(0)
+    expect(overlay.locator(".overlay-text-big")).to_be_visible()
+    expect(status_bar).to_contain_text("Answering the Context Clue")
+
+
 def test_context_clue_wager_reveal_and_judge_correct(
     live_server: str, page: Page
 ) -> None:

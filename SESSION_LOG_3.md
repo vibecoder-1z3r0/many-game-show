@@ -50,17 +50,21 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 28 | That seems like fragile test cases? | 02:04:41 | 17s | 16s | 12 | 2,898 | 4,234 | 2,661,496 |
 | 29 | Fix it properly | 02:05:13 | 8m 20s | 1h 19m ⏳ | 186 | 37,343 | 86,238 | 44,322,509 |
 | 30 | I don't see the contestants answer bar on the  main display - can you … | 03:33:18 | 57s | 30s | 18 | 3,253 | 898,992 | 3,574,981 |
-| 31 | did you finish the validation? | 03:34:46 | 5m 44s | — | 106 | 23,460 | 55,933 | 27,297,426 |
+| 31 | did you finish the validation? | 03:34:46 | 6m 3s | 4m 26s | 122 | 25,810 | 61,917 | 31,530,645 |
+| 32 | What happens when a contestant picks the context clue? | 03:45:15 | 16s | 1m 44s | 14 | 2,055 | 3,480 | 3,720,889 |
+| 33 | I mean how does the reveal work?  Does it first show “Context Clue” in… | 03:47:15 | 23s | 1m 43s | 4 | 4,226 | 1,428 | 1,065,954 |
+| 34 | Yes add the distinct  context clue announcement phase | 03:49:21 | 55s | 30s | 36 | 11,100 | 23,002 | 9,744,123 |
+| 35 | Keep going to finish this task out | 03:50:46 | 1m 50s | — | 34 | 7,261 | 11,543 | 9,345,419 |
 
-**Total turns:** 31  
-**Total agent time spent (excl. flagged):** 2h 3m  
-**Total human think time (excl. outliers):** 27m 55s  
-**Average human think time (excl. outliers):** 1m 24s  
+**Total turns:** 35  
+**Total agent time spent (excl. flagged):** 2h 6m  
+**Total human think time (excl. outliers):** 36m 18s  
+**Average human think time (excl. outliers):** 1m 31s  
 **Think-time outliers (> 15 min):** 10  
-**Total input tokens:** 3,051  
-**Total output tokens:** 1,155,967  
-**Total cache-write tokens:** 7,402,204  
-**Total cache-read tokens:** 604,931,503  
+**Total input tokens:** 3,155  
+**Total output tokens:** 1,182,959  
+**Total cache-write tokens:** 7,447,641  
+**Total cache-read tokens:** 633,041,107  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
 
 ⚠ Turn(s) 21 had an 'agent time spent' over 30 min (total 30m 1s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
@@ -73,11 +77,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 118  
-**Combined agent time spent (excl. flagged):** 5h 8m  
-**Combined human think time (excl. outliers):** 2h 44m  
+**Combined total turns:** 122  
+**Combined agent time spent (excl. flagged):** 5h 12m  
+**Combined human think time (excl. outliers):** 2h 53m  
 **Combined think-time outliers:** 18  
-**Total input tokens (since tracking began, this file only):** 2,152  
-**Total output tokens (since tracking began, this file only):** 713,244  
-**Total cache-write tokens (since tracking began, this file only):** 4,855,165  
-**Total cache-read tokens (since tracking began, this file only):** 472,888,994
+**Total input tokens (since tracking began, this file only):** 2,256  
+**Total output tokens (since tracking began, this file only):** 740,236  
+**Total cache-write tokens (since tracking began, this file only):** 4,900,602  
+**Total cache-read tokens (since tracking began, this file only):** 500,998,598
