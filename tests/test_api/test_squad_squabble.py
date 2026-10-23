@@ -1,4 +1,24 @@
+from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
+
+from manygameshow.questions import load_questions
+
+_FIXTURE_PATH = (
+    Path(__file__).parent.parent / "data" / "squad_squabble_questions.fixture.json"
+)
+
+
+@pytest.fixture(autouse=True)
+def _fixed_question_bank(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Points these tests at a small, stable fixture bank instead of the
+    live sample content (which gets swapped out per conference) — see
+    tests/data/squad_squabble_questions.fixture.json."""
+    monkeypatch.setenv("SQUAD_SQUABBLE_QUESTIONS_PATH", str(_FIXTURE_PATH))
+    load_questions.cache_clear()
+    yield
+    load_questions.cache_clear()
 
 
 def _create_game(client: TestClient) -> str:
