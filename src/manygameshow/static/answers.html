@@ -1085,7 +1085,8 @@
         }
         const cat = gs.categories[gs.selected_category_index];
         const clue = cat.clues[gs.selected_clue_index];
-        if (clue.is_context_clue) {
+        if (clue.is_context_clue && gs.clue_phase !== "revealed") {
+          // Pre-reveal announcement — no timer yet.
           const name = gs.board_control ? gs.players[gs.board_control].name : "?";
           bar.hidden = false;
           bar.innerHTML = `<div class="status-name">${name}</div>`;
@@ -1213,12 +1214,6 @@
 
         if (clue.is_context_clue) {
           html += `<div class="status-line">Wager: ${gs.context_clue_wager}</div>`;
-          html += `
-            <div class="row-line">
-              <button class="primary" onclick="judge(true)">Correct</button>
-              <button class="primary" onclick="judge(false)">Incorrect</button>
-            </div>`;
-          return html;
         }
 
         if (gs.buzzed_player) {
@@ -1237,6 +1232,13 @@
               <button class="primary" onclick="stopAnswerTimer()">Stop</button>
               <button class="primary" onclick="resetAnswerTimer()">Reset</button>
               <button class="primary" onclick="clearAnswerTimer()">Clear</button>
+            </div>`;
+        } else if (clue.is_context_clue) {
+          // Timer was cleared — still judgeable via board control.
+          html += `
+            <div class="row-line">
+              <button class="primary" onclick="judge(true)">Correct</button>
+              <button class="primary" onclick="judge(false)">Incorrect</button>
             </div>`;
         } else {
           html += `<div class="status-line">Waiting for a ring-in...</div>`;
@@ -1303,11 +1305,17 @@
         const clue = cat.clues[gs.selected_clue_index];
         if (clue.is_context_clue) {
           if (gs.board_control !== player) return "";
-          const message =
-            gs.clue_phase === "revealed"
-              ? "Your Context Clue — answer now!"
-              : "Your Context Clue — state your wager!";
-          return `<div class="status-line" style="text-align:center">${message}</div>`;
+          if (gs.clue_phase !== "revealed") {
+            return `<div class="status-line" style="text-align:center">Your Context Clue — state your wager!</div>`;
+          }
+          const me = gs.players[player];
+          const pct = me.answer_time_ms
+            ? Math.min(100, (100 * (gs.buzz_remaining_ms || 0)) / me.answer_time_ms)
+            : 0;
+          return (
+            `<div class="status-line" style="text-align:center">Your Context Clue — answer now!</div>` +
+            countdownBarHtml(pct, "answer")
+          );
         }
         if (gs.clue_phase !== "revealed") {
           return `<div class="status-line" style="text-align:center">Waiting for the next clue...</div>`;
