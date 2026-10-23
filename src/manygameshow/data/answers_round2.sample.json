@@ -7,61 +7,557 @@
         {
           "name": "Legacy Code",
           "clues": [
-            { "text": "This comment, left in code with no explanation, is the bane of every maintainer's existence.", "answer": "What is \"// TODO\" (or \"// don't touch this\")", "value": 400 },
-            { "text": "This term describes code so fragile that touching it risks breaking unrelated features.", "answer": "What is a house of cards (spaghetti code)", "value": 800 },
-            { "text": "This practice of writing tests for code that has none is often the first step in a rewrite.", "answer": "What is adding a test harness (characterization testing)", "value": 1200 },
-            { "text": "This Martin Fowler book popularized the catalog of code smells and the moves used to fix them.", "answer": "What is Refactoring", "value": 1600 },
-            { "text": "This principle says you shouldn't rewrite a system from scratch, because you'll repeat the original mistakes plus new ones.", "answer": "What is \"never rewrite from scratch\" (Joel Spolsky's rule)", "value": 2000 }
+            {
+              "text": "This comment, left in code with no explanation, is the bane of every maintainer's existence.",
+              "answer": "What is \"// TODO\" (or \"// don't touch this\")",
+              "value": 400
+            },
+            {
+              "text": "This term describes code so fragile that touching it risks breaking unrelated features.",
+              "answer": "What is a house of cards (spaghetti code)",
+              "value": 800
+            },
+            {
+              "text": "This practice of writing tests for code that has none is often the first step in a rewrite.",
+              "answer": "What is adding a test harness (characterization testing)",
+              "value": 1200
+            },
+            {
+              "text": "This Martin Fowler book popularized the catalog of code smells and the moves used to fix them.",
+              "answer": "What is Refactoring",
+              "value": 1600
+            },
+            {
+              "text": "This principle says you shouldn't rewrite a system from scratch, because you'll repeat the original mistakes plus new ones.",
+              "answer": "What is \"never rewrite from scratch\" (Joel Spolsky's rule)",
+              "value": 2000
+            }
           ]
         },
         {
           "name": "Kubernetes Chaos",
           "clues": [
-            { "text": "This smallest deployable unit in Kubernetes can hold one or more containers.", "answer": "What is a Pod", "value": 400 },
-            { "text": "This Kubernetes object ensures a specified number of pod replicas are running at all times.", "answer": "What is a ReplicaSet (or Deployment)", "value": 800 },
-            { "text": "This status means a pod keeps crashing and restarting in a loop.", "answer": "What is CrashLoopBackOff", "value": 1200 },
-            { "text": "This Kubernetes object provides a stable network identity to a set of pods.", "answer": "What is a Service", "value": 1600 },
-            { "text": "This command-line tool is the primary way operators talk to a Kubernetes cluster.", "answer": "What is kubectl", "value": 2000 }
+            {
+              "text": "This smallest deployable unit in Kubernetes can hold one or more containers.",
+              "answer": "What is a Pod",
+              "value": 400
+            },
+            {
+              "text": "This Kubernetes object ensures a specified number of pod replicas are running at all times.",
+              "answer": "What is a ReplicaSet (or Deployment)",
+              "value": 800
+            },
+            {
+              "text": "This status means a pod keeps crashing and restarting in a loop.",
+              "answer": "What is CrashLoopBackOff",
+              "value": 1200
+            },
+            {
+              "text": "This Kubernetes object provides a stable network identity to a set of pods.",
+              "answer": "What is a Service",
+              "value": 1600
+            },
+            {
+              "text": "This command-line tool is the primary way operators talk to a Kubernetes cluster.",
+              "answer": "What is kubectl",
+              "value": 2000
+            }
           ]
         },
         {
           "name": "Merge Conflicts",
           "clues": [
-            { "text": "These markers, starting with seven less-than signs, appear in a file when Git can't auto-merge.", "answer": "What are conflict markers (<<<<<<<)", "value": 400 },
-            { "text": "This strategy always takes the incoming branch's version of a conflicting line, no manual review.", "answer": "What is \"ours\" or \"theirs\" merge strategy", "value": 800 },
-            { "text": "This tool category (like Beyond Compare or VS Code's built-in one) shows conflicts side by side for resolution.", "answer": "What is a merge tool / diff tool", "value": 1200 },
-            { "text": "This Git command abandons an in-progress merge and returns to the pre-merge state.", "answer": "What is git merge --abort", "value": 1600, "context_clue": 2 },
-            { "text": "This workflow rebases a feature branch onto main before merging, to avoid a messy merge commit entirely.", "answer": "What is rebase-then-merge (a linear history workflow)", "value": 2000 }
+            {
+              "text": "These markers, starting with seven less-than signs, appear in a file when Git can't auto-merge.",
+              "answer": "What are conflict markers (<<<<<<<)",
+              "value": 400
+            },
+            {
+              "text": "This strategy always takes the incoming branch's version of a conflicting line, no manual review.",
+              "answer": "What is \"ours\" or \"theirs\" merge strategy",
+              "value": 800
+            },
+            {
+              "text": "This tool category (like Beyond Compare or VS Code's built-in one) shows conflicts side by side for resolution.",
+              "answer": "What is a merge tool / diff tool",
+              "value": 1200
+            },
+            {
+              "text": "This Git command abandons an in-progress merge and returns to the pre-merge state.",
+              "answer": "What is git merge --abort",
+              "value": 1600,
+              "context_clue": 2
+            },
+            {
+              "text": "This workflow rebases a feature branch onto main before merging, to avoid a messy merge commit entirely.",
+              "answer": "What is rebase-then-merge (a linear history workflow)",
+              "value": 2000
+            }
           ]
         },
         {
           "name": "AI Says No",
           "clues": [
-            { "text": "This term describes an AI model confidently stating something false as fact.", "answer": "What is a hallucination", "value": 400 },
-            { "text": "This technique feeds a model relevant external documents at query time instead of only relying on training data.", "answer": "What is Retrieval-Augmented Generation (RAG)", "value": 800 },
-            { "text": "This number, roughly measuring how much text a model can \"see\" at once, is called the context ___.", "answer": "What is the context window", "value": 1200 },
-            { "text": "This process adjusts a pre-trained model's weights on a smaller, task-specific dataset.", "answer": "What is fine-tuning", "value": 1600 },
-            { "text": "This technique asks a model to \"think step by step\" before giving a final answer, often improving accuracy.", "answer": "What is chain-of-thought prompting", "value": 2000, "context_clue": 2 }
+            {
+              "text": "This term describes an AI model confidently stating something false as fact.",
+              "answer": "What is a hallucination",
+              "value": 400
+            },
+            {
+              "text": "This technique feeds a model relevant external documents at query time instead of only relying on training data.",
+              "answer": "What is Retrieval-Augmented Generation (RAG)",
+              "value": 800
+            },
+            {
+              "text": "This number, roughly measuring how much text a model can \"see\" at once, is called the context ___.",
+              "answer": "What is the context window",
+              "value": 1200
+            },
+            {
+              "text": "This process adjusts a pre-trained model's weights on a smaller, task-specific dataset.",
+              "answer": "What is fine-tuning",
+              "value": 1600
+            },
+            {
+              "text": "This technique asks a model to \"think step by step\" before giving a final answer, often improving accuracy.",
+              "answer": "What is chain-of-thought prompting",
+              "value": 2000,
+              "context_clue": 2
+            }
           ]
         },
         {
           "name": "Deprecated",
           "clues": [
-            { "text": "This HTML tag, used for blinking text, was mercifully deprecated and removed from modern browsers.", "answer": "What is <blink>", "value": 400 },
-            { "text": "This Python 2 print statement's lack of parentheses became a punchline once Python 3 made it a function.", "answer": "What is \"print\" (print statement vs print function)", "value": 800 },
-            { "text": "This once-dominant browser plugin for interactive web content was finally killed off around 2020.", "answer": "What is Flash", "value": 1200 },
-            { "text": "This jQuery-era attribute pattern for event handling, like onclick=\"...\", is now discouraged in favor of addEventListener.", "answer": "What is an inline event handler", "value": 1600 },
-            { "text": "This once-ubiquitous callback pattern for async code was largely superseded by Promises and async/await.", "answer": "What is callback hell (nested callbacks)", "value": 2000 }
+            {
+              "text": "This HTML tag, used for blinking text, was mercifully deprecated and removed from modern browsers.",
+              "answer": "What is <blink>",
+              "value": 400
+            },
+            {
+              "text": "This Python 2 print statement's lack of parentheses became a punchline once Python 3 made it a function.",
+              "answer": "What is \"print\" (print statement vs print function)",
+              "value": 800
+            },
+            {
+              "text": "This once-dominant browser plugin for interactive web content was finally killed off around 2020.",
+              "answer": "What is Flash",
+              "value": 1200
+            },
+            {
+              "text": "This jQuery-era attribute pattern for event handling, like onclick=\"...\", is now discouraged in favor of addEventListener.",
+              "answer": "What is an inline event handler",
+              "value": 1600
+            },
+            {
+              "text": "This once-ubiquitous callback pattern for async code was largely superseded by Promises and async/await.",
+              "answer": "What is callback hell (nested callbacks)",
+              "value": 2000
+            }
           ]
         },
         {
           "name": "Ship It",
           "clues": [
-            { "text": "This practice automatically runs tests and builds on every push, catching problems early.", "answer": "What is Continuous Integration (CI)", "value": 400 },
-            { "text": "This deployment strategy routes a small percentage of traffic to a new version before a full rollout.", "answer": "What is a canary release", "value": 800 },
-            { "text": "This deployment strategy runs two identical production environments and swaps traffic between them instantly.", "answer": "What is blue-green deployment", "value": 1200 },
-            { "text": "This toggle lets teams ship code dark and turn features on without a new deployment.", "answer": "What is a feature flag", "value": 1600 },
-            { "text": "This metric, tracked by DORA, measures how long it takes code to go from commit to production.", "answer": "What is lead time for changes", "value": 2000 }
+            {
+              "text": "This practice automatically runs tests and builds on every push, catching problems early.",
+              "answer": "What is Continuous Integration (CI)",
+              "value": 400
+            },
+            {
+              "text": "This deployment strategy routes a small percentage of traffic to a new version before a full rollout.",
+              "answer": "What is a canary release",
+              "value": 800
+            },
+            {
+              "text": "This deployment strategy runs two identical production environments and swaps traffic between them instantly.",
+              "answer": "What is blue-green deployment",
+              "value": 1200
+            },
+            {
+              "text": "This toggle lets teams ship code dark and turn features on without a new deployment.",
+              "answer": "What is a feature flag",
+              "value": 1600
+            },
+            {
+              "text": "This metric, tracked by DORA, measures how long it takes code to go from commit to production.",
+              "answer": "What is lead time for changes",
+              "value": 2000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "movies",
+      "name": "Blockbuster Trivia II",
+      "categories": [
+        {
+          "name": "Director's Chair",
+          "clues": [
+            {
+              "text": "This director is known for twist endings in films like The Sixth Sense and Signs.",
+              "answer": "Who is M. Night Shyamalan",
+              "value": 400
+            },
+            {
+              "text": "This director's filmography includes Jaws, E.T., and Schindler's List.",
+              "answer": "Who is Steven Spielberg",
+              "value": 800
+            },
+            {
+              "text": "This director is known for nonlinear storytelling in films like Pulp Fiction and Reservoir Dogs.",
+              "answer": "Who is Quentin Tarantino",
+              "value": 1200
+            },
+            {
+              "text": "This director helmed the Dark Knight trilogy as well as Inception and Interstellar.",
+              "answer": "Who is Christopher Nolan",
+              "value": 1600
+            },
+            {
+              "text": "This Japanese director, nicknamed \"The Emperor\" by his crew, directed Seven Samurai and Rashomon.",
+              "answer": "Who is Akira Kurosawa",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Sequels & Franchises",
+          "clues": [
+            {
+              "text": "This 1980 sequel to a 1977 space opera revealed Darth Vader's true relationship to Luke Skywalker.",
+              "answer": "What is The Empire Strikes Back",
+              "value": 400
+            },
+            {
+              "text": "This franchise's second film, subtitled \"Judgment Day,\" is often cited as one of the rare sequels better than the original.",
+              "answer": "What is Terminator 2",
+              "value": 800
+            },
+            {
+              "text": "This 2008 sequel introduced Heath Ledger's Oscar-winning performance as the Joker.",
+              "answer": "What is The Dark Knight",
+              "value": 1200
+            },
+            {
+              "text": "This long-running spy franchise has had actors from Sean Connery to Daniel Craig play its lead, agent 007.",
+              "answer": "What is James Bond",
+              "value": 1600
+            },
+            {
+              "text": "This 2015 film was the seventh mainline installment in a space saga, introducing Rey and Kylo Ren.",
+              "answer": "What is Star Wars: The Force Awakens",
+              "value": 2000,
+              "context_clue": 2
+            }
+          ]
+        },
+        {
+          "name": "Oscar Snubs & Surprises",
+          "clues": [
+            {
+              "text": "This 1941 Orson Welles film, often ranked the greatest ever made, lost Best Picture to How Green Was My Valley.",
+              "answer": "What is Citizen Kane",
+              "value": 400
+            },
+            {
+              "text": "This actor was famously nominated for an Oscar many times before finally winning for The Revenant in 2016.",
+              "answer": "Who is Leonardo DiCaprio",
+              "value": 800
+            },
+            {
+              "text": "At the 2017 Oscars, this film was mistakenly announced as Best Picture winner before the error was corrected to Moonlight.",
+              "answer": "What is La La Land",
+              "value": 1200
+            },
+            {
+              "text": "This actress holds the record for most competitive acting Oscars, with four wins.",
+              "answer": "Who is Katharine Hepburn",
+              "value": 1600
+            },
+            {
+              "text": "This film's Best Picture snub in 2009 is widely credited with prompting the Academy to later expand the category to up to ten nominees.",
+              "answer": "What is The Dark Knight",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Cult Classics",
+          "clues": [
+            {
+              "text": "This 1994 crime film with a nonlinear plot and a famous dance scene stars John Travolta and Uma Thurman.",
+              "answer": "What is Pulp Fiction",
+              "value": 400
+            },
+            {
+              "text": "This 1998 Coen Brothers film follows \"the Dude,\" a slacker caught up in a case of mistaken identity.",
+              "answer": "What is The Big Lebowski",
+              "value": 800
+            },
+            {
+              "text": "This 1975 musical comedy horror film is famous for midnight screenings where audiences dress up and shout at the screen.",
+              "answer": "What is The Rocky Horror Picture Show",
+              "value": 1200
+            },
+            {
+              "text": "This 1982 Ridley Scott sci-fi film, a box office flop on release, is now considered a landmark of the genre.",
+              "answer": "What is Blade Runner",
+              "value": 1600
+            },
+            {
+              "text": "This 1999 film about an underground fight club, based on a Chuck Palahniuk novel, bombed in theaters but found a huge following on video.",
+              "answer": "What is Fight Club",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Movie Trivia Deep Cuts",
+          "clues": [
+            {
+              "text": "This actor voiced the Genie in Aladdin and also starred in Mrs. Doubtfire.",
+              "answer": "Who is Robin Williams",
+              "value": 400
+            },
+            {
+              "text": "This film's working title was \"Blue Harvest\" to disguise it as a cheap horror film during production.",
+              "answer": "What is Star Wars: Return of the Jedi",
+              "value": 800
+            },
+            {
+              "text": "This 1985 Steven Spielberg drama shares the record, with The Turning Point, for most Oscar nominations (11) without a single win.",
+              "answer": "What is The Color Purple",
+              "value": 1200
+            },
+            {
+              "text": "This 1997 film's budget overruns and production troubles were so notorious that insiders predicted a flop \u2014 instead it became the highest-grossing film of its time.",
+              "answer": "What is Titanic",
+              "value": 1600
+            },
+            {
+              "text": "This actor-director won the Best Director Oscar for Dances with Wolves, a film in which he also starred.",
+              "answer": "Who is Kevin Costner",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Behind the Scenes",
+          "clues": [
+            {
+              "text": "This stop-motion technique, pioneered by Ray Harryhausen, animates models one frame at a time.",
+              "answer": "What is stop-motion animation",
+              "value": 400
+            },
+            {
+              "text": "This term describes a brief appearance by a celebrity, or the director, playing a minor role in a film.",
+              "answer": "What is a cameo",
+              "value": 800
+            },
+            {
+              "text": "This Alfred Hitchcock technique combines a zoom in one direction with a camera dolly in the other, creating a disorienting effect.",
+              "answer": "What is the dolly zoom (the \"Vertigo effect\")",
+              "value": 1200
+            },
+            {
+              "text": "This term for a movie's early public screening, used to gauge audience reaction before wide release, often involves comment cards.",
+              "answer": "What is a test screening",
+              "value": 1600
+            },
+            {
+              "text": "This visual effects technique, popularized at feature scale by Jurassic Park, blends computer-generated imagery seamlessly with live-action footage.",
+              "answer": "What is CGI (computer-generated imagery)",
+              "value": 2000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "world",
+      "name": "World Geography & History II",
+      "categories": [
+        {
+          "name": "World War History",
+          "clues": [
+            {
+              "text": "This 1944 Allied invasion of Normandy, France, is commonly known by this nickname, also the title of a 1998 Spielberg film.",
+              "answer": "What is D-Day",
+              "value": 400
+            },
+            {
+              "text": "This treaty, signed in 1919, formally ended World War I and imposed harsh terms on Germany.",
+              "answer": "What is the Treaty of Versailles",
+              "value": 800
+            },
+            {
+              "text": "This event, the bombing of a U.S. naval base in Hawaii by Japan in 1941, brought the United States into World War II.",
+              "answer": "What is the attack on Pearl Harbor",
+              "value": 1200
+            },
+            {
+              "text": "This secret British codebreaking effort at Bletchley Park cracked Germany's Enigma cipher, aided by Alan Turing.",
+              "answer": "What is Bletchley Park (breaking the Enigma code)",
+              "value": 1600
+            },
+            {
+              "text": "This Soviet city, site of one of the war's bloodiest battles, was successfully defended against Nazi forces in 1942-43 and was later renamed Volgograd.",
+              "answer": "What is Stalingrad",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Geography Extremes",
+          "clues": [
+            {
+              "text": "This is the driest desert in the world (excluding polar deserts), located in Chile.",
+              "answer": "What is the Atacama Desert",
+              "value": 400
+            },
+            {
+              "text": "This is the smallest country in the world by both area and population, located within the city of Rome.",
+              "answer": "What is Vatican City",
+              "value": 800
+            },
+            {
+              "text": "This body of water is the saltiest lake in the world, located between Israel and Jordan, where swimmers famously float.",
+              "answer": "What is the Dead Sea",
+              "value": 1200
+            },
+            {
+              "text": "This is the coldest permanently inhabited place on Earth, a Russian village in Siberia.",
+              "answer": "What is Oymyakon",
+              "value": 1600
+            },
+            {
+              "text": "This trench in the Pacific Ocean is the deepest point on Earth, reaching nearly 36,000 feet.",
+              "answer": "What is the Mariana Trench",
+              "value": 2000,
+              "context_clue": 2
+            }
+          ]
+        },
+        {
+          "name": "Famous Explorers",
+          "clues": [
+            {
+              "text": "This Italian explorer, sailing for Spain, reached the Americas in 1492 while seeking a westward route to Asia.",
+              "answer": "Who is Christopher Columbus",
+              "value": 400
+            },
+            {
+              "text": "This Portuguese explorer's expedition was the first to circumnavigate the globe, though he died partway through the voyage.",
+              "answer": "Who is Ferdinand Magellan",
+              "value": 800
+            },
+            {
+              "text": "This explorer led the first expedition to reach the South Pole, in 1911, narrowly beating a British rival.",
+              "answer": "Who is Roald Amundsen",
+              "value": 1200
+            },
+            {
+              "text": "This English explorer famously vanished along with his entire crew while searching for the Northwest Passage in the 1840s.",
+              "answer": "Who is Sir John Franklin",
+              "value": 1600
+            },
+            {
+              "text": "This Venetian merchant traveled the Silk Road to China and wrote a famous account of his travels after returning to Europe.",
+              "answer": "Who is Marco Polo",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Ancient Wonders",
+          "clues": [
+            {
+              "text": "This wonder of the ancient world, a massive lighthouse, once stood on the island of Pharos near Alexandria, Egypt.",
+              "answer": "What is the Lighthouse of Alexandria",
+              "value": 400
+            },
+            {
+              "text": "This wonder, famous for its lush greenery, was said to have been built by a Babylonian king for his homesick wife.",
+              "answer": "What are the Hanging Gardens of Babylon",
+              "value": 800
+            },
+            {
+              "text": "This wonder, a massive statue of the king of the Greek gods, once stood at Olympia.",
+              "answer": "What is the Statue of Zeus at Olympia",
+              "value": 1200
+            },
+            {
+              "text": "This wonder, a monumental tomb for a Persian satrap, gave us the modern word for a grand tomb.",
+              "answer": "What is the Mausoleum at Halicarnassus",
+              "value": 1600
+            },
+            {
+              "text": "This wonder, a temple dedicated to a Greek goddess of the hunt, stood in the ancient city of Ephesus.",
+              "answer": "What is the Temple of Artemis",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "Currencies",
+          "clues": [
+            {
+              "text": "This currency, adopted by most European Union countries starting in 2002, replaced currencies like the franc and the mark.",
+              "answer": "What is the euro",
+              "value": 400
+            },
+            {
+              "text": "This Japanese currency's symbol is a capital Y with two horizontal lines through it.",
+              "answer": "What is the yen",
+              "value": 800
+            },
+            {
+              "text": "This British currency unit, worth one-hundredth of a pound, shares its name with a copper-colored coin used in several other countries.",
+              "answer": "What is the penny",
+              "value": 1200
+            },
+            {
+              "text": "This country's currency, the rupee, shares its name with currencies used in Pakistan, Sri Lanka, and Nepal.",
+              "answer": "What is India",
+              "value": 1600
+            },
+            {
+              "text": "This cryptocurrency, created by the pseudonymous Satoshi Nakamoto, was the first and remains the most valuable by market cap.",
+              "answer": "What is Bitcoin",
+              "value": 2000
+            }
+          ]
+        },
+        {
+          "name": "International Organizations",
+          "clues": [
+            {
+              "text": "This international organization, founded in 1945, aims to maintain peace and security among its nearly 200 member nations.",
+              "answer": "What is the United Nations",
+              "value": 400
+            },
+            {
+              "text": "This European economic and political union currently has 27 member states after the UK's 2020 departure.",
+              "answer": "What is the European Union",
+              "value": 800
+            },
+            {
+              "text": "This military alliance, formed in 1949, includes the U.S., Canada, and many European nations, built around mutual defense.",
+              "answer": "What is NATO",
+              "value": 1200
+            },
+            {
+              "text": "This organization of oil-producing nations, including Saudi Arabia and Venezuela, coordinates petroleum policy.",
+              "answer": "What is OPEC",
+              "value": 1600
+            },
+            {
+              "text": "This UN agency, headquartered in Geneva, led the global response to pandemics including COVID-19.",
+              "answer": "What is the World Health Organization (WHO)",
+              "value": 2000
+            }
           ]
         }
       ]

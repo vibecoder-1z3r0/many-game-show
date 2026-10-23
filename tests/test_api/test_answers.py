@@ -81,9 +81,15 @@ def test_bank_options_lists_all_three_round_types(client: TestClient) -> None:
     resp = client.get("/api/answers/games/banks")
     assert resp.status_code == 200
     body = resp.json()
-    assert {b["id"] for b in body["round1"]} == {"classic"}
-    assert {b["id"] for b in body["round2"]} == {"classic"}
-    assert {b["id"] for b in body["final"]} == {"classic"}
+    assert {b["id"] for b in body["round1"]} == {"classic", "movies", "world"}
+    assert {b["id"] for b in body["round2"]} == {"classic", "movies", "world"}
+    assert {b["id"] for b in body["final"]} == {
+        "classic",
+        "moon-landing",
+        "shakespeare",
+        "seven-samurai",
+        "andes",
+    }
 
 
 def test_clue_text_and_answer_hidden_before_selection(client: TestClient) -> None:
