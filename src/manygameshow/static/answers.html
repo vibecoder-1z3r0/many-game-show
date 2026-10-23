@@ -1044,9 +1044,9 @@
         }
         const cat = gs.categories[gs.selected_category_index];
         const clue = cat.clues[gs.selected_clue_index];
-        bar.hidden = false;
         if (clue.is_context_clue) {
           const name = gs.board_control ? gs.players[gs.board_control].name : "?";
+          bar.hidden = false;
           bar.innerHTML = `<div class="status-name">${name}</div><div class="status-line">Answering the Context Clue</div>`;
           return;
         }
@@ -1055,11 +1055,13 @@
           const pct = gs.answer_time_ms
             ? Math.max(0, 100 - (100 * (gs.buzz_elapsed_ms || 0)) / gs.answer_time_ms)
             : 0;
+          bar.hidden = false;
           bar.innerHTML =
             `<div class="status-name">${name}</div>` + countdownBarHtml(pct, "answer");
           return;
         }
-        bar.innerHTML = `<div class="status-name">Ring in!</div>`;
+        bar.hidden = true;
+        bar.innerHTML = "";
       }
 
       function countdownBarHtml(pct, extraClass) {

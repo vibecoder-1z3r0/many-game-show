@@ -133,12 +133,15 @@ def test_main_status_bar_shows_buzzed_player_name_and_timer(
     _select_clue(page, 1, 0)
     _reveal_clue(page)
 
+    _goto(live_server, page, game_id, "main")
+    bar = page.locator("#clue-status-bar")
+    expect(bar).to_be_hidden()
+
     _goto(live_server, page, game_id, "player1")
     _wait_for_ring_in_open(live_server, page, game_id)
     _buzz(page, "player1")
 
     _goto(live_server, page, game_id, "main")
-    bar = page.locator("#clue-status-bar")
     expect(bar).to_be_visible()
     expect(bar).to_contain_text("Player 1")
     expect(bar.locator(".countdown-track")).to_have_count(1)
