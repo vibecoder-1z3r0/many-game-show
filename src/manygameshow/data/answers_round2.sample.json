@@ -1,0 +1,70 @@
+{
+  "banks": [
+    {
+      "id": "classic",
+      "name": "Classic Dev Trivia II",
+      "categories": [
+        {
+          "name": "Legacy Code",
+          "clues": [
+            { "text": "This comment, left in code with no explanation, is the bane of every maintainer's existence.", "answer": "What is \"// TODO\" (or \"// don't touch this\")", "value": 400 },
+            { "text": "This term describes code so fragile that touching it risks breaking unrelated features.", "answer": "What is a house of cards (spaghetti code)", "value": 800 },
+            { "text": "This practice of writing tests for code that has none is often the first step in a rewrite.", "answer": "What is adding a test harness (characterization testing)", "value": 1200 },
+            { "text": "This Martin Fowler book popularized the catalog of code smells and the moves used to fix them.", "answer": "What is Refactoring", "value": 1600 },
+            { "text": "This principle says you shouldn't rewrite a system from scratch, because you'll repeat the original mistakes plus new ones.", "answer": "What is \"never rewrite from scratch\" (Joel Spolsky's rule)", "value": 2000 }
+          ]
+        },
+        {
+          "name": "Kubernetes Chaos",
+          "clues": [
+            { "text": "This smallest deployable unit in Kubernetes can hold one or more containers.", "answer": "What is a Pod", "value": 400 },
+            { "text": "This Kubernetes object ensures a specified number of pod replicas are running at all times.", "answer": "What is a ReplicaSet (or Deployment)", "value": 800 },
+            { "text": "This status means a pod keeps crashing and restarting in a loop.", "answer": "What is CrashLoopBackOff", "value": 1200 },
+            { "text": "This Kubernetes object provides a stable network identity to a set of pods.", "answer": "What is a Service", "value": 1600 },
+            { "text": "This command-line tool is the primary way operators talk to a Kubernetes cluster.", "answer": "What is kubectl", "value": 2000 }
+          ]
+        },
+        {
+          "name": "Merge Conflicts",
+          "clues": [
+            { "text": "These markers, starting with seven less-than signs, appear in a file when Git can't auto-merge.", "answer": "What are conflict markers (<<<<<<<)", "value": 400 },
+            { "text": "This strategy always takes the incoming branch's version of a conflicting line, no manual review.", "answer": "What is \"ours\" or \"theirs\" merge strategy", "value": 800 },
+            { "text": "This tool category (like Beyond Compare or VS Code's built-in one) shows conflicts side by side for resolution.", "answer": "What is a merge tool / diff tool", "value": 1200 },
+            { "text": "This Git command abandons an in-progress merge and returns to the pre-merge state.", "answer": "What is git merge --abort", "value": 1600, "context_clue": 2 },
+            { "text": "This workflow rebases a feature branch onto main before merging, to avoid a messy merge commit entirely.", "answer": "What is rebase-then-merge (a linear history workflow)", "value": 2000 }
+          ]
+        },
+        {
+          "name": "AI Says No",
+          "clues": [
+            { "text": "This term describes an AI model confidently stating something false as fact.", "answer": "What is a hallucination", "value": 400 },
+            { "text": "This technique feeds a model relevant external documents at query time instead of only relying on training data.", "answer": "What is Retrieval-Augmented Generation (RAG)", "value": 800 },
+            { "text": "This number, roughly measuring how much text a model can \"see\" at once, is called the context ___.", "answer": "What is the context window", "value": 1200 },
+            { "text": "This process adjusts a pre-trained model's weights on a smaller, task-specific dataset.", "answer": "What is fine-tuning", "value": 1600 },
+            { "text": "This technique asks a model to \"think step by step\" before giving a final answer, often improving accuracy.", "answer": "What is chain-of-thought prompting", "value": 2000, "context_clue": 2 }
+          ]
+        },
+        {
+          "name": "Deprecated",
+          "clues": [
+            { "text": "This HTML tag, used for blinking text, was mercifully deprecated and removed from modern browsers.", "answer": "What is <blink>", "value": 400 },
+            { "text": "This Python 2 print statement's lack of parentheses became a punchline once Python 3 made it a function.", "answer": "What is \"print\" (print statement vs print function)", "value": 800 },
+            { "text": "This once-dominant browser plugin for interactive web content was finally killed off around 2020.", "answer": "What is Flash", "value": 1200 },
+            { "text": "This jQuery-era attribute pattern for event handling, like onclick=\"...\", is now discouraged in favor of addEventListener.", "answer": "What is an inline event handler", "value": 1600 },
+            { "text": "This once-ubiquitous callback pattern for async code was largely superseded by Promises and async/await.", "answer": "What is callback hell (nested callbacks)", "value": 2000 }
+          ]
+        },
+        {
+          "name": "Ship It",
+          "clues": [
+            { "text": "This practice automatically runs tests and builds on every push, catching problems early.", "answer": "What is Continuous Integration (CI)", "value": 400 },
+            { "text": "This deployment strategy routes a small percentage of traffic to a new version before a full rollout.", "answer": "What is a canary release", "value": 800 },
+            { "text": "This deployment strategy runs two identical production environments and swaps traffic between them instantly.", "answer": "What is blue-green deployment", "value": 1200 },
+            { "text": "This toggle lets teams ship code dark and turn features on without a new deployment.", "answer": "What is a feature flag", "value": 1600 },
+            { "text": "This metric, tracked by DORA, measures how long it takes code to go from commit to production.", "answer": "What is lead time for changes", "value": 2000 }
+          ]
+        }
+      ]
+    }
+  ]
+}

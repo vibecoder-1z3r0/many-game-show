@@ -1,0 +1,11 @@
+{
+  "banks": [
+    {
+      "id": "classic",
+      "name": "Classic Final",
+      "category": "Famous Firsts in Computing",
+      "text": "This programmer, working on Charles Babbage's Analytical Engine in the 1840s, is widely considered the first computer programmer.",
+      "answer": "Who is Ada Lovelace"
+    }
+  ]
+}

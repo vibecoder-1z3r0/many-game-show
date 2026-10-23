@@ -1,0 +1,70 @@
+{
+  "banks": [
+    {
+      "id": "classic",
+      "name": "Classic Dev Trivia",
+      "categories": [
+        {
+          "name": "Git Happens",
+          "clues": [
+            { "text": "This single command stages every change in the current directory.", "answer": "What is git add .", "value": 200 },
+            { "text": "This command creates a new branch and switches to it in one step.", "answer": "What is git checkout -b", "value": 400 },
+            { "text": "This three-way operation combines changes from two branches, possibly leaving markers like <<<<<<< behind.", "answer": "What is a merge", "value": 600 },
+            { "text": "This command rewrites commit history onto a new base, often described as \"replaying\" commits.", "answer": "What is rebase", "value": 800 },
+            { "text": "This command un-stages a file without discarding its changes, the opposite of git add.", "answer": "What is git reset (or git restore --staged)", "value": 1000, "context_clue": 1 }
+          ]
+        },
+        {
+          "name": "HTTP Status Quo",
+          "clues": [
+            { "text": "This status code means the request succeeded.", "answer": "What is 200", "value": 200 },
+            { "text": "This status code means the requested resource could not be found.", "answer": "What is 404", "value": 400 },
+            { "text": "This status code means you're not authenticated at all.", "answer": "What is 401", "value": 600 },
+            { "text": "This status code means the server understood the request but refuses to authorize it.", "answer": "What is 403", "value": 800 },
+            { "text": "This status code range (500-599) always means the server, not the client, is at fault.", "answer": "What is 5xx", "value": 1000 }
+          ]
+        },
+        {
+          "name": "Regex Pain",
+          "clues": [
+            { "text": "This character matches any single character except a newline.", "answer": "What is . (dot)", "value": 200 },
+            { "text": "This quantifier means \"zero or more\" of the preceding element.", "answer": "What is *", "value": 400 },
+            { "text": "This anchor matches the start of a line.", "answer": "What is ^", "value": 600 },
+            { "text": "This construct lets you capture a matched group for later reuse.", "answer": "What are parentheses (a capture group)", "value": 800 },
+            { "text": "This term describes a regex that can take exponential time on certain inputs, sometimes called \"catastrophic\" this.", "answer": "What is backtracking", "value": 1000 }
+          ]
+        },
+        {
+          "name": "The Cloud",
+          "clues": [
+            { "text": "This acronym describes paying only for compute you actually use, no servers to provision.", "answer": "What is serverless", "value": 200 },
+            { "text": "This AWS service stores objects like files and images, organized into \"buckets.\"", "answer": "What is S3", "value": 400 },
+            { "text": "This practice defines and provisions infrastructure through machine-readable config files instead of manual setup.", "answer": "What is Infrastructure as Code", "value": 600 },
+            { "text": "This term describes automatically adding or removing servers based on current load.", "answer": "What is autoscaling", "value": 800 },
+            { "text": "This unexpected monthly surprise is the subject of countless engineering memes.", "answer": "What is the cloud bill", "value": 1000 }
+          ]
+        },
+        {
+          "name": "Stand-Up Speak",
+          "clues": [
+            { "text": "This phrase means a developer is still figuring out why something broke.", "answer": "What is \"investigating\"", "value": 200 },
+            { "text": "Saying you're \"blocked on\" this means you're waiting on someone else's work.", "answer": "What is a code review (or a dependency)", "value": 400 },
+            { "text": "This ritual at the start of a sprint decides what gets worked on.", "answer": "What is sprint planning", "value": 600 },
+            { "text": "This unit, often a Fibonacci number, estimates relative effort rather than hours.", "answer": "What is a story point", "value": 800 },
+            { "text": "This meeting at the end of a sprint shows stakeholders what got built.", "answer": "What is a sprint review (demo)", "value": 1000 }
+          ]
+        },
+        {
+          "name": "Naming Things",
+          "clues": [
+            { "text": "This programming problem is, along with cache invalidation, famously one of the two hard things in computer science.", "answer": "What is naming things", "value": 200 },
+            { "text": "This naming convention writes compound words with no spaces, each word capitalized after the first.", "answer": "What is camelCase", "value": 400 },
+            { "text": "This naming convention separates words with underscores, all lowercase.", "answer": "What is snake_case", "value": 600 },
+            { "text": "Variables named x, y, tmp, and foo are jokingly blamed on this lack of effort.", "answer": "What is laziness (poor naming)", "value": 800 },
+            { "text": "This classic variable name, often paired with \"baz\", traces back to military slang and old hacker culture.", "answer": "What is foo (or bar)", "value": 1000 }
+          ]
+        }
+      ]
+    }
+  ]
+}
