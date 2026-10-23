@@ -277,12 +277,38 @@
         margin: 0 auto;
       }
 
+      .board-headers {
+        margin-bottom: 0.35rem;
+      }
+
+      /* Category headers are flip-cards (horizontal, rotateY — same
+         motion as Squad Squabble's question-card flip) so revealing a
+         category reads as a deliberate reveal, not an instant swap. */
+      .cat-header-flip-outer {
+        perspective: 1200px;
+      }
+
+      .cat-header-flip {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 3rem;
+        transform-style: preserve-3d;
+        transition: transform 0.6s ease;
+      }
+
+      .cat-header-flip.flipped {
+        transform: rotateY(180deg);
+      }
+
       .cat-header {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
         background: var(--panel-2);
         border: 1px solid var(--border);
         border-radius: 0.4rem;
         padding: 0.4rem 0.3rem;
-        min-height: 3rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -298,11 +324,15 @@
         opacity: 0.6;
       }
 
-      .cat-header.clickable-header {
+      .cat-header.cat-header-back {
+        transform: rotateY(180deg);
+      }
+
+      .cat-header-flip.clickable-header {
         cursor: pointer;
       }
 
-      .cat-header.clickable-header:hover {
+      .cat-header-flip.clickable-header:hover .cat-header {
         border-color: var(--accent);
       }
 
@@ -630,6 +660,7 @@
     <main>
       <section id="view-main">
         <div id="main-round-status">Round 1</div>
+        <div id="main-board-headers" class="board board-headers"></div>
         <div id="main-board" class="board"></div>
         <div id="main-scoreboard" class="scoreboard"></div>
       </section>
@@ -645,6 +676,7 @@
         </fieldset>
         <fieldset id="control-board-fieldset">
           <legend>Board (click a greyed category to reveal it, a clue to select it)</legend>
+          <div id="control-board-headers" class="board board-headers"></div>
           <div id="control-board" class="board"></div>
         </fieldset>
         <fieldset id="control-clue-fieldset" hidden>
@@ -996,21 +1028,14 @@
           </div>`;
       }
 
+      // Category headers are flip-cards with persistent DOM nodes (see
+      // renderCategoryHeaders) so the CSS transition has an old state to
+      // animate from; boardHtml() only ever handles the clue-value grid,
+      // which is cheap to fully rebuild every poll.
       function boardHtml(gs, { clickable }) {
         if (gs.current_round === "final") {
           return `<div class="status-line" style="text-align:center">Final Exam in progress</div>`;
         }
-        const headers = gs.categories
-          .map((c, i) => {
-            const classes = ["cat-header"];
-            if (!c.revealed) classes.push("hidden-cat");
-            if (clickable) classes.push("clickable-header");
-            const onclick = clickable
-              ? `onclick="toggleCategory(${i}, ${!c.revealed})"`
-              : "";
-            return `<div class="${classes.join(" ")}" ${onclick}>${c.revealed ? c.name : "???"}</div>`;
-          })
-          .join("");
         let rows = "";
         for (let row = 0; row < 5; row++) {
           rows += gs.categories
@@ -1033,7 +1058,50 @@
             })
             .join("");
         }
-        return headers + rows;
+        return rows;
+      }
+
+      // Persistent flip-card DOM per header container, keyed so a
+      // round/bank change rebuilds the cards but an ordinary poll just
+      // toggles "flipped" on the same nodes (required for the CSS
+      // transition to have something to animate from).
+      const headerFlipState = {};
+
+      function renderCategoryHeaders(containerId, gs, { clickable }) {
+        const container = document.getElementById(containerId);
+        if (gs.current_round === "final") {
+          container.innerHTML = "";
+          delete headerFlipState[containerId];
+          return;
+        }
+        const key = `${gs.current_round}:${gs.categories.length}`;
+        let entry = headerFlipState[containerId];
+        if (!entry || entry.key !== key) {
+          container.innerHTML = "";
+          const flips = gs.categories.map(() => {
+            const outer = document.createElement("div");
+            outer.className = "cat-header-flip-outer";
+            outer.innerHTML =
+              '<div class="cat-header-flip">' +
+              '<div class="cat-header cat-header-front hidden-cat">???</div>' +
+              '<div class="cat-header cat-header-back"></div>' +
+              "</div>";
+            container.appendChild(outer);
+            return outer.querySelector(".cat-header-flip");
+          });
+          entry = { key, flips };
+          headerFlipState[containerId] = entry;
+        }
+        gs.categories.forEach((c, i) => {
+          const flipEl = entry.flips[i];
+          if (!flipEl) return;
+          flipEl.classList.toggle("flipped", c.revealed);
+          flipEl.classList.toggle("clickable-header", !!clickable);
+          flipEl.querySelector(".cat-header-back").textContent = c.name;
+          flipEl.onclick = clickable
+            ? () => toggleCategory(i, !c.revealed)
+            : null;
+        });
       }
 
       function roundLabel(round) {
@@ -1049,6 +1117,7 @@
         document.getElementById("main-round-status").textContent = roundLabel(
           state.current_round
         );
+        renderCategoryHeaders("main-board-headers", state, { clickable: false });
         document.getElementById("main-board").innerHTML = boardHtml(state, {
           clickable: false,
         });
@@ -1113,8 +1182,20 @@
             `<div class="status-name">${p.name}</div>` + countdownBarHtml(pct, "answer");
           return;
         }
-        bar.hidden = true;
-        bar.innerHTML = "";
+        // No one's buzzed in yet — show the ring-in window itself, no
+        // name/caption since it's shared, not any one player's.
+        const ringPct = gs.ring_in_window_ms
+          ? Math.min(
+              100,
+              Math.max(
+                0,
+                (100 * ((gs.ring_in_elapsed_ms || 0) - gs.ring_in_start_delay_ms)) /
+                  gs.ring_in_window_ms
+              )
+            )
+          : 0;
+        bar.hidden = false;
+        bar.innerHTML = countdownBarHtml(100 - ringPct, "");
       }
 
       function countdownBarHtml(pct, extraClass) {
@@ -1141,6 +1222,7 @@
         document.getElementById("control-final-fieldset").hidden = !isFinal;
 
         if (!isFinal) {
+          renderCategoryHeaders("control-board-headers", gs, { clickable: true });
           document.getElementById("control-board").innerHTML = boardHtml(gs, {
             clickable: true,
           });
