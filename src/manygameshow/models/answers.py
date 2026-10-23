@@ -115,6 +115,10 @@ class AnswersGame(SQLModel, table=True):
     # Regular-clue ring-in state.
     buzzed_player: Player | None = Field(default=None)
     buzz_answer_started_at: datetime | None = Field(default=None)
+    # Set by the host to freeze the answer countdown bar in place (e.g.
+    # once the contestant has visibly started talking) without affecting
+    # judging. Cleared whenever a new answer attempt starts.
+    buzz_timer_frozen_ms: int | None = Field(default=None)
 
     # Context Clue (Daily Double) wager, entered by the host before reveal.
     context_clue_wager: int | None = Field(default=None)
@@ -197,6 +201,7 @@ class AnswersGameRead(SQLModel):
     context_clue_wager: int | None
     ring_in_elapsed_ms: int | None
     buzz_elapsed_ms: int | None
+    answer_timer_stopped: bool
     no_one_can_answer: bool
     ring_in_start_delay_ms: int
     ring_in_window_ms: int
@@ -404,6 +409,8 @@ def ring_in_elapsed_ms(game: AnswersGame, now: datetime | None = None) -> int | 
 def buzz_elapsed_ms(game: AnswersGame, now: datetime | None = None) -> int | None:
     if game.buzz_answer_started_at is None:
         return None
+    if game.buzz_timer_frozen_ms is not None:
+        return game.buzz_timer_frozen_ms
     now = now if now is not None else _utcnow()
     return int((now - game.buzz_answer_started_at).total_seconds() * 1000)
 

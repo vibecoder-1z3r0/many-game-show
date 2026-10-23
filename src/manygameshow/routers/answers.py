@@ -1,6 +1,6 @@
 """Answers — /api/answers/games/* endpoints."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -161,6 +161,7 @@ def _to_read(game: AnswersGame, *, show_all: bool = False) -> AnswersGameRead:
         context_clue_wager=game.context_clue_wager,
         ring_in_elapsed_ms=ring_in_elapsed_ms(game),
         buzz_elapsed_ms=buzz_elapsed_ms(game),
+        answer_timer_stopped=game.buzz_timer_frozen_ms is not None,
         no_one_can_answer=ring_in_window_expired(game),
         ring_in_start_delay_ms=game.ring_in_start_delay_ms,
         ring_in_window_ms=game.ring_in_window_ms,
@@ -307,6 +308,7 @@ def select_clue(
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
+    game.buzz_timer_frozen_ms = None
     game.context_clue_wager = None
     return _to_read(_save(game, session), show_all=True)
 
@@ -354,8 +356,36 @@ def buzz(game_id: str, body: BuzzBody, session: SessionDep) -> AnswersGameRead:
     if can_ring_in(game, body.player):
         game.buzzed_player = body.player
         game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None)
+        game.buzz_timer_frozen_ms = None
         return _to_read(_save(game, session))
     return _to_read(game)
+
+
+@router.patch("/{game_id}/stop-answer-timer", response_model=AnswersGameRead)
+def stop_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    """Freezes the answering player's countdown bar in place — e.g. once
+    they've visibly started talking, the host doesn't want the bar to
+    keep ticking down (or running out) while they're still answering.
+    Purely cosmetic: judging still works normally."""
+    game = _get_game(game_id, session)
+    if game.buzzed_player is None or game.buzz_answer_started_at is None:
+        raise HTTPException(status_code=400, detail="No one is currently answering")
+    game.buzz_timer_frozen_ms = buzz_elapsed_ms(game)
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/resume-answer-timer", response_model=AnswersGameRead)
+def resume_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    game = _get_game(game_id, session)
+    if game.buzzed_player is None or game.buzz_answer_started_at is None:
+        raise HTTPException(status_code=400, detail="No one is currently answering")
+    if game.buzz_timer_frozen_ms is None:
+        raise HTTPException(status_code=400, detail="Timer isn't stopped")
+    game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(
+        milliseconds=game.buzz_timer_frozen_ms
+    )
+    game.buzz_timer_frozen_ms = None
+    return _to_read(_save(game, session), show_all=True)
 
 
 class JudgeBody(SQLModel):
@@ -407,6 +437,7 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> AnswersGameRead
             cell.locked_out = [*cell.locked_out, player]
             game.buzzed_player = None
             game.buzz_answer_started_at = None
+            game.buzz_timer_frozen_ms = None
             if len(cell.locked_out) >= len(ALL_PLAYERS):
                 cell.played = True
                 _clear_selected(game)
@@ -425,6 +456,7 @@ def _clear_selected(game: AnswersGame) -> None:
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
+    game.buzz_timer_frozen_ms = None
     game.context_clue_wager = None
 
 

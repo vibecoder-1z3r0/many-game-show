@@ -8,6 +8,7 @@ from manygameshow.models.answers import (
     RoundName,
     TimingOverride,
     answer_time_for,
+    buzz_elapsed_ms,
     can_ring_in,
     categories_revealed,
     clear_answer_time_overrides,
@@ -291,3 +292,17 @@ def test_final_bank_content() -> None:
     category, text, answer = final_bank_content(game)
     assert category == "Famous Firsts in Computing"
     assert "Ada Lovelace" in answer
+
+
+def test_buzz_elapsed_ms_none_when_no_one_buzzed() -> None:
+    game = AnswersGame()
+    assert buzz_elapsed_ms(game) is None
+
+
+def test_buzz_elapsed_ms_frozen_stays_fixed_regardless_of_now() -> None:
+    game = AnswersGame(
+        buzz_answer_started_at=datetime(2024, 1, 1, 0, 0, 0),
+        buzz_timer_frozen_ms=1234,
+    )
+    now = datetime(2024, 1, 1, 0, 5, 0)
+    assert buzz_elapsed_ms(game, now=now) == 1234

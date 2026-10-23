@@ -869,6 +869,14 @@
         patch("/no-one-answered");
       }
 
+      function stopAnswerTimer() {
+        patch("/stop-answer-timer");
+      }
+
+      function resumeAnswerTimer() {
+        patch("/resume-answer-timer");
+      }
+
       function setBoardControl(player) {
         patch("/board-control", { player });
       }
@@ -1181,6 +1189,11 @@
             <div class="row-line">
               <button class="primary" onclick="judge(true)">Correct</button>
               <button class="primary" onclick="judge(false)">Incorrect</button>
+              ${
+                gs.answer_timer_stopped
+                  ? `<button class="primary" onclick="resumeAnswerTimer()">Resume Timer</button>`
+                  : `<button class="primary" onclick="stopAnswerTimer()">Stop Timer</button>`
+              }
             </div>`;
         } else {
           html += `<div class="status-line">Waiting for a ring-in...</div>`;

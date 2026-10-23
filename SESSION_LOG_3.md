@@ -43,17 +43,18 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 21 | So let it be written, so let it be done! | 00:51:35 | 30m 1s ⚠ | 2s | 646 | 297,444 | 656,716 | 156,781,308 |
 | 22 | Create some sample question banks for the normal rounds and some for f… | 01:21:37 | 5m 9s | 2s | 180 | 61,638 | 90,936 | 20,079,351 |
 | 23 | There are no dollars, only points.  For player views - We can and shou… | 01:26:49 | 5m 38s | 17m 2s ⏳ | 180 | 54,114 | 138,410 | 26,016,217 |
-| 24 | Remove ring in, that’s not needed from the main view | 01:49:29 | 53s | — | 36 | 5,343 | 9,773 | 5,772,420 |
+| 24 | Remove ring in, that’s not needed from the main view | 01:49:29 | 1m 5s | 20s | 50 | 6,742 | 15,090 | 8,049,811 |
+| 25 | There should be a control on the control ui to stop the count down bar… | 01:50:53 | 3m 23s | — | 154 | 25,884 | 58,221 | 26,534,126 |
 
-**Total turns:** 24  
-**Total agent time spent (excl. flagged):** 1h 36m  
-**Total human think time (excl. outliers):** 24m 7s  
-**Average human think time (excl. outliers):** 1m 43s  
+**Total turns:** 25  
+**Total agent time spent (excl. flagged):** 1h 40m  
+**Total human think time (excl. outliers):** 24m 26s  
+**Average human think time (excl. outliers):** 1m 38s  
 **Think-time outliers (> 15 min):** 9  
-**Total input tokens:** 2,343  
-**Total output tokens:** 988,700  
-**Total cache-write tokens:** 6,150,591  
-**Total cache-read tokens:** 453,726,176  
+**Total input tokens:** 2,511  
+**Total output tokens:** 1,015,983  
+**Total cache-write tokens:** 6,214,129  
+**Total cache-read tokens:** 482,537,693  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
 
 ⚠ Turn(s) 21 had an 'agent time spent' over 30 min (total 30m 1s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
@@ -66,11 +67,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 111  
-**Combined agent time spent (excl. flagged):** 4h 42m  
-**Combined human think time (excl. outliers):** 2h 40m  
+**Combined total turns:** 112  
+**Combined agent time spent (excl. flagged):** 4h 45m  
+**Combined human think time (excl. outliers):** 2h 41m  
 **Combined think-time outliers:** 17  
-**Total input tokens (since tracking began, this file only):** 1,444  
-**Total output tokens (since tracking began, this file only):** 545,977  
-**Total cache-write tokens (since tracking began, this file only):** 3,603,552  
-**Total cache-read tokens (since tracking began, this file only):** 321,683,667
+**Total input tokens (since tracking began, this file only):** 1,612  
+**Total output tokens (since tracking began, this file only):** 573,260  
+**Total cache-write tokens (since tracking began, this file only):** 3,667,090  
+**Total cache-read tokens (since tracking began, this file only):** 350,495,184
