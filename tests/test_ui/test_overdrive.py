@@ -70,17 +70,19 @@ def test_category_header_click_reveals_and_hides_directly(
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
 
-    header = page.locator("#control-board .cat-header").nth(1)
-    expect(header).to_contain_text("???")
-    expect(header).to_have_class(re.compile("hidden-cat"))
+    flip = page.locator("#control-board-headers .cat-header-flip").nth(1)
+    front = flip.locator(".cat-header-front")
+    back = flip.locator(".cat-header-back")
+    expect(front).to_contain_text("???")
+    expect(flip).not_to_have_class(re.compile("flipped"))
 
-    header.click()
-    expect(header).to_contain_text("HTTP Status Quo")
-    expect(header).not_to_have_class(re.compile("hidden-cat"))
+    flip.click()
+    expect(back).to_contain_text("HTTP Status Quo")
+    expect(flip).to_have_class(re.compile("flipped"))
 
-    header.click()
-    expect(header).to_contain_text("???")
-    expect(header).to_have_class(re.compile("hidden-cat"))
+    flip.click()
+    expect(front).to_contain_text("???")
+    expect(flip).not_to_have_class(re.compile("flipped"))
 
 
 def test_board_values_show_as_plain_points_no_dollar_sign(
@@ -135,7 +137,9 @@ def test_main_status_bar_shows_buzzed_player_name_and_timer(
 
     _goto(live_server, page, game_id, "main")
     bar = page.locator("#clue-status-bar")
-    expect(bar).to_be_hidden()
+    expect(bar).to_be_visible()
+    expect(bar).not_to_contain_text("Player 1")
+    expect(bar.locator(".countdown-track")).to_have_count(1)
 
     _goto(live_server, page, game_id, "player1")
     _wait_for_ring_in_open(live_server, page, game_id)
