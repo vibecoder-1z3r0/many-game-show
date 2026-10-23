@@ -30,7 +30,7 @@
             { "text": "These markers, starting with seven less-than signs, appear in a file when Git can't auto-merge.", "answer": "What are conflict markers (<<<<<<<)", "value": 400 },
             { "text": "This strategy always takes the incoming branch's version of a conflicting line, no manual review.", "answer": "What is \"ours\" or \"theirs\" merge strategy", "value": 800 },
             { "text": "This tool category (like Beyond Compare or VS Code's built-in one) shows conflicts side by side for resolution.", "answer": "What is a merge tool / diff tool", "value": 1200 },
-            { "text": "This Git command abandons an in-progress merge and returns to the pre-merge state.", "answer": "What is git merge --abort", "value": 1600, "stake_stacker": 2 },
+            { "text": "This Git command abandons an in-progress merge and returns to the pre-merge state.", "answer": "What is git merge --abort", "value": 1600, "crit_boost": 2 },
             { "text": "This workflow rebases a feature branch onto main before merging, to avoid a messy merge commit entirely.", "answer": "What is rebase-then-merge (a linear history workflow)", "value": 2000 }
           ]
         },
@@ -41,7 +41,7 @@
             { "text": "This technique feeds a model relevant external documents at query time instead of only relying on training data.", "answer": "What is Retrieval-Augmented Generation (RAG)", "value": 800 },
             { "text": "This number, roughly measuring how much text a model can \"see\" at once, is called the context ___.", "answer": "What is the context window", "value": 1200 },
             { "text": "This process adjusts a pre-trained model's weights on a smaller, task-specific dataset.", "answer": "What is fine-tuning", "value": 1600 },
-            { "text": "This technique asks a model to \"think step by step\" before giving a final answer, often improving accuracy.", "answer": "What is chain-of-thought prompting", "value": 2000, "stake_stacker": 2 }
+            { "text": "This technique asks a model to \"think step by step\" before giving a final answer, often improving accuracy.", "answer": "What is chain-of-thought prompting", "value": 2000, "crit_boost": 2 }
           ]
         },
         {
@@ -87,7 +87,7 @@
             { "text": "This franchise's second film, subtitled \"Judgment Day,\" is often cited as one of the rare sequels better than the original.", "answer": "What is Terminator 2", "value": 800 },
             { "text": "This 2008 sequel introduced Heath Ledger's Oscar-winning performance as the Joker.", "answer": "What is The Dark Knight", "value": 1200 },
             { "text": "This long-running spy franchise has had actors from Sean Connery to Daniel Craig play its lead, agent 007.", "answer": "What is James Bond", "value": 1600 },
-            { "text": "This 2015 film was the seventh mainline installment in a space saga, introducing Rey and Kylo Ren.", "answer": "What is Star Wars: The Force Awakens", "value": 2000, "stake_stacker": 2 }
+            { "text": "This 2015 film was the seventh mainline installment in a space saga, introducing Rey and Kylo Ren.", "answer": "What is Star Wars: The Force Awakens", "value": 2000, "crit_boost": 2 }
           ]
         },
         {
@@ -153,7 +153,7 @@
             { "text": "This is the smallest country in the world by both area and population, located within the city of Rome.", "answer": "What is Vatican City", "value": 800 },
             { "text": "This body of water is the saltiest lake in the world, located between Israel and Jordan, where swimmers famously float.", "answer": "What is the Dead Sea", "value": 1200 },
             { "text": "This is the coldest permanently inhabited place on Earth, a Russian village in Siberia.", "answer": "What is Oymyakon", "value": 1600 },
-            { "text": "This trench in the Pacific Ocean is the deepest point on Earth, reaching nearly 36,000 feet.", "answer": "What is the Mariana Trench", "value": 2000, "stake_stacker": 2 }
+            { "text": "This trench in the Pacific Ocean is the deepest point on Earth, reaching nearly 36,000 feet.", "answer": "What is the Mariana Trench", "value": 2000, "crit_boost": 2 }
           ]
         },
         {

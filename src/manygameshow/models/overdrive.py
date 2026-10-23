@@ -1,8 +1,8 @@
-"""Peril (Jeopardy-style) — a 3-round, 3-player trivia board game. See
+"""Overdrive (Jeopardy-style) — a 3-round, 3-player trivia board game. See
 ADDING_A_GAME.md for the shared conventions this follows.
 
 Content (categories, clues, wording) is data, not code — see
-peril_banks.py — so a round's board can be authored/swapped without
+overdrive_banks.py — so a round's board can be authored/swapped without
 touching this state machine.
 """
 
@@ -13,7 +13,7 @@ from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
 
-from manygameshow.peril_banks import (
+from manygameshow.overdrive_banks import (
     ClueContent,
     RoundBank,
     get_final_bank,
@@ -87,8 +87,8 @@ def _default_final_entries_json() -> str:
     return json.dumps({p.value: FinalEntry().model_dump() for p in ALL_PLAYERS})
 
 
-class PerilGame(SQLModel, table=True):
-    __tablename__ = "peril_games"
+class OverdriveGame(SQLModel, table=True):
+    __tablename__ = "overdrive_games"
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     round1_bank_id: str = Field(default="classic")
@@ -123,8 +123,8 @@ class PerilGame(SQLModel, table=True):
     buzz_timer_remaining_ms: int | None = Field(default=None)
     buzz_timer_running: bool = Field(default=True)
 
-    # Stake Stacker (Daily Double) wager, entered by the host before reveal.
-    stake_stacker_wager: int | None = Field(default=None)
+    # Crit Boost (Daily Double) wager, entered by the host before reveal.
+    crit_boost_wager: int | None = Field(default=None)
 
     # Ring-in window: a buzz only counts between start_delay and
     # start_delay+window after the clue's revealed. Global defaults, with
@@ -146,7 +146,7 @@ class PerilGame(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=_utcnow)
 
 
-class PerilGameCreate(SQLModel):
+class OverdriveGameCreate(SQLModel):
     round1_bank_id: str = "classic"
     round2_bank_id: str = "classic"
     final_bank_id: str = "classic"
@@ -159,7 +159,7 @@ class ClueRead(SQLModel):
     category_index: int
     clue_index: int
     value: int
-    is_stake_stacker: bool
+    is_crit_boost: bool
     played: bool
     locked_out: list[Player]
     text: str | None
@@ -191,7 +191,7 @@ class PlayerStatusRead(SQLModel):
     answer_time_ms: int
 
 
-class PerilGameRead(SQLModel):
+class OverdriveGameRead(SQLModel):
     id: str
     current_round: RoundName
     categories: list[CategoryRead]
@@ -201,7 +201,7 @@ class PerilGameRead(SQLModel):
     selected_clue_index: int | None
     clue_phase: str | None
     buzzed_player: Player | None
-    stake_stacker_wager: int | None
+    crit_boost_wager: int | None
     ring_in_elapsed_ms: int | None
     buzz_remaining_ms: int | None
     answer_timer_running: bool
@@ -217,7 +217,7 @@ class PerilGameRead(SQLModel):
     updated_at: datetime
 
 
-def bank_for_round(game: PerilGame, round_name: RoundName) -> RoundBank:
+def bank_for_round(game: OverdriveGame, round_name: RoundName) -> RoundBank:
     if round_name == RoundName.ROUND1:
         bank = get_round1_bank(game.round1_bank_id)
     elif round_name == RoundName.ROUND2:
@@ -229,44 +229,44 @@ def bank_for_round(game: PerilGame, round_name: RoundName) -> RoundBank:
     return bank
 
 
-def current_bank(game: PerilGame) -> RoundBank:
+def current_bank(game: OverdriveGame) -> RoundBank:
     return bank_for_round(game, game.current_round)
 
 
-def player_scores(game: PerilGame) -> dict[Player, PlayerScore]:
+def player_scores(game: OverdriveGame) -> dict[Player, PlayerScore]:
     raw: list[dict[str, object]] = json.loads(game.players_json)
     return {p: PlayerScore.model_validate(raw[i]) for i, p in enumerate(ALL_PLAYERS)}
 
 
-def player_score(game: PerilGame, player: Player) -> PlayerScore:
+def player_score(game: OverdriveGame, player: Player) -> PlayerScore:
     return player_scores(game)[player]
 
 
-def set_player_score(game: PerilGame, player: Player, score: PlayerScore) -> None:
+def set_player_score(game: OverdriveGame, player: Player, score: PlayerScore) -> None:
     scores = player_scores(game)
     scores[player] = score
     game.players_json = json.dumps([scores[p].model_dump() for p in ALL_PLAYERS])
 
 
-def categories_revealed(game: PerilGame) -> list[bool]:
+def categories_revealed(game: OverdriveGame) -> list[bool]:
     result: list[bool] = json.loads(game.categories_revealed_json)
     return result
 
 
-def set_categories_revealed(game: PerilGame, revealed: list[bool]) -> None:
+def set_categories_revealed(game: OverdriveGame, revealed: list[bool]) -> None:
     game.categories_revealed_json = json.dumps(revealed)
 
 
-def clue_cells(game: PerilGame) -> list[list[ClueCell]]:
+def clue_cells(game: OverdriveGame) -> list[list[ClueCell]]:
     raw: list[list[dict[str, object]]] = json.loads(game.clue_cells_json)
     return [[ClueCell.model_validate(c) for c in row] for row in raw]
 
 
-def set_clue_cells(game: PerilGame, cells: list[list[ClueCell]]) -> None:
+def set_clue_cells(game: OverdriveGame, cells: list[list[ClueCell]]) -> None:
     game.clue_cells_json = json.dumps([[c.model_dump() for c in row] for row in cells])
 
 
-def reset_board_for_round(game: PerilGame, round_name: RoundName) -> None:
+def reset_board_for_round(game: OverdriveGame, round_name: RoundName) -> None:
     """Start a round's board fresh: all categories hidden, all clues
     unplayed, no locked-out players. Does not touch scores or
     board_control."""
@@ -281,38 +281,38 @@ def reset_board_for_round(game: PerilGame, round_name: RoundName) -> None:
     game.buzz_answer_started_at = None
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
-    game.stake_stacker_wager = None
+    game.crit_boost_wager = None
 
 
-def selected_clue_content(game: PerilGame) -> ClueContent | None:
+def selected_clue_content(game: OverdriveGame) -> ClueContent | None:
     if game.selected_category_index is None or game.selected_clue_index is None:
         return None
     bank = current_bank(game)
     return bank.categories[game.selected_category_index].clues[game.selected_clue_index]
 
 
-def selected_clue_cell(game: PerilGame) -> ClueCell | None:
+def selected_clue_cell(game: OverdriveGame) -> ClueCell | None:
     if game.selected_category_index is None or game.selected_clue_index is None:
         return None
     cells = clue_cells(game)
     return cells[game.selected_category_index][game.selected_clue_index]
 
 
-def is_selected_stake_stacker(game: PerilGame) -> bool:
+def is_selected_crit_boost(game: OverdriveGame) -> bool:
     content = selected_clue_content(game)
-    return content is not None and content.stake_stacker != 0
+    return content is not None and content.crit_boost != 0
 
 
-def clue_phase(game: PerilGame) -> str | None:
+def clue_phase(game: OverdriveGame) -> str | None:
     """None (nothing selected), "selected" (fly-in, not yet revealed),
-    or "revealed" (clue text visible, ring-in or Stake Stacker answer in
+    or "revealed" (clue text visible, ring-in or Crit Boost answer in
     progress)."""
     if game.selected_category_index is None:
         return None
     return "revealed" if game.clue_revealed_at is not None else "selected"
 
 
-def ring_in_window_for(game: PerilGame, player: Player) -> tuple[int, int]:
+def ring_in_window_for(game: OverdriveGame, player: Player) -> tuple[int, int]:
     """(start_delay_ms, window_ms) for one player, honoring any override."""
     overrides: dict[str, dict[str, int | None]] = json.loads(
         game.ring_in_overrides_json
@@ -329,7 +329,7 @@ def ring_in_window_for(game: PerilGame, player: Player) -> tuple[int, int]:
 
 
 def set_ring_in_override(
-    game: PerilGame, player: Player, override: TimingOverride
+    game: OverdriveGame, player: Player, override: TimingOverride
 ) -> None:
     overrides: dict[str, dict[str, int | None]] = json.loads(
         game.ring_in_overrides_json
@@ -338,11 +338,11 @@ def set_ring_in_override(
     game.ring_in_overrides_json = json.dumps(overrides)
 
 
-def clear_ring_in_overrides(game: PerilGame) -> None:
+def clear_ring_in_overrides(game: OverdriveGame) -> None:
     game.ring_in_overrides_json = "{}"
 
 
-def answer_time_for(game: PerilGame, player: Player) -> int:
+def answer_time_for(game: OverdriveGame, player: Player) -> int:
     overrides: dict[str, dict[str, int | None]] = json.loads(
         game.answer_time_overrides_json
     )
@@ -353,7 +353,7 @@ def answer_time_for(game: PerilGame, player: Player) -> int:
 
 
 def set_answer_time_override(
-    game: PerilGame, player: Player, window_ms: int | None
+    game: OverdriveGame, player: Player, window_ms: int | None
 ) -> None:
     overrides: dict[str, dict[str, int | None]] = json.loads(
         game.answer_time_overrides_json
@@ -362,17 +362,19 @@ def set_answer_time_override(
     game.answer_time_overrides_json = json.dumps(overrides)
 
 
-def clear_answer_time_overrides(game: PerilGame) -> None:
+def clear_answer_time_overrides(game: OverdriveGame) -> None:
     game.answer_time_overrides_json = "{}"
 
 
-def can_ring_in(game: PerilGame, player: Player, now: datetime | None = None) -> bool:
+def can_ring_in(
+    game: OverdriveGame, player: Player, now: datetime | None = None
+) -> bool:
     """Whether `player`'s buzz would currently be accepted — within
     their ring-in window, not already locked out of this clue, and no
     one's already won the buzz."""
     if game.clue_revealed_at is None or game.buzzed_player is not None:
         return False
-    if is_selected_stake_stacker(game):
+    if is_selected_crit_boost(game):
         return False
     cell = selected_clue_cell(game)
     if cell is None or player in cell.locked_out:
@@ -383,7 +385,7 @@ def can_ring_in(game: PerilGame, player: Player, now: datetime | None = None) ->
     return start <= elapsed_ms <= start + window
 
 
-def ring_in_window_expired(game: PerilGame, now: datetime | None = None) -> bool:
+def ring_in_window_expired(game: OverdriveGame, now: datetime | None = None) -> bool:
     """True once every still-eligible (not locked out) player's ring-in
     window has closed with no one having buzzed — the clue is dead."""
     if game.clue_revealed_at is None or game.buzzed_player is not None:
@@ -404,14 +406,14 @@ def ring_in_window_expired(game: PerilGame, now: datetime | None = None) -> bool
     return all(window_closed(p) for p in remaining)
 
 
-def ring_in_elapsed_ms(game: PerilGame, now: datetime | None = None) -> int | None:
+def ring_in_elapsed_ms(game: OverdriveGame, now: datetime | None = None) -> int | None:
     if game.clue_revealed_at is None:
         return None
     now = now if now is not None else _utcnow()
     return int((now - game.clue_revealed_at).total_seconds() * 1000)
 
 
-def buzz_remaining_ms(game: PerilGame, now: datetime | None = None) -> int | None:
+def buzz_remaining_ms(game: OverdriveGame, now: datetime | None = None) -> int | None:
     """Time left on the answering player's countdown. None if no one's
     currently answering. Counts down from answer_time_for(player) to 0
     while running; frozen at buzz_timer_remaining_ms while paused."""
@@ -424,16 +426,16 @@ def buzz_remaining_ms(game: PerilGame, now: datetime | None = None) -> int | Non
     return max(0, game.buzz_timer_remaining_ms - elapsed_ms)
 
 
-def final_entries(game: PerilGame) -> dict[Player, FinalEntry]:
+def final_entries(game: OverdriveGame) -> dict[Player, FinalEntry]:
     raw: dict[str, dict[str, object]] = json.loads(game.final_entries_json)
     return {p: FinalEntry.model_validate(raw[p.value]) for p in ALL_PLAYERS}
 
 
-def final_entry(game: PerilGame, player: Player) -> FinalEntry:
+def final_entry(game: OverdriveGame, player: Player) -> FinalEntry:
     return final_entries(game)[player]
 
 
-def set_final_entry(game: PerilGame, player: Player, entry: FinalEntry) -> None:
+def set_final_entry(game: OverdriveGame, player: Player, entry: FinalEntry) -> None:
     entries = final_entries(game)
     entries[player] = entry
     game.final_entries_json = json.dumps(
@@ -441,7 +443,7 @@ def set_final_entry(game: PerilGame, player: Player, entry: FinalEntry) -> None:
     )
 
 
-def final_bank_content(game: PerilGame) -> tuple[str, str, str]:
+def final_bank_content(game: OverdriveGame) -> tuple[str, str, str]:
     """(category, text, answer) for the chosen final bank."""
     bank = get_final_bank(game.final_bank_id)
     if bank is None:
