@@ -128,14 +128,22 @@ def test_spin_stop_resolves_tokens_square_from_the_players_own_device(
 
     page.click(".spin-btn")
     expect(page.locator(".spin-btn")).to_contain_text("STOP")
-    page.wait_for_timeout(
-        int(0.5 * CHASE_STEP_S * 1000)
-    )  # land on square 0: +300 Tokens
     page.click(".spin-btn.stop")
 
+    # Which square the chase was over is timing-dependent, so don't predict
+    # it — check the Stop locked in *a* square and the player's own view
+    # shows whatever the server resolved (per-square effects are covered
+    # by the backend tests).
+    expect(page.locator("#player1-body .square.landed")).to_have_count(1)
+    resp = page.request.get(f"{live_server}/api/big-tokens/games/{game_id}")
+    assert resp.ok
+    state = resp.json()
+    assert state["last_landed_square_index"] is not None
+    player = state["players"]["player1"]
+
     my_stats = page.locator("#player1-body .my-stats")
-    expect(my_stats).to_contain_text("300 tokens")
-    expect(my_stats).to_contain_text("0 spin(s)")
+    expect(my_stats).to_contain_text(f"{player['token_total']} tokens")
+    expect(my_stats).to_contain_text(f"{player['spins_remaining']} spin(s)")
 
 
 def test_hallucination_hit_shows_strike_and_out_badge_at_max(
