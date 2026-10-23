@@ -1,6 +1,6 @@
 """Answers — /api/answers/games/* endpoints."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -27,7 +27,7 @@ from manygameshow.models.answers import (
     RoundName,
     TimingOverride,
     answer_time_for,
-    buzz_elapsed_ms,
+    buzz_remaining_ms,
     can_ring_in,
     categories_revealed,
     clear_answer_time_overrides,
@@ -160,8 +160,8 @@ def _to_read(game: AnswersGame, *, show_all: bool = False) -> AnswersGameRead:
         buzzed_player=game.buzzed_player,
         context_clue_wager=game.context_clue_wager,
         ring_in_elapsed_ms=ring_in_elapsed_ms(game),
-        buzz_elapsed_ms=buzz_elapsed_ms(game),
-        answer_timer_stopped=game.buzz_timer_frozen_ms is not None,
+        buzz_remaining_ms=buzz_remaining_ms(game),
+        answer_timer_running=game.buzz_timer_running,
         no_one_can_answer=ring_in_window_expired(game),
         ring_in_start_delay_ms=game.ring_in_start_delay_ms,
         ring_in_window_ms=game.ring_in_window_ms,
@@ -308,7 +308,8 @@ def select_clue(
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
-    game.buzz_timer_frozen_ms = None
+    game.buzz_timer_remaining_ms = None
+    game.buzz_timer_running = True
     game.context_clue_wager = None
     return _to_read(_save(game, session), show_all=True)
 
@@ -356,35 +357,83 @@ def buzz(game_id: str, body: BuzzBody, session: SessionDep) -> AnswersGameRead:
     if can_ring_in(game, body.player):
         game.buzzed_player = body.player
         game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None)
-        game.buzz_timer_frozen_ms = None
+        game.buzz_timer_remaining_ms = answer_time_for(game, body.player)
+        game.buzz_timer_running = True
         return _to_read(_save(game, session))
     return _to_read(game)
 
 
-@router.patch("/{game_id}/stop-answer-timer", response_model=AnswersGameRead)
-def stop_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
-    """Freezes the answering player's countdown bar in place — e.g. once
-    they've visibly started talking, the host doesn't want the bar to
-    keep ticking down (or running out) while they're still answering.
-    Purely cosmetic: judging still works normally."""
-    game = _get_game(game_id, session)
-    if game.buzzed_player is None or game.buzz_answer_started_at is None:
+def _require_answering(game: AnswersGame) -> Player:
+    if game.buzzed_player is None:
         raise HTTPException(status_code=400, detail="No one is currently answering")
-    game.buzz_timer_frozen_ms = buzz_elapsed_ms(game)
+    return game.buzzed_player
+
+
+@router.patch("/{game_id}/play-answer-timer", response_model=AnswersGameRead)
+def play_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    """Resumes a paused (or stopped-at-zero) countdown from wherever it
+    was left off."""
+    game = _get_game(game_id, session)
+    _require_answering(game)
+    if game.buzz_timer_running:
+        raise HTTPException(status_code=400, detail="Timer is already running")
+    game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None)
+    game.buzz_timer_running = True
     return _to_read(_save(game, session), show_all=True)
 
 
-@router.patch("/{game_id}/resume-answer-timer", response_model=AnswersGameRead)
-def resume_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+@router.patch("/{game_id}/pause-answer-timer", response_model=AnswersGameRead)
+def pause_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    """Freezes the countdown in place — e.g. once the contestant's
+    visibly started talking, the host doesn't want the bar to keep
+    ticking down while they're still answering. Resumable with Play.
+    Purely cosmetic: judging still works normally."""
     game = _get_game(game_id, session)
-    if game.buzzed_player is None or game.buzz_answer_started_at is None:
-        raise HTTPException(status_code=400, detail="No one is currently answering")
-    if game.buzz_timer_frozen_ms is None:
-        raise HTTPException(status_code=400, detail="Timer isn't stopped")
-    game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(
-        milliseconds=game.buzz_timer_frozen_ms
-    )
-    game.buzz_timer_frozen_ms = None
+    _require_answering(game)
+    if not game.buzz_timer_running:
+        raise HTTPException(status_code=400, detail="Timer is already paused")
+    game.buzz_timer_remaining_ms = buzz_remaining_ms(game)
+    game.buzz_timer_running = False
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/stop-answer-timer", response_model=AnswersGameRead)
+def stop_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    """Zeroes the countdown out immediately — "time's up" — and pauses
+    it there. Resumable with Play (resumes from 0, i.e. stays expired
+    until Reset)."""
+    game = _get_game(game_id, session)
+    _require_answering(game)
+    game.buzz_timer_remaining_ms = 0
+    game.buzz_timer_running = False
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/reset-answer-timer", response_model=AnswersGameRead)
+def reset_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    """Restarts the countdown at the player's full answer duration,
+    keeping whatever running/paused state it was already in."""
+    game = _get_game(game_id, session)
+    player = _require_answering(game)
+    game.buzz_timer_remaining_ms = answer_time_for(game, player)
+    if game.buzz_timer_running:
+        game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None)
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/clear-answer-timer", response_model=AnswersGameRead)
+def clear_answer_timer(game_id: str, session: SessionDep) -> AnswersGameRead:
+    """Cancels this player's answer attempt entirely — un-buzzes them
+    and reopens a fresh ring-in window for everyone else, with no
+    scoring change. For when a buzz was a mistake (wrong button,
+    technical glitch) rather than a wrong answer."""
+    game = _get_game(game_id, session)
+    _require_answering(game)
+    game.buzzed_player = None
+    game.buzz_answer_started_at = None
+    game.buzz_timer_remaining_ms = None
+    game.buzz_timer_running = True
+    game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
     return _to_read(_save(game, session), show_all=True)
 
 
@@ -437,7 +486,8 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> AnswersGameRead
             cell.locked_out = [*cell.locked_out, player]
             game.buzzed_player = None
             game.buzz_answer_started_at = None
-            game.buzz_timer_frozen_ms = None
+            game.buzz_timer_remaining_ms = None
+            game.buzz_timer_running = True
             if len(cell.locked_out) >= len(ALL_PLAYERS):
                 cell.played = True
                 _clear_selected(game)
@@ -456,7 +506,8 @@ def _clear_selected(game: AnswersGame) -> None:
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
-    game.buzz_timer_frozen_ms = None
+    game.buzz_timer_remaining_ms = None
+    game.buzz_timer_running = True
     game.context_clue_wager = None
 
 
