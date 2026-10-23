@@ -219,6 +219,57 @@ def test_second_buzz_ignored_once_someone_already_in(client: TestClient) -> None
     assert body["buzzed_player"] == "player1"
 
 
+def test_stop_answer_timer_freezes_elapsed_ms(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _buzz(client, game_id, "player1")
+    time.sleep(0.05)
+
+    resp = client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["answer_timer_stopped"] is True
+    frozen = body["buzz_elapsed_ms"]
+    assert frozen is not None
+
+    time.sleep(0.05)
+    body = _get(client, game_id)
+    assert body["buzz_elapsed_ms"] == frozen
+
+
+def test_stop_answer_timer_requires_someone_answering(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    resp = client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
+    assert resp.status_code == 400
+
+
+def test_resume_answer_timer_clears_frozen_flag(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _buzz(client, game_id, "player1")
+    client.patch(f"/api/answers/games/{game_id}/stop-answer-timer")
+
+    resp = client.patch(f"/api/answers/games/{game_id}/resume-answer-timer")
+    assert resp.status_code == 200
+    assert resp.json()["answer_timer_stopped"] is False
+
+
+def test_resume_answer_timer_rejected_when_not_stopped(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _buzz(client, game_id, "player1")
+    resp = client.patch(f"/api/answers/games/{game_id}/resume-answer-timer")
+    assert resp.status_code == 400
+
+
 def test_judge_correct_awards_value_and_sets_control(client: TestClient) -> None:
     game_id = _create_game(client)
     _set_fast_ring_in(client, game_id)

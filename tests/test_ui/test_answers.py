@@ -189,6 +189,35 @@ def test_select_reveal_buzz_judge_correct_awards_points_and_board_control(
     expect(page.locator("#control-clue-fieldset")).to_be_hidden()
 
 
+def test_stop_timer_button_freezes_bar_then_resume_unfreezes(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+
+    _goto(live_server, page, game_id, "player1")
+    _wait_for_ring_in_open(live_server, page, game_id)
+    _buzz(page, "player1")
+
+    _goto(live_server, page, game_id, "control")
+    page.get_by_role("button", name="Stop Timer").click()
+
+    frozen = page.request.get(f"{live_server}/api/answers/games/{game_id}").json()[
+        "buzz_elapsed_ms"
+    ]
+    page.wait_for_timeout(250)
+    still_frozen = page.request.get(
+        f"{live_server}/api/answers/games/{game_id}"
+    ).json()["buzz_elapsed_ms"]
+    assert still_frozen == frozen
+
+    page.get_by_role("button", name="Resume Timer").click()
+    expect(page.get_by_role("button", name="Stop Timer")).to_be_visible()
+
+
 def test_judge_incorrect_locks_out_player_and_reopens_ring_in(
     live_server: str, page: Page
 ) -> None:
