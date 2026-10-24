@@ -10,6 +10,8 @@ from manygameshow.big_tokens_boards import list_boards
 from manygameshow.database import get_session
 from manygameshow.models.big_tokens import (
     ALL_PLAYERS,
+    MAX_CHASE_STEP_MS,
+    MIN_CHASE_STEP_MS,
     BigTokensGame,
     BigTokensGameCreate,
     BigTokensGameRead,
@@ -71,6 +73,7 @@ def _to_read(game: BigTokensGame) -> BigTokensGameRead:
         current_player=game.current_player,
         round_number=game.round_number,
         chase_position=chase_position(game),
+        chase_step_ms=game.chase_step_ms,
         awaiting=awaiting(game),
         pending_square_index=game.pending_square_index,
         last_landed_square_index=game.last_landed_square_index,
@@ -492,6 +495,24 @@ def reset_game(game_id: str, session: SessionDep) -> BigTokensGameRead:
     game.pending_square_index = None
     game.pending_choice = None
     game.last_landed_square_index = None
+    return _to_read(_save(game, session))
+
+
+class ChaseSpeedBody(SQLModel):
+    step_ms: int = Field(ge=MIN_CHASE_STEP_MS, le=MAX_CHASE_STEP_MS)
+
+
+@router.patch("/{game_id}/chase-speed", response_model=BigTokensGameRead)
+def set_chase_speed(
+    game_id: str, body: ChaseSpeedBody, session: SessionDep
+) -> BigTokensGameRead:
+    """Host setting: how many ms the chase light spends on each square.
+    Refused mid-spin — the position is derived from elapsed time, so
+    changing the step then would make the light jump squares."""
+    game = _get_game(game_id, session)
+    if game.chase_started_at is not None:
+        raise HTTPException(status_code=400, detail="A spin is in progress")
+    game.chase_step_ms = body.step_ms
     return _to_read(_save(game, session))
 
 

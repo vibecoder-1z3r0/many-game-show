@@ -107,6 +107,19 @@ def test_chase_position_wraps_around_18_squares() -> None:
     assert chase_position(game, now=now) == 2
 
 
+def test_chase_step_defaults_to_150ms() -> None:
+    assert BigTokensGame().chase_step_ms == 150
+
+
+def test_chase_position_uses_the_games_own_step() -> None:
+    now = datetime.now(UTC).replace(tzinfo=None)
+    game = BigTokensGame(
+        chase_started_at=now - timedelta(milliseconds=950), chase_step_ms=300
+    )
+    # 950ms / 300ms per step = 3 steps, position 3 (would be 6 at 150ms).
+    assert chase_position(game, now=now) == 3
+
+
 def test_awaiting_none_when_no_pending_square() -> None:
     game = BigTokensGame()
     assert awaiting(game) is None
