@@ -2,10 +2,12 @@ import time
 
 from playwright.sync_api import Page, expect
 
-# Matches CHASE_STEP_MS in models/big_tokens.py. Sleeping to the middle of
-# a target index's window (index + 0.5 steps) gives generous tolerance
-# against local HTTP/test overhead in either direction.
-CHASE_STEP_S = 0.15
+# Slower than the 150ms game default (set per game via PATCH
+# .../chase-speed in _create_game) so each square's window is wide enough
+# to tolerate local HTTP/click overhead. Sleeping to the middle of a target
+# index's window (index + 0.5 steps) gives tolerance in either direction.
+TEST_CHASE_STEP_MS = 300
+CHASE_STEP_S = TEST_CHASE_STEP_MS / 1000
 
 
 def _create_game(live_server: str, page: Page, board_id: str = "classic") -> str:
@@ -14,6 +16,11 @@ def _create_game(live_server: str, page: Page, board_id: str = "classic") -> str
     )
     assert resp.ok
     game_id: str = resp.json()["id"]
+    resp = page.request.patch(
+        f"{live_server}/api/big-tokens/games/{game_id}/chase-speed",
+        data={"step_ms": TEST_CHASE_STEP_MS},
+    )
+    assert resp.ok
     return game_id
 
 
@@ -95,6 +102,23 @@ def test_main_view_shows_board_and_turn_status(live_server: str, page: Page) -> 
     _goto(live_server, page, game_id, "main")
     expect(page.locator("#main-board .square")).to_have_count(18)
     expect(page.locator("#main-turn-status")).to_contain_text("Player 2's turn")
+
+
+def test_control_chase_speed_defaults_to_150_and_can_be_changed(
+    live_server: str, page: Page
+) -> None:
+    resp = page.request.post(f"{live_server}/api/big-tokens/games/", data={})
+    assert resp.ok
+    game_id = resp.json()["id"]
+    _goto(live_server, page, game_id, "control")
+
+    step_input = page.locator("#chase-step-input")
+    expect(step_input).to_have_value("150")
+
+    step_input.fill("400")
+    page.get_by_role("button", name="Apply", exact=True).click()
+    page.reload()
+    expect(page.locator("#chase-step-input")).to_have_value("400")
 
 
 def test_player_view_has_no_spin_button_when_not_active(
@@ -222,7 +246,7 @@ def test_control_override_can_force_stop_and_resolve_pending_choice(
     # Poll the live chase position instead of a fixed sleep — a fixed
     # sleep followed by a page click has unpredictable extra latency
     # (button-visibility wait, etc.) that can drift onto the wrong square.
-    for _ in range(400):
+    for _ in range(1000):
         resp = page.request.get(f"{live_server}/api/big-tokens/games/{game_id}")
         if resp.json()["chase_position"] == 13:
             break

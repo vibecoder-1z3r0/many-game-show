@@ -139,6 +139,46 @@ def test_start_spin_sets_a_live_chase_position(client: TestClient) -> None:
     assert body["chase_position"] is not None
 
 
+def test_chase_speed_defaults_to_150_and_can_be_set(client: TestClient) -> None:
+    game_id = _create_game(client)
+    assert _get(client, game_id)["chase_step_ms"] == 150
+    resp = client.patch(
+        f"/api/big-tokens/games/{game_id}/chase-speed", json={"step_ms": 400}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["chase_step_ms"] == 400
+    assert _get(client, game_id)["chase_step_ms"] == 400
+
+
+@pytest.mark.parametrize("step_ms", [0, 49, 5001])
+def test_chase_speed_rejects_out_of_range(client: TestClient, step_ms: int) -> None:
+    game_id = _create_game(client)
+    resp = client.patch(
+        f"/api/big-tokens/games/{game_id}/chase-speed", json={"step_ms": step_ms}
+    )
+    assert resp.status_code == 422
+
+
+def test_chase_speed_refused_mid_spin(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=3)
+    _start_spin(client, game_id)
+    resp = client.patch(
+        f"/api/big-tokens/games/{game_id}/chase-speed", json={"step_ms": 400}
+    )
+    assert resp.status_code == 400
+    assert _get(client, game_id)["chase_step_ms"] == 150
+
+
+def test_reset_keeps_chase_speed(client: TestClient) -> None:
+    game_id = _create_game(client)
+    client.patch(f"/api/big-tokens/games/{game_id}/chase-speed", json={"step_ms": 400})
+    resp = client.patch(f"/api/big-tokens/games/{game_id}/reset")
+    assert resp.status_code == 200
+    assert resp.json()["chase_step_ms"] == 400
+
+
 def test_stop_spin_without_active_spin_errors(client: TestClient) -> None:
     game_id = _create_game(client)
     _set_active(client, game_id, "player1")

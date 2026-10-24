@@ -20,9 +20,12 @@ from manygameshow.big_tokens_boards import (
     get_board,
 )
 
-# How fast the chase light moves — server-authoritative, same pattern as
-# Speed Points' countdown: store started_at, compute elapsed on every read.
-CHASE_STEP_MS = 150
+# Default chase-light speed — server-authoritative, same pattern as Speed
+# Points' countdown: store started_at, compute elapsed on every read. Each
+# game stores its own step (host-adjustable from Control).
+DEFAULT_CHASE_STEP_MS = 150
+MIN_CHASE_STEP_MS = 50
+MAX_CHASE_STEP_MS = 5000
 
 
 def _utcnow() -> datetime:
@@ -96,6 +99,9 @@ class BigTokensGame(SQLModel, table=True):
     # Live chase state, server-authoritative (per ARCHITECTURE.md: store
     # started_at, compute elapsed on every read — never a client timer).
     chase_started_at: datetime | None = Field(default=None)
+    chase_step_ms: int = Field(
+        default=DEFAULT_CHASE_STEP_MS, ge=MIN_CHASE_STEP_MS, le=MAX_CHASE_STEP_MS
+    )
 
     # Set the instant a spin is stopped (by the player or a host
     # override), until fully resolved (a choice and/or a target may still
@@ -150,6 +156,7 @@ class BigTokensGameRead(SQLModel):
     current_player: Player | None
     round_number: int
     chase_position: int | None
+    chase_step_ms: int
     awaiting: str | None
     pending_square_index: int | None
     last_landed_square_index: int | None
@@ -219,7 +226,7 @@ def chase_position(game: BigTokensGame, now: datetime | None = None) -> int | No
         return None
     now = now if now is not None else _utcnow()
     elapsed_ms = (now - game.chase_started_at).total_seconds() * 1000
-    return int(elapsed_ms // CHASE_STEP_MS) % SQUARES_PER_BOARD
+    return int(elapsed_ms // game.chase_step_ms) % SQUARES_PER_BOARD
 
 
 def awaiting(game: BigTokensGame) -> str | None:
