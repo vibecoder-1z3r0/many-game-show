@@ -1,10 +1,13 @@
-.PHONY: preflight sync run clean test test-backend test-ui lint format typecheck check
+.PHONY: preflight sync run clean screenshots test test-backend test-ui lint format typecheck check
 
 preflight:
 	bash scripts/preflight.sh
 
 clean:
 	rm -f manygameshow.db
+
+screenshots:
+	uv run python scripts/screenshots.py
 
 sync:
 	uv sync --extra dev
