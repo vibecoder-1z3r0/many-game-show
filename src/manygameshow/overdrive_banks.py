@@ -23,8 +23,8 @@ _DEFAULT_FINAL_PATH = Path(__file__).parent / "data" / "overdrive_final.sample.j
 # as one of round 2's two. 2 = usable only as one of round 2's two. This
 # is purely a content-authoring convenience for building a shared clue
 # pool across banks — whichever clues end up with a nonzero value in
-# whichever bank is actually loaded for a round ARE that round's Stake
-# Stacker(s); the engine doesn't treat 1 vs 2 differently at runtime.
+# whichever bank is actually loaded for a round ARE that round's
+# Crit Boost(s); the engine doesn't treat 1 vs 2 differently at runtime.
 CritBoostFlag = Literal[0, 1, 2]
 
 
