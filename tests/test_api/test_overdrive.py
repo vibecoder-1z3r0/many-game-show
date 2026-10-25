@@ -107,7 +107,7 @@ def test_control_sees_full_answer_key_always(client: TestClient) -> None:
     clue = body["categories"][0]["clues"][0]
     assert clue["text"] is not None
     assert clue["answer"] is not None
-    # The known context clue on the classic round1 bank.
+    # The known Crit Boost clue on the classic round1 bank.
     crit_boost = body["categories"][0]["clues"][4]
     assert crit_boost["is_crit_boost"] is True
 
@@ -174,14 +174,14 @@ def test_reveal_clue_shows_text_to_everyone(client: TestClient) -> None:
 
 def test_reveal_requires_wager_for_crit_boost(client: TestClient) -> None:
     game_id = _create_game(client)
-    _select_clue(client, game_id, 0, 4)  # the context clue
+    _select_clue(client, game_id, 0, 4)  # the Crit Boost clue
     resp = client.patch(f"/api/overdrive/games/{game_id}/reveal-clue")
     assert resp.status_code == 400
 
 
 def test_reveal_requires_board_control_for_crit_boost(client: TestClient) -> None:
     game_id = _create_game(client)
-    _select_clue(client, game_id, 0, 4)  # the context clue
+    _select_clue(client, game_id, 0, 4)  # the Crit Boost clue
     client.patch(
         f"/api/overdrive/games/{game_id}/crit-boost-wager", json={"wager": 500}
     )

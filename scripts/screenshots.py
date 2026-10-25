@@ -74,33 +74,25 @@ def setup_squad_squabble() -> str:
     for i in (0, 1, 2):
         patch("squad-squabble", gid, "reveal", {"answer_index": i})
     patch("squad-squabble", gid, "strike")
+    patch("squad-squabble", gid, "strike")
     return gid
 
 
 def setup_speed_points() -> str:
+    """Player 1 has answered all five questions and the host has revealed
+    every answer on Main; points (the second reveal beat) are still hidden."""
     gid = create("speed-points")
     patch(
         "speed-points",
         gid,
         "start-round",
-        {"player": "player1", "duration_seconds": 90},
+        {"player": "player1", "duration_seconds": 1},
     )
-    answers = ["LGTM", "Blocked on review", "A rubber duck", "Prod is on fire"]
+    answers = ["Nit:", "Blocked on review", "Rubber duck", "Friday", "Write tests"]
     for i, text in enumerate(answers):
         patch("speed-points", gid, "answer", {"question_index": i, "text": text})
         patch("speed-points", gid, "answer-lock", {"question_index": i, "locked": True})
-        # The last answer stays points-hidden, to show the two reveal beats.
-        if i < len(answers) - 1:
-            points = 36 - 9 * i
-            patch(
-                "speed-points", gid, "points", {"question_index": i, "points": points}
-            )
-            patch(
-                "speed-points",
-                gid,
-                "points-lock",
-                {"question_index": i, "locked": True},
-            )
+    time.sleep(1.5)  # let the 1s countdown expire: the round is over
     return gid
 
 
@@ -180,6 +172,12 @@ def main() -> None:
                 print("Writing screenshots to", OUT)
                 for game, setup in setups.items():
                     ids[game] = setup()
+                    # Squad Squabble's Main is tall enough to push the
+                    # strikes below an 800px fold.
+                    height = 1000 if game == "squad-squabble" else VIEWPORT["height"]
+                    page.set_viewport_size(
+                        {"width": VIEWPORT["width"], "height": height}
+                    )
                     shot(page, f"{game}-main", f"/{game}.html?id={ids[game]}&view=main")
                     shot(
                         page,
