@@ -78,7 +78,9 @@ before restarting** — there are no migrations (see
 Questions, boards and clue banks are data, not code, so you can swap in
 your own without touching any source: point the matching environment
 variable at a JSON file with the same shape as the bundled sample in
-[`src/manygameshow/data/`](./src/manygameshow/data/).
+[`src/manygameshow/data/`](./src/manygameshow/data/). The full
+walkthrough — file shapes, authoring tips and a check command per game —
+is in [ADDING_CONTENT.md](./ADDING_CONTENT.md).
 
 | Game | Environment variable(s) | Sample file(s) |
 |---|---|---|
@@ -132,6 +134,7 @@ Tokens chase light are live, so those shots differ slightly each run.
 ## Project docs
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — stack, conventions, extension pattern
+- [ADDING_CONTENT.md](./ADDING_CONTENT.md) — writing your own questions, boards and clue banks
 - [ADDING_A_GAME.md](./ADDING_A_GAME.md) — step-by-step recipe for a new game
 - [UI_LOOK_AND_FEEL.md](./UI_LOOK_AND_FEEL.md) — theming, typography, view conventions
 - [CLAUDE.md](./CLAUDE.md) — working conventions for the AI assistant (also useful for contributors)

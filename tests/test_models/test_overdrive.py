@@ -217,7 +217,7 @@ def test_can_ring_in_false_for_crit_boost() -> None:
     game = OverdriveGame(ring_in_start_delay_ms=300, ring_in_window_ms=5000)
     reset_board_for_round(game, RoundName.ROUND1)
     game.selected_category_index = 0
-    game.selected_clue_index = 4  # the context clue
+    game.selected_clue_index = 4  # the Crit Boost clue
     now = datetime.now(UTC).replace(tzinfo=None)
     game.clue_revealed_at = now - timedelta(milliseconds=1000)
     assert can_ring_in(game, Player.PLAYER1, now=now) is False
