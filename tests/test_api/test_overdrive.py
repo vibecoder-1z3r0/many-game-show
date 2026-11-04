@@ -137,9 +137,12 @@ def test_category_reveal_toggle(client: TestClient) -> None:
     assert resp.json()["categories"][0]["revealed"] is False
 
 
-def test_select_clue_rejects_when_already_selected(client: TestClient) -> None:
+def test_select_clue_rejects_once_the_clue_in_play_is_revealed(
+    client: TestClient,
+) -> None:
     game_id = _create_game(client)
     _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
     resp = client.patch(
         f"/api/overdrive/games/{game_id}/select-clue",
         json={"category_index": 1, "clue_index": 0},
@@ -825,3 +828,155 @@ def test_nothing_changeable_once_final_has_started(client: TestClient) -> None:
 def test_swap_rejects_unknown_bank(client: TestClient) -> None:
     game_id = _create_game(client)
     assert _set_banks(client, game_id, round1_bank_id="nope").status_code == 422  # type: ignore[attr-defined]
+
+
+def _patch(client: TestClient, game_id: str, action: str, body: dict | None = None):  # type: ignore[no-untyped-def]
+    return client.patch(f"/api/overdrive/games/{game_id}/{action}", json=body)
+
+
+def test_selecting_another_clue_swaps_an_unrevealed_selection(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 0)
+    body = _select_clue(client, game_id, 1, 2)
+    assert (body["selected_category_index"], body["selected_clue_index"]) == (1, 2)
+    assert body["clue_phase"] == "selected"
+
+
+def test_selecting_the_same_clue_again_changes_nothing(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "auto-reveal-settings", {"delay_ms": 60000})
+    first = _select_clue(client, game_id, 0, 0)["auto_reveal_remaining_ms"]
+    again = _select_clue(client, game_id, 0, 0)["auto_reveal_remaining_ms"]
+    assert again <= first  # the countdown wasn't restarted
+
+
+def test_deselect_clears_an_unrevealed_selection(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 0)
+    resp = _patch(client, game_id, "deselect-clue")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["selected_category_index"] is None
+    assert body["clue_phase"] is None
+
+
+def test_deselect_errors_without_selection_or_after_reveal(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    assert _patch(client, game_id, "deselect-clue").status_code == 400
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    assert _patch(client, game_id, "deselect-clue").status_code == 400
+
+
+def test_auto_reveal_is_off_by_default(client: TestClient) -> None:
+    game_id = _create_game(client)
+    body = _select_clue(client, game_id, 0, 0)
+    assert body["auto_reveal_delay_ms"] == 0
+    assert body["auto_reveal_remaining_ms"] is None
+
+
+def test_auto_reveal_reveals_the_clue_after_the_delay(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "auto-reveal-settings", {"delay_ms": 150})
+    body = _select_clue(client, game_id, 0, 0)
+    assert body["clue_phase"] == "selected"
+    assert 0 < body["auto_reveal_remaining_ms"] <= 150
+    time.sleep(0.3)
+    body = _get(client, game_id)
+    assert body["clue_phase"] == "revealed"
+    assert body["categories"][0]["clues"][0]["text"] is not None
+    assert body["auto_reveal_remaining_ms"] is None
+
+
+def test_deselecting_cancels_a_pending_auto_reveal(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "auto-reveal-settings", {"delay_ms": 150})
+    _select_clue(client, game_id, 0, 0)
+    _patch(client, game_id, "deselect-clue")
+    time.sleep(0.3)
+    assert _get(client, game_id)["clue_phase"] is None
+
+
+def test_auto_reveal_never_fires_for_a_crit_boost(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "auto-reveal-settings", {"delay_ms": 100})
+    body = _select_clue(client, game_id, 0, 4)  # the Crit Boost clue
+    assert body["auto_reveal_remaining_ms"] is None
+    time.sleep(0.25)
+    assert _get(client, game_id)["clue_phase"] == "selected"
+
+
+def test_auto_reveal_setting_is_validated(client: TestClient) -> None:
+    game_id = _create_game(client)
+    for delay in (-1, 60001):
+        resp = _patch(client, game_id, "auto-reveal-settings", {"delay_ms": delay})
+        assert resp.status_code == 422
+
+
+def test_host_can_ring_in_for_a_player_outside_their_window(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    # A window that opens far in the future: a real buzz would be ignored.
+    _patch(
+        client,
+        game_id,
+        "ring-in-settings",
+        {"start_delay_ms": 50000, "window_ms": 1000},
+    )
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    assert _buzz(client, game_id, "player2")["buzzed_player"] is None
+
+    resp = _patch(client, game_id, "host-ring-in", {"player": "player2"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["buzzed_player"] == "player2"
+    assert body["answer_timer_running"] is True
+    assert body["buzz_remaining_ms"] > 0
+
+
+def test_host_ring_in_refusals(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    # No clue yet / not revealed yet.
+    assert (
+        _patch(client, game_id, "host-ring-in", {"player": "player1"}).status_code
+        == 400
+    )
+    _select_clue(client, game_id, 0, 0)
+    assert (
+        _patch(client, game_id, "host-ring-in", {"player": "player1"}).status_code
+        == 400
+    )
+    _reveal_clue(client, game_id)
+
+    # Someone else already answering.
+    _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    resp = _patch(client, game_id, "host-ring-in", {"player": "player2"})
+    assert resp.status_code == 400
+    assert "already answering" in resp.json()["detail"]
+
+    # A player who answered wrong is locked out of that clue.
+    _judge(client, game_id, False)
+    resp = _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    assert resp.status_code == 400
+    assert "locked out" in resp.json()["detail"]
+    assert (
+        _patch(client, game_id, "host-ring-in", {"player": "player3"}).status_code
+        == 200
+    )
+
+
+def test_host_ring_in_refused_on_a_crit_boost(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "board-control", {"player": "player1"})
+    _select_clue(client, game_id, 0, 4)
+    _patch(client, game_id, "crit-boost-wager", {"wager": 100})
+    _reveal_clue(client, game_id)
+    resp = _patch(client, game_id, "host-ring-in", {"player": "player2"})
+    assert resp.status_code == 400
