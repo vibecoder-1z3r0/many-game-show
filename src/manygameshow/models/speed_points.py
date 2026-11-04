@@ -7,7 +7,7 @@ from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
 
-from manygameshow.speed_points_questions import Question, get_question
+from manygameshow.speed_points_questions import Question, get_bank
 
 QUESTIONS_PER_ROUND = 5
 
@@ -62,9 +62,20 @@ class SpeedPointsGame(SQLModel, table=True):
     player1_name: str = Field(default="Player 1")
     player2_name: str = Field(default="Player 2")
 
-    # The 5 questions both players face, chosen once at creation — JSON list
-    # of question ids, in play order.
+    # Which question bank this game plays from, and the 5 questions both
+    # players face (the bank's first 5) — JSON list of question ids, in
+    # play order. Both are set at creation and only change together, via
+    # the settings endpoint, before a round has started.
+    bank_id: str = Field(default="")
     question_ids_json: str = Field(default_factory=_default_question_ids_json)
+
+    # Each player's countdown length for their leg, host-adjustable.
+    player1_timer_seconds: int = Field(
+        default=DEFAULT_TIMER_SECONDS["player1"], ge=1, le=300
+    )
+    player2_timer_seconds: int = Field(
+        default=DEFAULT_TIMER_SECONDS["player2"], ge=1, le=300
+    )
 
     current_player: Player | None = Field(default=None)
 
@@ -92,6 +103,14 @@ class SpeedPointsGame(SQLModel, table=True):
 class SpeedPointsGameCreate(SQLModel):
     player1_name: str = "Player 1"
     player2_name: str = "Player 2"
+    bank_id: str | None = None  # default: the first bank in the file
+    win_threshold: int = Field(default=200, ge=1)
+    player1_timer_seconds: int = Field(
+        default=DEFAULT_TIMER_SECONDS["player1"], ge=1, le=300
+    )
+    player2_timer_seconds: int = Field(
+        default=DEFAULT_TIMER_SECONDS["player2"], ge=1, le=300
+    )
 
 
 class QuestionPromptRead(SQLModel):
@@ -158,6 +177,10 @@ class SpeedPointsGameRead(SQLModel):
     scores_revealed: bool
     remaining_seconds: int | None
     timer_duration_seconds: int
+    player1_timer_seconds: int
+    player2_timer_seconds: int
+    bank_id: str
+    bank_name: str
     status: str
     created_at: datetime
     updated_at: datetime
@@ -183,6 +206,10 @@ class JudgeGameRead(SQLModel):
     scores_revealed: bool
     remaining_seconds: int | None
     timer_duration_seconds: int
+    player1_timer_seconds: int
+    player2_timer_seconds: int
+    bank_id: str
+    bank_name: str
     status: str
 
 
@@ -192,7 +219,16 @@ def question_ids(game: SpeedPointsGame) -> list[str]:
 
 
 def current_questions(game: SpeedPointsGame) -> list[Question]:
-    return [q for qid in question_ids(game) if (q := get_question(qid)) is not None]
+    bank = get_bank(game.bank_id)
+    if bank is None:
+        return []
+    by_id = {q.id: q for q in bank.questions}
+    return [by_id[qid] for qid in question_ids(game) if qid in by_id]
+
+
+def bank_name(game: SpeedPointsGame) -> str:
+    bank = get_bank(game.bank_id)
+    return bank.name if bank is not None else ""
 
 
 def _slots_json_field(player: Player) -> str:

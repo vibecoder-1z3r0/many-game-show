@@ -387,3 +387,124 @@ def test_reset_clears_round_state_but_keeps_names(client: TestClient) -> None:
     assert body["player2_slots"] == [_empty_judge_slot()] * 5
     assert body["scores_revealed"] is False
     assert body["remaining_seconds"] is None
+
+
+def test_bank_options_lists_sample_banks(client: TestClient) -> None:
+    resp = client.get("/api/speed-points/games/banks")
+    assert resp.status_code == 200
+    assert {b["id"] for b in resp.json()} >= {"classic", "ai-era"}
+
+
+def test_create_defaults_to_first_bank_and_classic_settings(
+    client: TestClient,
+) -> None:
+    body = client.get(f"/api/speed-points/games/{_create_game(client)}").json()
+    assert body["bank_id"] == "classic"
+    assert body["win_threshold"] == 200
+    assert body["player1_timer_seconds"] == 20
+    assert body["player2_timer_seconds"] == 25
+    assert len(body["all_questions"]) == 5
+
+
+def test_create_accepts_all_options(client: TestClient) -> None:
+    resp = client.post(
+        "/api/speed-points/games/",
+        json={
+            "player1_name": "Ada",
+            "player2_name": "Grace",
+            "bank_id": "ai-era",
+            "win_threshold": 150,
+            "player1_timer_seconds": 30,
+            "player2_timer_seconds": 40,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["bank_id"] == "ai-era"
+    assert body["bank_name"] == "The AI Era"
+    assert body["win_threshold"] == 150
+    assert body["player1_timer_seconds"] == 30
+    assert body["player2_timer_seconds"] == 40
+    assert body["all_questions"][0]["id"] == "ai-first-prompt"
+
+
+def test_create_rejects_unknown_bank(client: TestClient) -> None:
+    resp = client.post("/api/speed-points/games/", json={"bank_id": "nope"})
+    assert resp.status_code == 422
+
+
+def test_start_round_uses_each_players_configured_timer(client: TestClient) -> None:
+    game_id = _create_game(client)
+    client.patch(
+        f"/api/speed-points/games/{game_id}/settings",
+        json={"player1_timer_seconds": 33, "player2_timer_seconds": 44},
+    )
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/start-round", json={"player": "player1"}
+    )
+    assert resp.json()["timer_duration_seconds"] == 33
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/start-round", json={"player": "player2"}
+    )
+    assert resp.json()["timer_duration_seconds"] == 44
+
+
+def test_settings_change_threshold_and_timers_any_time(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _start_round(client, game_id)
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/settings",
+        json={"win_threshold": 120, "player2_timer_seconds": 60},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["win_threshold"] == 120
+    assert body["player2_timer_seconds"] == 60
+    assert body["player1_timer_seconds"] == 20  # untouched
+
+
+def test_settings_rejects_out_of_range_values(client: TestClient) -> None:
+    game_id = _create_game(client)
+    for payload in (
+        {"win_threshold": 0},
+        {"player1_timer_seconds": 0},
+        {"player2_timer_seconds": 301},
+    ):
+        resp = client.patch(f"/api/speed-points/games/{game_id}/settings", json=payload)
+        assert resp.status_code == 422
+
+
+def test_settings_can_switch_bank_before_a_round_starts(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/settings", json={"bank_id": "ai-era"}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["bank_id"] == "ai-era"
+    assert body["all_questions"][0]["id"] == "ai-first-prompt"
+
+
+def test_settings_refuses_bank_change_once_a_round_has_started(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _start_round(client, game_id)
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/settings", json={"bank_id": "ai-era"}
+    )
+    assert resp.status_code == 400
+    # Reset returns the game to the pre-round state, so the bank can change.
+    client.patch(f"/api/speed-points/games/{game_id}/reset")
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/settings", json={"bank_id": "ai-era"}
+    )
+    assert resp.status_code == 200
+
+
+def test_settings_rejects_unknown_bank(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = client.patch(
+        f"/api/speed-points/games/{game_id}/settings", json={"bank_id": "nope"}
+    )
+    assert resp.status_code == 422

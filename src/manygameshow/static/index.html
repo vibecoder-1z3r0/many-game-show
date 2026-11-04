@@ -104,6 +104,58 @@
         background: rgba(255, 77, 77, 0.15);
       }
 
+      dialog {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.6rem;
+        padding: 1.25rem 1.5rem;
+        width: min(30rem, calc(100vw - 2rem));
+      }
+
+      button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      dialog::backdrop {
+        background: rgba(5, 8, 15, 0.7);
+      }
+
+      dialog h2 {
+        margin: 0 0 1rem;
+        color: var(--accent);
+        font-size: 1.15rem;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.8rem;
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      .field input,
+      .field select {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.95rem;
+        width: 100%;
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        margin-top: 1.1rem;
+      }
+
       .links a {
         color: var(--accent);
         text-decoration: none;
@@ -140,15 +192,21 @@
   <body>
     <h1>Many Game Show</h1>
     <div class="create-buttons">
-      <button onclick="createSquadSquabbleGame()">New Squad Squabble Game</button>
-      <button onclick="createSpeedPointsGame()">New Speed Points Game</button>
-      <select id="big-tokens-board-select"></select>
-      <button onclick="createBigTokensGame()">New Big Tokens Game</button>
-      <select id="overdrive-round1-select"></select>
-      <select id="overdrive-round2-select"></select>
-      <select id="overdrive-final-select"></select>
-      <button onclick="createOverdriveGame()">New Overdrive Game</button>
+      <button onclick="openNewGameDialog('squad-squabble')">New Squad Squabble Game</button>
+      <button onclick="openNewGameDialog('speed-points')">New Speed Points Game</button>
+      <button onclick="openNewGameDialog('big-tokens')">New Big Tokens Game</button>
+      <button onclick="openNewGameDialog('overdrive')">New Overdrive Game</button>
     </div>
+    <dialog id="new-game-dialog">
+      <form id="new-game-form" method="dialog">
+        <h2 id="new-game-title"></h2>
+        <div id="new-game-fields"></div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" onclick="closeNewGameDialog()">Cancel</button>
+          <button type="submit" id="new-game-create">Create game</button>
+        </div>
+      </form>
+    </dialog>
     <div class="games" id="games"></div>
     <script>
       // Each game type has its own API prefix + control/main page. Adding
@@ -161,77 +219,171 @@
         { key: "overdrive", label: "Overdrive", render: renderOverdriveCard },
       ];
 
-      async function loadBoardOptions() {
-        const resp = await fetch("/api/big-tokens/games/boards");
-        const boards = await resp.json();
-        const select = document.getElementById("big-tokens-board-select");
-        select.innerHTML = boards
-          .map((b) => `<option value="${b.id}">${b.name}</option>`)
+      // ----- New-game dialog -----
+      //
+      // Every "New … Game" button opens the same dialog, built from the
+      // game's entry in NEW_GAME_FORMS: a list of fields (defaults shown,
+      // so just clicking Create gives a standard game), the API call that
+      // creates it, and the page to land on. Select options come from the
+      // API when the dialog opens, since they depend on the content files.
+      // A select field's `options` is an async function returning
+      // [{ value, label }].
+
+      async function getJson(url) {
+        const resp = await fetch(url);
+        return resp.json();
+      }
+
+      const idName = (list) => list.map((x) => ({ value: x.id, label: x.name }));
+
+      const NEW_GAME_FORMS = {
+        "squad-squabble": {
+          title: "New Squad Squabble Game",
+          landing: "control",
+          fields: [
+            { name: "team1_name", label: "Team 1 name", type: "text", value: "Team 1" },
+            { name: "team2_name", label: "Team 2 name", type: "text", value: "Team 2" },
+            {
+              name: "question_id",
+              label: "Round 1 question",
+              type: "select",
+              options: async () => [
+                { value: "", label: "None — choose later" },
+                ...(await getJson("/api/squad-squabble/games/questions")).map((q) => ({
+                  value: q.id,
+                  label: q.prompt,
+                })),
+              ],
+            },
+          ],
+        },
+        "speed-points": {
+          title: "New Speed Points Game",
+          landing: "host",
+          fields: [
+            { name: "player1_name", label: "Player 1 name", type: "text", value: "Player 1" },
+            { name: "player2_name", label: "Player 2 name", type: "text", value: "Player 2" },
+            {
+              name: "bank_id",
+              label: "Question bank",
+              type: "select",
+              options: async () => idName(await getJson("/api/speed-points/games/banks")),
+            },
+            { name: "win_threshold", label: "Win threshold", type: "number", value: 200, min: 1 },
+            {
+              name: "player1_timer_seconds",
+              label: "Player 1 timer (seconds)",
+              type: "number",
+              value: 20,
+              min: 1,
+              max: 300,
+            },
+            {
+              name: "player2_timer_seconds",
+              label: "Player 2 timer (seconds)",
+              type: "number",
+              value: 25,
+              min: 1,
+              max: 300,
+            },
+          ],
+        },
+        "big-tokens": {
+          title: "New Big Tokens Game",
+          landing: "control",
+          fields: [
+            {
+              name: "board_id",
+              label: "Board",
+              type: "select",
+              options: async () => idName(await getJson("/api/big-tokens/games/boards")),
+            },
+          ],
+        },
+        overdrive: {
+          title: "New Overdrive Game",
+          landing: "control",
+          fields: [
+            {
+              name: "round1_bank_id",
+              label: "Round 1 bank",
+              type: "select",
+              options: async () => idName((await getJson("/api/overdrive/games/banks")).round1),
+            },
+            {
+              name: "round2_bank_id",
+              label: "Round 2 bank",
+              type: "select",
+              options: async () => idName((await getJson("/api/overdrive/games/banks")).round2),
+            },
+            {
+              name: "final_bank_id",
+              label: "Final Exam bank",
+              type: "select",
+              options: async () => idName((await getJson("/api/overdrive/games/banks")).final),
+            },
+          ],
+        },
+      };
+
+      let newGameKey = null;
+
+      function fieldHtml(f) {
+        const id = `new-game-${f.name}`;
+        const input =
+          f.type === "select"
+            ? `<select id="${id}" name="${f.name}"></select>`
+            : `<input id="${id}" name="${f.name}" type="${f.type}" value="${f.value}"${
+                f.min !== undefined ? ` min="${f.min}"` : ""
+              }${f.max !== undefined ? ` max="${f.max}"` : ""} />`;
+        return `<label class="field" for="${id}"><span>${f.label}</span>${input}</label>`;
+      }
+
+      async function openNewGameDialog(key) {
+        newGameKey = key;
+        const form = NEW_GAME_FORMS[key];
+        document.getElementById("new-game-title").textContent = form.title;
+        document.getElementById("new-game-fields").innerHTML = form.fields
+          .map(fieldHtml)
           .join("");
+        document.getElementById("new-game-dialog").showModal();
+        await Promise.all(
+          form.fields
+            .filter((f) => f.type === "select")
+            .map(async (f) => {
+              const options = await f.options();
+              document.getElementById(`new-game-${f.name}`).innerHTML = options
+                .map((o) => `<option value="${o.value}">${o.label}</option>`)
+                .join("");
+            })
+        );
       }
-      loadBoardOptions();
 
-      async function loadOverdriveBankOptions() {
-        const resp = await fetch("/api/overdrive/games/banks");
-        const banks = await resp.json();
-        const fill = (selectId, options) => {
-          document.getElementById(selectId).innerHTML = options
-            .map((b) => `<option value="${b.id}">${b.name}</option>`)
-            .join("");
-        };
-        fill("overdrive-round1-select", banks.round1);
-        fill("overdrive-round2-select", banks.round2);
-        fill("overdrive-final-select", banks.final);
+      function closeNewGameDialog() {
+        document.getElementById("new-game-dialog").close();
       }
-      loadOverdriveBankOptions();
 
-      async function createSquadSquabbleGame() {
-        const resp = await fetch("/api/squad-squabble/games/", {
+      document.getElementById("new-game-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = NEW_GAME_FORMS[newGameKey];
+        const body = {};
+        for (const f of form.fields) {
+          const raw = document.getElementById(`new-game-${f.name}`).value;
+          if (raw === "") continue; // blank = let the server use its default
+          body[f.name] = f.type === "number" ? parseInt(raw, 10) : raw;
+        }
+        const resp = await fetch(`/api/${newGameKey}/games/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify(body),
         });
+        if (!resp.ok) {
+          alert(`Couldn't create the game: ${(await resp.json()).detail}`);
+          return;
+        }
         const game = await resp.json();
-        location.href = `/squad-squabble.html?id=${game.id}&view=control`;
-      }
-
-      async function createSpeedPointsGame() {
-        const resp = await fetch("/api/speed-points/games/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        const game = await resp.json();
-        location.href = `/speed-points.html?id=${game.id}&view=host`;
-      }
-
-      async function createBigTokensGame() {
-        const boardId = document.getElementById("big-tokens-board-select").value;
-        const resp = await fetch("/api/big-tokens/games/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ board_id: boardId }),
-        });
-        const game = await resp.json();
-        location.href = `/big-tokens.html?id=${game.id}&view=control`;
-      }
-
-      async function createOverdriveGame() {
-        const round1BankId = document.getElementById("overdrive-round1-select").value;
-        const round2BankId = document.getElementById("overdrive-round2-select").value;
-        const finalBankId = document.getElementById("overdrive-final-select").value;
-        const resp = await fetch("/api/overdrive/games/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            round1_bank_id: round1BankId,
-            round2_bank_id: round2BankId,
-            final_bank_id: finalBankId,
-          }),
-        });
-        const game = await resp.json();
-        location.href = `/overdrive.html?id=${game.id}&view=control`;
-      }
+        location.href = `/${newGameKey}.html?id=${game.id}&view=${form.landing}`;
+      });
 
       function controllingLabel(g) {
         if (g.controlling_team === "team1") return g.team1_name;

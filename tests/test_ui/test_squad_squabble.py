@@ -25,8 +25,39 @@ def test_lobby_create_game_button_navigates_to_control(
 ) -> None:
     page.goto(live_server)
     page.get_by_role("button", name="New Squad Squabble Game").click()
+    page.get_by_role("button", name="Create game").click()
     page.wait_for_url("**/squad-squabble.html?id=*&view=control")
     expect(page.locator("#tab-control")).to_have_class("active")
+
+
+def test_lobby_dialog_sets_team_names_and_round_one_question(
+    live_server: str, page: Page
+) -> None:
+    page.goto(live_server)
+    page.get_by_role("button", name="New Squad Squabble Game").click()
+    page.fill("#new-game-team1_name", "Ravens")
+    page.fill("#new-game-team2_name", "Otters")
+    page.select_option("#new-game-question_id", "desk-drawer")
+    page.get_by_role("button", name="Create game").click()
+    page.wait_for_url("**/squad-squabble.html?id=*&view=control")
+
+    game_id = page.url.split("id=")[1].split("&")[0]
+    game = page.request.get(f"{live_server}/api/squad-squabble/games/{game_id}").json()
+    assert game["team1_name"] == "Ravens"
+    assert game["team2_name"] == "Otters"
+    assert game["current_question"]["id"] == "desk-drawer"
+    assert game["question_visible"] is False
+
+
+def test_lobby_dialog_cancel_creates_nothing(live_server: str, page: Page) -> None:
+    before = page.request.get(f"{live_server}/api/squad-squabble/games/").json()
+    page.goto(live_server)
+    page.get_by_role("button", name="New Squad Squabble Game").click()
+    expect(page.locator("#new-game-dialog")).to_be_visible()
+    page.get_by_role("button", name="Cancel").click()
+    expect(page.locator("#new-game-dialog")).to_be_hidden()
+    after = page.request.get(f"{live_server}/api/squad-squabble/games/").json()
+    assert len(after) == len(before)
 
 
 def test_breadcrumb_links_back_to_lobby(live_server: str, page: Page) -> None:

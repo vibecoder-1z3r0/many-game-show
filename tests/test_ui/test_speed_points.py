@@ -59,8 +59,76 @@ def test_lobby_create_speed_points_button_navigates_to_host(
 ) -> None:
     page.goto(live_server)
     page.get_by_role("button", name="New Speed Points Game").click()
+    page.get_by_role("button", name="Create game").click()
     page.wait_for_url("**/speed-points.html?id=*&view=host")
     expect(page.locator("#tab-host")).to_have_class("active")
+
+
+def test_lobby_dialog_defaults_and_bank_choices(live_server: str, page: Page) -> None:
+    page.goto(live_server)
+    page.get_by_role("button", name="New Speed Points Game").click()
+    expect(page.locator("#new-game-bank_id option")).to_have_count(2)
+    expect(page.locator("#new-game-win_threshold")).to_have_value("200")
+    expect(page.locator("#new-game-player1_timer_seconds")).to_have_value("20")
+    expect(page.locator("#new-game-player2_timer_seconds")).to_have_value("25")
+
+
+def test_lobby_dialog_creates_game_with_chosen_settings(
+    live_server: str, page: Page
+) -> None:
+    page.goto(live_server)
+    page.get_by_role("button", name="New Speed Points Game").click()
+    page.fill("#new-game-player1_name", "Ada")
+    page.fill("#new-game-player2_name", "Grace")
+    page.select_option("#new-game-bank_id", "ai-era")
+    page.fill("#new-game-win_threshold", "150")
+    page.fill("#new-game-player1_timer_seconds", "30")
+    page.fill("#new-game-player2_timer_seconds", "40")
+    page.get_by_role("button", name="Create game").click()
+    page.wait_for_url("**/speed-points.html?id=*&view=host")
+
+    # The Host view's own settings reflect what the dialog chose.
+    expect(page.locator("#setting-bank")).to_have_value("ai-era")
+    expect(page.locator("#setting-threshold")).to_have_value("150")
+    expect(page.locator("#setting-p1-timer")).to_have_value("30")
+    expect(page.locator("#setting-p2-timer")).to_have_value("40")
+
+
+def test_host_can_change_threshold_timers_and_bank(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_host(live_server, page, game_id)
+    expect(page.locator("#setting-bank")).to_have_value("classic")
+
+    page.select_option("#setting-bank", "ai-era")
+    page.fill("#setting-threshold", "120")
+    page.fill("#setting-p1-timer", "35")
+    page.fill("#setting-p2-timer", "45")
+    page.get_by_role("button", name="Apply settings").click()
+
+    first_prompt = page.locator("#host-question-list li").first
+    expect(first_prompt).to_contain_text("AI assistant first thing")
+    page.reload()
+    expect(page.locator("#setting-bank")).to_have_value("ai-era")
+    expect(page.locator("#setting-threshold")).to_have_value("120")
+    expect(page.locator("#setting-p1-timer")).to_have_value("35")
+    expect(page.locator("#setting-p2-timer")).to_have_value("45")
+
+    # The new timer length is what the clock starts from.
+    page.get_by_role("button", name="Start Player 2").click()
+    expect(page.locator("#host-timer")).to_contain_text("4")  # 45s, ticking
+
+
+def test_host_bank_is_locked_once_a_round_has_started(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto_host(live_server, page, game_id)
+    expect(page.locator("#setting-bank")).to_be_enabled()
+    page.get_by_role("button", name="Start Player 1").click()
+    expect(page.locator("#setting-bank")).to_be_disabled()
+    expect(page.locator("#setting-bank-note")).to_contain_text("reset")
 
 
 def test_host_view_shows_full_question_rundown_and_no_answers(

@@ -9,7 +9,6 @@ from sqlmodel import Field, Session, SQLModel, select
 
 from manygameshow.database import get_session
 from manygameshow.models.speed_points import (
-    DEFAULT_TIMER_SECONDS,
     QUESTIONS_PER_ROUND,
     AnswerOptionRead,
     AnswerSlot,
@@ -22,13 +21,14 @@ from manygameshow.models.speed_points import (
     SpeedPointsGame,
     SpeedPointsGameCreate,
     SpeedPointsGameRead,
+    bank_name,
     combined_total,
     current_questions,
     player_slots,
     player_total,
     remaining_seconds,
 )
-from manygameshow.speed_points_questions import list_questions
+from manygameshow.speed_points_questions import get_bank, list_banks
 
 router = APIRouter(prefix="/api/speed-points/games", tags=["speed-points"])
 
@@ -89,6 +89,10 @@ def _to_judge_read(game: SpeedPointsGame) -> JudgeGameRead:
         scores_revealed=game.scores_revealed,
         remaining_seconds=remaining_seconds(game),
         timer_duration_seconds=game.timer_duration_seconds,
+        player1_timer_seconds=game.player1_timer_seconds,
+        player2_timer_seconds=game.player2_timer_seconds,
+        bank_id=game.bank_id,
+        bank_name=bank_name(game),
         status=game.status,
     )
 
@@ -114,21 +118,46 @@ def _to_read(game: SpeedPointsGame) -> SpeedPointsGameRead:
         scores_revealed=game.scores_revealed,
         remaining_seconds=remaining_seconds(game),
         timer_duration_seconds=game.timer_duration_seconds,
+        player1_timer_seconds=game.player1_timer_seconds,
+        player2_timer_seconds=game.player2_timer_seconds,
+        bank_id=game.bank_id,
+        bank_name=bank_name(game),
         status=game.status,
         created_at=game.created_at,
         updated_at=game.updated_at,
     )
 
 
+class BankOptionRead(SQLModel):
+    id: str
+    name: str
+
+
+@router.get("/banks", response_model=list[BankOptionRead])
+def get_bank_options() -> list[BankOptionRead]:
+    return [BankOptionRead(id=b.id, name=b.name) for b in list_banks()]
+
+
+def _first_question_ids(bank_id: str) -> list[str]:
+    bank = get_bank(bank_id)
+    if bank is None:
+        raise HTTPException(status_code=422, detail=f"Unknown bank: {bank_id}")
+    return [q.id for q in bank.questions[:QUESTIONS_PER_ROUND]]
+
+
 @router.post("/", response_model=SpeedPointsGameRead)
 def create_game(
     body: SpeedPointsGameCreate, session: SessionDep
 ) -> SpeedPointsGameRead:
-    question_ids = [q.id for q in list_questions()[:QUESTIONS_PER_ROUND]]
+    bank_id = body.bank_id or list_banks()[0].id
     game = SpeedPointsGame(
         player1_name=body.player1_name,
         player2_name=body.player2_name,
-        question_ids_json=json.dumps(question_ids),
+        bank_id=bank_id,
+        question_ids_json=json.dumps(_first_question_ids(bank_id)),
+        win_threshold=body.win_threshold,
+        player1_timer_seconds=body.player1_timer_seconds,
+        player2_timer_seconds=body.player2_timer_seconds,
     )
     session.add(game)
     session.commit()
@@ -196,7 +225,11 @@ def start_round(
     game.timer_duration_seconds = (
         body.duration_seconds
         if body.duration_seconds is not None
-        else DEFAULT_TIMER_SECONDS[body.player.value]
+        else (
+            game.player1_timer_seconds
+            if body.player == Player.PLAYER1
+            else game.player2_timer_seconds
+        )
     )
     game.timer_started_at = datetime.now(UTC).replace(tzinfo=None)
     return _to_read(_save(game, session))
@@ -367,6 +400,40 @@ def update_players(
         game.player1_name = body.player1_name
     if body.player2_name is not None:
         game.player2_name = body.player2_name
+    return _to_read(_save(game, session))
+
+
+class SettingsBody(SQLModel):
+    win_threshold: int | None = Field(default=None, ge=1)
+    player1_timer_seconds: int | None = Field(default=None, ge=1, le=300)
+    player2_timer_seconds: int | None = Field(default=None, ge=1, le=300)
+    bank_id: str | None = None
+
+
+@router.patch("/{game_id}/settings", response_model=SpeedPointsGameRead)
+def update_settings(
+    game_id: str, body: SettingsBody, session: SessionDep
+) -> SpeedPointsGameRead:
+    """Host settings. The win threshold and timer lengths can change any
+    time (a timer length applies from that player's next leg). The
+    question bank can only change before a round has started, since the
+    judged answers belong to the questions already in play — reset the
+    game to change it afterwards."""
+    game = _get_game(game_id, session)
+    if body.bank_id is not None and body.bank_id != game.bank_id:
+        if game.current_player is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="Question bank can't change once a round has started",
+            )
+        game.question_ids_json = json.dumps(_first_question_ids(body.bank_id))
+        game.bank_id = body.bank_id
+    if body.win_threshold is not None:
+        game.win_threshold = body.win_threshold
+    if body.player1_timer_seconds is not None:
+        game.player1_timer_seconds = body.player1_timer_seconds
+    if body.player2_timer_seconds is not None:
+        game.player2_timer_seconds = body.player2_timer_seconds
     return _to_read(_save(game, session))
 
 

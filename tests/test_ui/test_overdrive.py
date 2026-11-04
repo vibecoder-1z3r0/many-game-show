@@ -44,15 +44,28 @@ def test_lobby_create_overdrive_button_navigates_to_control(
 ) -> None:
     page.goto(live_server)
     page.get_by_role("button", name="New Overdrive Game").click()
+    page.get_by_role("button", name="Create game").click()
     page.wait_for_url("**/overdrive.html?id=*&view=control")
     expect(page.locator("#tab-control")).to_have_class("active")
 
 
-def test_lobby_bank_selects_list_all_sample_banks(live_server: str, page: Page) -> None:
+def test_lobby_dialog_lists_all_sample_banks_and_creates_with_the_choices(
+    live_server: str, page: Page
+) -> None:
     page.goto(live_server)
-    expect(page.locator("#overdrive-round1-select option")).to_have_count(3)
-    expect(page.locator("#overdrive-round2-select option")).to_have_count(3)
-    expect(page.locator("#overdrive-final-select option")).to_have_count(5)
+    page.get_by_role("button", name="New Overdrive Game").click()
+    expect(page.locator("#new-game-round1_bank_id option")).to_have_count(3)
+    expect(page.locator("#new-game-round2_bank_id option")).to_have_count(3)
+    expect(page.locator("#new-game-final_bank_id option")).to_have_count(5)
+
+    page.select_option("#new-game-round1_bank_id", "movies")
+    page.get_by_role("button", name="Create game").click()
+    page.wait_for_url("**/overdrive.html?id=*&view=control")
+    game_id = page.url.split("id=")[1].split("&")[0]
+    control = page.request.get(
+        f"{live_server}/api/overdrive/games/{game_id}/control"
+    ).json()
+    assert control["categories"][0]["name"] == "Blockbusters"
 
 
 def test_control_shows_board_and_all_three_players(

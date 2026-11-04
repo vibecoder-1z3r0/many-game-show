@@ -9,6 +9,11 @@ working app" conference session, largely with an AI coding assistant (see
 
 ![Lobby](./docs/screenshots/lobby.png)
 
+Each **New … Game** button opens a short options dialog — here, Speed
+Points — so a game starts with the names, content and settings you want:
+
+![New Speed Points game dialog](./docs/screenshots/new-game-dialog.png)
+
 ## The games
 
 Every game follows the same shape: the host runs it from a **Control**
@@ -63,8 +68,11 @@ make sync   # install dependencies (uv sync --extra dev)
 make run    # dev server with hot-reload (uvicorn manygameshow.main:app --reload)
 ```
 
-Open **http://localhost:8000**, create a game from the lobby, and use the
-links on each game's card to open its views — put **Main** on the big
+Open **http://localhost:8000** and click a **New … Game** button. Each one
+opens a short dialog for that game's options — team or player names, which
+question or bank to use, timers and the win threshold for Speed Points —
+with sensible defaults, so you can also just click **Create game**. Then
+use the links on each game's card to open its views — put **Main** on the big
 screen, keep **Control** (or **Host** / **Judge**) for yourself, and send
 the **P1/P2/P3** links to players.
 
@@ -93,9 +101,9 @@ is in [ADDING_CONTENT.md](./ADDING_CONTENT.md).
 SQUAD_SQUABBLE_QUESTIONS_PATH=/path/to/my_questions.json make run
 ```
 
-Speed Points always uses the first five questions in its file. Overdrive's
-files hold several selectable banks per round; the lobby lists them in
-dropdowns.
+Speed Points and Overdrive files hold several selectable banks, which the
+new-game dialog lists in dropdowns; Speed Points plays the first five
+questions of the chosen bank.
 
 ---
 
