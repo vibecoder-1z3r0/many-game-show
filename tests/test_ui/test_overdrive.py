@@ -448,7 +448,7 @@ def test_final_exam_self_serve_submit_reveal_and_judge(
 
     _goto(live_server, page, game_id, "control")
     expect(page.locator("#control-final")).to_contain_text("Player 1: submitted")
-    page.get_by_role("button", name="Reveal").click()
+    page.get_by_role("button", name="Reveal", exact=True).click()
     expect(page.locator("#control-final")).to_contain_text("Ada Lovelace")
 
     page.get_by_role("button", name="Correct", exact=True).click()
@@ -556,3 +556,105 @@ def test_control_timing_fields_show_the_current_defaults(
     page.get_by_role("button", name="Apply Global").nth(1).click()
     page.reload()
     expect(page.locator("#answer-time-input")).to_have_value("12000")
+
+
+def test_clicking_the_selected_clue_again_deselects_it(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    expect(page.locator("#control-board .clue-cell.in-play")).to_have_count(1)
+
+    page.locator("#control-board .clue-cell.in-play").click()
+    expect(page.locator("#control-board .clue-cell.in-play")).to_have_count(0)
+    expect(page.locator("#control-clue-fieldset")).to_be_hidden()
+
+
+def test_clicking_another_clue_swaps_an_unrevealed_selection(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    _select_clue(page, 2, 1)
+    expect(page.locator("#control-board .clue-cell.in-play")).to_have_count(1)
+    expect(page.locator("#control-clue-status")).to_contain_text("Regex Pain")
+
+
+def test_deselect_button_and_revealed_clues_are_not_swappable(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    page.get_by_role("button", name="Deselect Clue").click()
+    expect(page.locator("#control-clue-fieldset")).to_be_hidden()
+
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+    expect(page.locator("#control-clue-status")).to_contain_text(
+        "Waiting for a ring-in"
+    )
+    # Once revealed, board cells stop being clickable.
+    expect(page.locator("#control-board .clue-cell.clickable")).to_have_count(0)
+
+
+def test_control_flags_the_crit_boost_clue_but_main_does_not(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    tags = page.locator("#control-board .clue-cell.crit-boost .crit-tag")
+    expect(tags).to_have_count(1)
+    expect(tags.first).to_have_text("CRIT BOOST")
+
+    _goto(live_server, page, game_id, "main")
+    expect(page.locator("#main-board .crit-tag")).to_have_count(0)
+    expect(page.locator("#main-board .crit-boost")).to_have_count(0)
+
+
+def test_auto_reveal_setting_counts_down_and_reveals_the_clue(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    expect(page.locator("#auto-reveal-input")).to_have_value("0")
+
+    page.fill("#auto-reveal-input", "1500")
+    page.get_by_role("button", name="Set Auto-reveal").click()
+    expect(page.locator("#auto-reveal-input")).not_to_be_focused()
+
+    _select_clue(page, 1, 0)
+    expect(page.locator("#auto-reveal-countdown")).to_contain_text("Auto-revealing in")
+    expect(page.locator("#control-clue-status")).to_contain_text(
+        "Waiting for a ring-in", timeout=5000
+    )
+
+
+def test_host_can_ring_in_for_a_player(live_server: str, page: Page) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    ring_in = page.get_by_role("button", name="Ring In for Player 2")
+    expect(ring_in).to_be_disabled()  # nothing revealed yet
+
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+    expect(ring_in).to_be_enabled()
+    ring_in.click()
+    expect(page.locator("#control-clue-status")).to_contain_text(
+        "Player 2 is answering"
+    )
+    expect(ring_in).to_be_disabled()
+
+
+def test_player_timing_buttons_are_named_for_what_they_do(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    expect(page.get_by_role("button", name="Set Ring-in Timing")).to_have_count(3)
+    expect(
+        page.get_by_role("button", name="Set Answer Time", exact=True)
+    ).to_have_count(3)
+    expect(page.get_by_role("button", name="Override Ring-in")).to_have_count(0)

@@ -370,6 +370,21 @@
         background: var(--panel-2);
       }
 
+      /* Host view only: flag the Crit Boost clue so it's never a surprise. */
+      .clue-cell.crit-boost {
+        flex-direction: column;
+        gap: 0.1rem;
+        border-color: #e040fb;
+      }
+
+      .crit-tag {
+        font-family: system-ui, sans-serif;
+        font-size: 0.55rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: #e040fb;
+      }
+
       .clue-cell.clickable {
         cursor: pointer;
       }
@@ -743,6 +758,16 @@
             <button class="primary" onclick="applyAnswerTimeSettings()">Apply Global</button>
           </div>
           <div class="row-line">
+            <span>Auto-reveal clue after</span>
+            <input type="number"
+                   id="auto-reveal-input"
+                   min="0"
+                   max="60000"
+                   placeholder="ms" />
+            <span>ms (0 = off; Crit Boost clues always reveal manually)</span>
+            <button class="primary" onclick="applyAutoRevealSettings()">Set Auto-reveal</button>
+          </div>
+          <div class="row-line">
             <button class="primary" onclick="clearRingInOverrides()">Reset Ring-in to Global (all)</button>
             <button class="primary" onclick="clearAnswerTimeOverrides()">
               Reset Answer Time to Global (all)
@@ -988,6 +1013,20 @@
         patch("/select-clue", { category_index: catIndex, clue_index: clueIndex });
       }
 
+      function deselectClue() {
+        patch("/deselect-clue");
+      }
+
+      function hostRingIn(player) {
+        patch("/host-ring-in", { player });
+      }
+
+      function applyAutoRevealSettings() {
+        const delay = document.getElementById("auto-reveal-input").value;
+        if (delay === "") return;
+        patch("/auto-reveal-settings", { delay_ms: parseInt(delay, 10) });
+      }
+
       function setCritBoostWager() {
         const input = document.getElementById("crit-boost-wager-input");
         const wager = parseInt(input.value, 10);
@@ -1122,18 +1161,21 @@
               const clue = c.clues[row];
               const isCurrent =
                 gs.selected_category_index === catIdx && gs.selected_clue_index === row;
+              // A clue can be picked (or swapped, or backed out of by
+              // clicking it again) until it's revealed.
+              const pickable = clickable && !clue.played && gs.clue_phase !== "revealed";
+              const showCrit = clickable && clue.is_crit_boost && !clue.played;
               const classes = ["clue-cell"];
               if (clue.played) classes.push("played");
               if (isCurrent) classes.push("in-play");
-              if (clickable && !clue.played && gs.selected_category_index === null) {
-                classes.push("clickable");
-              }
-              const onclick =
-                clickable && !clue.played && gs.selected_category_index === null
-                  ? `onclick="selectClue(${catIdx}, ${row})"`
-                  : "";
+              if (showCrit) classes.push("crit-boost");
+              if (pickable) classes.push("clickable");
+              const onclick = pickable
+                ? `onclick="${isCurrent ? "deselectClue()" : `selectClue(${catIdx}, ${row})`}"`
+                : "";
               const label = clue.played ? "" : `${clue.value}`;
-              return `<div class="${classes.join(" ")}" ${onclick}>${label}</div>`;
+              const tag = showCrit ? '<span class="crit-tag">CRIT BOOST</span>' : "";
+              return `<div class="${classes.join(" ")}" ${onclick}>${label}${tag}</div>`;
             })
             .join("");
         }
@@ -1303,6 +1345,7 @@
           ["ring-start-input", gs.ring_in_start_delay_ms],
           ["ring-window-input", gs.ring_in_window_ms],
           ["answer-time-input", gs.answer_time_ms],
+          ["auto-reveal-input", gs.auto_reveal_delay_ms],
         ]) {
           const input = document.getElementById(id);
           if (document.activeElement !== input) input.value = value;
@@ -1348,12 +1391,17 @@
                 <button class="primary" onclick="renamePlayer('${player}')">Rename</button>
                 <input type="number" id="set-score-${player}" value="${p.score}" />
                 <button class="primary" onclick="setScore('${player}')">Set Score</button>
-                <span class="status-line">Ring-in ${p.ring_in_start_delay_ms}/${p.ring_in_window_ms}ms, answer ${p.answer_time_ms}ms</span>
+                <button class="primary" onclick="hostRingIn('${player}')" ${canHostRingIn(gs) ? "" : "disabled"}>
+                  Ring In for ${p.name}
+                </button>
+              </div>
+              <div class="row-line">
+                <span class="status-line">Timing for ${p.name} — ring-in ${p.ring_in_start_delay_ms}/${p.ring_in_window_ms}ms, answer ${p.answer_time_ms}ms</span>
                 <input type="number" id="ring-override-start-${player}" placeholder="start ms" />
                 <input type="number" id="ring-override-window-${player}" placeholder="window ms" />
-                <button class="primary" onclick="applyRingInOverride('${player}')">Override Ring-in</button>
+                <button class="primary" onclick="applyRingInOverride('${player}')">Set Ring-in Timing</button>
                 <input type="number" id="answer-override-${player}" placeholder="answer ms" />
-                <button class="primary" onclick="applyAnswerTimeOverride('${player}')">Override Answer Time</button>
+                <button class="primary" onclick="applyAnswerTimeOverride('${player}')">Set Answer Time</button>
               </div>
             </div>`;
         }).join("");
@@ -1374,6 +1422,14 @@
         patch("/answer-time-override", { player, window_ms: parseInt(input.value, 10) });
       }
 
+      // The host can ring in for a player once a regular clue is revealed
+      // and nobody holds the floor (the server enforces lockouts too).
+      function canHostRingIn(gs) {
+        if (gs.clue_phase !== "revealed" || gs.buzzed_player) return false;
+        const clue = gs.categories[gs.selected_category_index].clues[gs.selected_clue_index];
+        return !clue.is_crit_boost;
+      }
+
       function controlClueHtml(gs) {
         const cat = gs.categories[gs.selected_category_index];
         const clue = cat.clues[gs.selected_clue_index];
@@ -1389,12 +1445,22 @@
               <button class="primary" onclick="revealClue()" ${gs.crit_boost_wager === null ? "disabled" : ""}>
                 Reveal Clue
               </button>
+              <button class="primary" onclick="deselectClue()">Deselect Clue</button>
             </div>`;
           return html;
         }
 
         if (gs.clue_phase !== "revealed") {
-          html += `<button class="primary" onclick="revealClue()">Reveal Clue</button>`;
+          if (gs.auto_reveal_remaining_ms !== null) {
+            html += `<div class="status-line" id="auto-reveal-countdown">Auto-revealing in ${(
+              gs.auto_reveal_remaining_ms / 1000
+            ).toFixed(1)}s</div>`;
+          }
+          html += `
+            <div class="row-line">
+              <button class="primary" onclick="revealClue()">Reveal Clue</button>
+              <button class="primary" onclick="deselectClue()">Deselect Clue</button>
+            </div>`;
           return html;
         }
 

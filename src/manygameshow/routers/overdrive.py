@@ -22,6 +22,8 @@ from manygameshow.models.overdrive import (
     RoundName,
     TimingOverride,
     answer_time_for,
+    apply_auto_reveal,
+    auto_reveal_remaining_ms,
     buzz_remaining_ms,
     can_ring_in,
     categories_revealed,
@@ -67,6 +69,8 @@ def _get_game(game_id: str, session: Session) -> OverdriveGame:
     game = session.get(OverdriveGame, game_id)
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")
+    if apply_auto_reveal(game):
+        _save(game, session)
     return game
 
 
@@ -168,6 +172,8 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
         clue_phase=clue_phase(game),
         buzzed_player=game.buzzed_player,
         crit_boost_wager=game.crit_boost_wager,
+        auto_reveal_delay_ms=game.auto_reveal_delay_ms,
+        auto_reveal_remaining_ms=auto_reveal_remaining_ms(game),
         ring_in_elapsed_ms=ring_in_elapsed_ms(game),
         buzz_remaining_ms=buzz_remaining_ms(game),
         answer_timer_running=game.buzz_timer_running,
@@ -313,8 +319,11 @@ def select_clue(
     game = _get_game(game_id, session)
     if game.current_round == RoundName.FINAL:
         raise HTTPException(status_code=400, detail="No board in Final Exam")
-    if game.selected_category_index is not None:
+    if clue_phase(game) == "revealed":
         raise HTTPException(status_code=400, detail="A clue is already in play")
+    # A selection that hasn't been revealed yet can simply be swapped for
+    # another clue; re-selecting the same one leaves it (and its
+    # auto-reveal countdown) alone.
     bank = current_bank(game)
     if not (0 <= body.category_index < len(bank.categories)):
         raise HTTPException(status_code=422, detail="category_index out of range")
@@ -324,14 +333,34 @@ def select_clue(
     cells = clue_cells(game)
     if cells[body.category_index][body.clue_index].played:
         raise HTTPException(status_code=400, detail="That clue is already played")
+    if (
+        game.selected_category_index == body.category_index
+        and game.selected_clue_index == body.clue_index
+    ):
+        return _to_read(game, show_all=True)
     game.selected_category_index = body.category_index
     game.selected_clue_index = body.clue_index
+    game.clue_selected_at = datetime.now(UTC).replace(tzinfo=None)
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
     game.crit_boost_wager = None
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/deselect-clue", response_model=OverdriveGameRead)
+def deselect_clue(game_id: str, session: SessionDep) -> OverdriveGameRead:
+    """Back out of a selected clue before it has been revealed (which also
+    cancels any pending auto-reveal). Once revealed, use no-one-answered or
+    judge instead."""
+    game = _get_game(game_id, session)
+    if game.selected_category_index is None:
+        raise HTTPException(status_code=400, detail="No clue is selected")
+    if clue_phase(game) == "revealed":
+        raise HTTPException(status_code=400, detail="That clue is already revealed")
+    _clear_selected(game)
     return _to_read(_save(game, session), show_all=True)
 
 
@@ -400,6 +429,38 @@ def buzz(game_id: str, body: BuzzBody, session: SessionDep) -> OverdriveGameRead
         game.buzz_timer_running = True
         return _to_read(_save(game, session))
     return _to_read(game)
+
+
+@router.patch("/{game_id}/host-ring-in", response_model=OverdriveGameRead)
+def host_ring_in(
+    game_id: str, body: BuzzBody, session: SessionDep
+) -> OverdriveGameRead:
+    """Host rings in on a player's behalf (a dead phone, a missed window).
+    Unlike a player's buzz this ignores the ring-in window, but a clue
+    must be revealed, nobody else may be answering, and the player can't
+    be locked out of it — and unlike a buzz, a refusal is an error."""
+    game = _get_game(game_id, session)
+    name = player_score(game, body.player).name
+    if clue_phase(game) != "revealed":
+        raise HTTPException(status_code=400, detail="No revealed clue to ring in on")
+    if is_selected_crit_boost(game):
+        raise HTTPException(
+            status_code=400,
+            detail="Crit Boost clues go to whoever holds board control",
+        )
+    if game.buzzed_player is not None:
+        answering = player_score(game, game.buzzed_player).name
+        raise HTTPException(status_code=400, detail=f"{answering} is already answering")
+    cell = selected_clue_cell(game)
+    if cell is not None and body.player in cell.locked_out:
+        raise HTTPException(
+            status_code=400, detail=f"{name} is locked out of this clue"
+        )
+    game.buzzed_player = body.player
+    game.buzz_answer_started_at = datetime.now(UTC).replace(tzinfo=None)
+    game.buzz_timer_remaining_ms = answer_time_for(game, body.player)
+    game.buzz_timer_running = True
+    return _to_read(_save(game, session), show_all=True)
 
 
 def _require_answering(game: OverdriveGame) -> Player:
@@ -542,6 +603,7 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> OverdriveGameRe
 def _clear_selected(game: OverdriveGame) -> None:
     game.selected_category_index = None
     game.selected_clue_index = None
+    game.clue_selected_at = None
     game.clue_revealed_at = None
     game.buzzed_player = None
     game.buzz_answer_started_at = None
@@ -719,6 +781,21 @@ def clear_ring_in_player_overrides(
 
 class AnswerTimeSettingsBody(SQLModel):
     window_ms: int = Field(ge=100)
+
+
+class AutoRevealBody(SQLModel):
+    delay_ms: int = Field(ge=0, le=60000)
+
+
+@router.patch("/{game_id}/auto-reveal-settings", response_model=OverdriveGameRead)
+def set_auto_reveal(
+    game_id: str, body: AutoRevealBody, session: SessionDep
+) -> OverdriveGameRead:
+    """How long after a clue is selected it reveals itself; 0 turns
+    auto-reveal off. Applies to selections made from now on."""
+    game = _get_game(game_id, session)
+    game.auto_reveal_delay_ms = body.delay_ms
+    return _to_read(_save(game, session), show_all=True)
 
 
 @router.patch("/{game_id}/answer-time-settings", response_model=OverdriveGameRead)

@@ -8,7 +8,7 @@ touching this state machine.
 
 import json
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
@@ -111,6 +111,11 @@ class OverdriveGame(SQLModel, table=True):
     selected_category_index: int | None = Field(default=None)
     selected_clue_index: int | None = Field(default=None)
     clue_revealed_at: datetime | None = Field(default=None)
+    # When the selection was made, for the optional auto-reveal countdown.
+    clue_selected_at: datetime | None = Field(default=None)
+    # 0 = off. Otherwise a selected (regular) clue reveals itself this many
+    # ms after being selected, unless the host reveals or deselects it first.
+    auto_reveal_delay_ms: int = Field(default=0, ge=0, le=60000)
 
     # Regular-clue ring-in state. The answer countdown is tracked as
     # time *remaining* (counts down), not elapsed: buzz_timer_remaining_ms
@@ -208,6 +213,8 @@ class OverdriveGameRead(SQLModel):
     clue_phase: str | None
     buzzed_player: Player | None
     crit_boost_wager: int | None
+    auto_reveal_delay_ms: int
+    auto_reveal_remaining_ms: int | None
     ring_in_elapsed_ms: int | None
     buzz_remaining_ms: int | None
     answer_timer_running: bool
@@ -343,6 +350,39 @@ def clue_phase(game: OverdriveGame) -> str | None:
     if game.selected_category_index is None:
         return None
     return "revealed" if game.clue_revealed_at is not None else "selected"
+
+
+def auto_reveal_remaining_ms(
+    game: OverdriveGame, now: datetime | None = None
+) -> int | None:
+    """ms until the selected clue reveals itself, or None when no
+    auto-reveal is pending (off, nothing selected, already revealed, or a
+    Crit Boost — those need a wager and board control, so stay manual)."""
+    if (
+        game.auto_reveal_delay_ms <= 0
+        or game.clue_selected_at is None
+        or clue_phase(game) != "selected"
+        or is_selected_crit_boost(game)
+    ):
+        return None
+    now = now if now is not None else _utcnow()
+    elapsed_ms = (now - game.clue_selected_at).total_seconds() * 1000
+    return max(0, round(game.auto_reveal_delay_ms - elapsed_ms))
+
+
+def apply_auto_reveal(game: OverdriveGame, now: datetime | None = None) -> bool:
+    """Reveal the selected clue if its auto-reveal delay has elapsed.
+    Called whenever a game is loaded (there is no background worker), and
+    stamps the reveal at the scheduled instant rather than "now" so the
+    ring-in window is measured from when the clue was meant to appear.
+    Returns whether it changed the game."""
+    if auto_reveal_remaining_ms(game, now) != 0:
+        return False
+    assert game.clue_selected_at is not None
+    game.clue_revealed_at = game.clue_selected_at + timedelta(
+        milliseconds=game.auto_reveal_delay_ms
+    )
+    return True
 
 
 def ring_in_window_for(game: OverdriveGame, player: Player) -> tuple[int, int]:
