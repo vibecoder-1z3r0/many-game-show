@@ -260,6 +260,19 @@
         color: var(--text-dim);
       }
 
+      .content-fieldset {
+        min-width: 0;
+      }
+
+      .bank-row label {
+        min-width: 6rem;
+      }
+
+      .bank-row select {
+        flex: 1;
+        min-width: 0;
+      }
+
       .row-line {
         display: flex;
         align-items: center;
@@ -675,17 +688,21 @@
             <button class="danger" onclick="resetGame()">Reset Game</button>
           </div>
         </fieldset>
-        <fieldset>
+        <fieldset class="content-fieldset">
           <legend>Content</legend>
-          <div class="row-line">
+          <div class="row-line bank-row">
             <label for="bank-round1">Round 1</label>
             <select id="bank-round1"></select>
+          </div>
+          <div class="row-line bank-row">
             <label for="bank-round2">Round 2</label>
             <select id="bank-round2"></select>
+          </div>
+          <div class="row-line bank-row">
             <label for="bank-final">Final Exam</label>
             <select id="bank-final"></select>
-            <button class="primary" onclick="applyBanks()">Apply</button>
           </div>
+          <button class="primary" onclick="applyBanks()">Apply</button>
           <div class="status-line" id="bank-note"></div>
         </fieldset>
         <fieldset id="control-board-fieldset">
@@ -925,7 +942,7 @@
         const banks = await resp.json();
         for (const [kind, id] of Object.entries(BANK_SELECTS)) {
           document.getElementById(id).innerHTML = banks[kind]
-            .map((b) => `<option value="${b.id}">${b.name}</option>`)
+            .map((b) => `<option value="${b.id}">${b.name} (${b.categories.join(", ")})</option>`)
             .join("");
         }
         if (controlState) renderControl();
@@ -1129,7 +1146,7 @@
       // transition to have something to animate from).
       const headerFlipState = {};
 
-      function renderCategoryHeaders(containerId, gs, { clickable }) {
+      function renderCategoryHeaders(containerId, gs, { clickable, showHiddenNames = false }) {
         const container = document.getElementById(containerId);
         if (gs.current_round === "final") {
           container.innerHTML = "";
@@ -1160,6 +1177,11 @@
           flipEl.classList.toggle("flipped", c.revealed);
           flipEl.classList.toggle("clickable-header", !!clickable);
           flipEl.querySelector(".cat-header-back").textContent = c.name;
+          // Control already knows every category; keep the greyed look but
+          // show the name instead of ??? so the host can see what's what.
+          flipEl.querySelector(".cat-header-front").textContent = showHiddenNames
+            ? c.name
+            : "???";
           flipEl.onclick = clickable
             ? () => toggleCategory(i, !c.revealed)
             : null;
@@ -1285,7 +1307,10 @@
         document.getElementById("control-final-fieldset").hidden = !isFinal;
 
         if (!isFinal) {
-          renderCategoryHeaders("control-board-headers", gs, { clickable: true });
+          renderCategoryHeaders("control-board-headers", gs, {
+            clickable: true,
+            showHiddenNames: true,
+          });
           document.getElementById("control-board").innerHTML = boardHtml(gs, {
             clickable: true,
           });

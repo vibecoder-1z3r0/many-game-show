@@ -49,6 +49,7 @@ from manygameshow.models.overdrive import (
     set_ring_in_override,
 )
 from manygameshow.overdrive_banks import (
+    RoundBank,
     get_final_bank,
     get_round1_bank,
     get_round2_bank,
@@ -188,6 +189,9 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
 class BankOptionRead(SQLModel):
     id: str
     name: str
+    # Host-facing hint of what's in the bank: a round bank's category
+    # names, or a Final Exam bank's single category.
+    categories: list[str]
 
 
 class BankOptionsRead(SQLModel):
@@ -196,12 +200,21 @@ class BankOptionsRead(SQLModel):
     final: list[BankOptionRead]
 
 
+def _round_bank_option(bank: RoundBank) -> BankOptionRead:
+    return BankOptionRead(
+        id=bank.id, name=bank.name, categories=[c.name for c in bank.categories]
+    )
+
+
 @router.get("/banks", response_model=BankOptionsRead)
 def get_bank_options() -> BankOptionsRead:
     return BankOptionsRead(
-        round1=[BankOptionRead(id=b.id, name=b.name) for b in list_round1_banks()],
-        round2=[BankOptionRead(id=b.id, name=b.name) for b in list_round2_banks()],
-        final=[BankOptionRead(id=b.id, name=b.name) for b in list_final_banks()],
+        round1=[_round_bank_option(b) for b in list_round1_banks()],
+        round2=[_round_bank_option(b) for b in list_round2_banks()],
+        final=[
+            BankOptionRead(id=b.id, name=b.name, categories=[b.category])
+            for b in list_final_banks()
+        ],
     )
 
 

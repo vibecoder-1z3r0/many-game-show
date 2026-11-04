@@ -86,7 +86,9 @@ def test_category_header_click_reveals_and_hides_directly(
     flip = page.locator("#control-board-headers .cat-header-flip").nth(1)
     front = flip.locator(".cat-header-front")
     back = flip.locator(".cat-header-back")
-    expect(front).to_contain_text("???")
+    # Control sees the real name on the greyed (unrevealed) face.
+    expect(front).to_contain_text("HTTP Status Quo")
+    expect(front).to_have_class(re.compile("hidden-cat"))
     expect(flip).not_to_have_class(re.compile("flipped"))
 
     flip.click()
@@ -94,7 +96,7 @@ def test_category_header_click_reveals_and_hides_directly(
     expect(flip).to_have_class(re.compile("flipped"))
 
     flip.click()
-    expect(front).to_contain_text("???")
+    expect(front).to_contain_text("HTTP Status Quo")
     expect(flip).not_to_have_class(re.compile("flipped"))
 
 
@@ -497,6 +499,9 @@ def test_control_can_swap_banks_until_the_round_starts(
     page.select_option("#bank-round1", "movies")
     page.select_option("#bank-final", "moon-landing")
     page.get_by_role("button", name="Apply", exact=True).click()
+    expect(
+        page.locator("#control-board-headers .cat-header-front").first
+    ).to_contain_text("Blockbusters")
     control = page.request.get(
         f"{live_server}/api/overdrive/games/{game_id}/control"
     ).json()
@@ -509,3 +514,30 @@ def test_control_can_swap_banks_until_the_round_starts(
     expect(page.locator("#bank-round2")).to_be_enabled()
     expect(page.locator("#bank-final")).to_be_enabled()
     expect(page.locator("#bank-note")).to_contain_text("already started")
+
+
+def test_main_still_hides_unrevealed_category_names(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "main")
+    front = page.locator("#main-board-headers .cat-header-front").nth(1)
+    expect(front).to_contain_text("???")
+    expect(front).not_to_contain_text("HTTP Status Quo")
+
+
+def test_bank_dropdowns_list_each_banks_categories(
+    live_server: str, page: Page
+) -> None:
+    page.goto(live_server)
+    page.get_by_role("button", name="New Overdrive Game").click()
+    classic = page.locator("#new-game-round1_bank_id option[value=classic]")
+    expect(classic).to_contain_text("Classic Dev Trivia (Git Happens, HTTP Status Quo")
+    final = page.locator("#new-game-final_bank_id option[value=moon-landing]")
+    expect(final).to_contain_text("(Space Exploration)")
+
+    page.get_by_role("button", name="Create game").click()
+    page.wait_for_url("**/overdrive.html?id=*&view=control")
+    expect(page.locator("#bank-round1 option[value=classic]")).to_contain_text(
+        "(Git Happens, HTTP Status Quo"
+    )

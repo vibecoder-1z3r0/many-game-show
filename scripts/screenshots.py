@@ -121,7 +121,8 @@ def setup_big_tokens() -> str:
 
 def setup_overdrive() -> str:
     gid = create("overdrive")
-    for i in range(6):
+    # Leave the last two hidden: Main shows ???, Control shows their names.
+    for i in range(4):
         patch(
             "overdrive", gid, "category-reveal", {"category_index": i, "revealed": True}
         )

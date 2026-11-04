@@ -92,6 +92,15 @@ def test_bank_options_lists_all_three_round_types(client: TestClient) -> None:
     }
 
 
+def test_bank_options_include_category_names_for_hosts(client: TestClient) -> None:
+    body = client.get("/api/overdrive/games/banks").json()
+    classic = next(b for b in body["round1"] if b["id"] == "classic")
+    assert classic["categories"][:2] == ["Git Happens", "HTTP Status Quo"]
+    assert len(classic["categories"]) == 6
+    moon = next(b for b in body["final"] if b["id"] == "moon-landing")
+    assert moon["categories"] == ["Space Exploration"]
+
+
 def test_clue_text_and_answer_hidden_before_selection(client: TestClient) -> None:
     game_id = _create_game(client)
     body = _get(client, game_id)
