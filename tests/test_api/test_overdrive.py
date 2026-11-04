@@ -728,3 +728,91 @@ def test_timing_fields_present_for_frontend_countdown_math(client: TestClient) -
     time.sleep(0.05)
     body = _buzz(client, game_id, "player1")
     assert body["buzz_remaining_ms"] is not None
+
+
+def _set_banks(client: TestClient, game_id: str, **banks: str) -> object:
+    return client.patch(f"/api/overdrive/games/{game_id}/banks", json=banks)
+
+
+def test_banks_default_and_everything_changeable_at_start(client: TestClient) -> None:
+    body = _get(client, _create_game(client))
+    assert body["round1_bank_id"] == "classic"
+    assert body["changeable_banks"] == ["round1", "round2", "final"]
+
+
+def test_swap_all_banks_before_anything_has_happened(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = _set_banks(
+        client,
+        game_id,
+        round1_bank_id="movies",
+        round2_bank_id="world",
+        final_bank_id="moon-landing",
+    )
+    assert resp.status_code == 200  # type: ignore[attr-defined]
+    body = resp.json()  # type: ignore[attr-defined]
+    assert (body["round1_bank_id"], body["round2_bank_id"]) == ("movies", "world")
+    assert body["final_bank_id"] == "moon-landing"
+    # Round 1's board was rebuilt from the new bank.
+    assert _control(client, game_id)["categories"][0]["name"] == "Blockbusters"
+
+
+def test_round1_bank_locked_once_a_category_is_revealed(client: TestClient) -> None:
+    game_id = _create_game(client)
+    client.patch(
+        f"/api/overdrive/games/{game_id}/category-reveal",
+        json={"category_index": 0, "revealed": True},
+    )
+    body = _get(client, game_id)
+    assert body["changeable_banks"] == ["round2", "final"]
+    resp = _set_banks(client, game_id, round1_bank_id="movies")
+    assert resp.status_code == 400  # type: ignore[attr-defined]
+    assert _get(client, game_id)["round1_bank_id"] == "classic"
+    # Later rounds are still free to change mid round 1, and nothing on
+    # the live board is disturbed.
+    resp = _set_banks(client, game_id, round2_bank_id="world")
+    assert resp.status_code == 200  # type: ignore[attr-defined]
+    assert _get(client, game_id)["categories"][0]["revealed"] is True
+
+
+def test_round1_bank_locked_once_a_clue_is_selected(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 0)
+    assert "round1" not in _get(client, game_id)["changeable_banks"]
+
+
+def test_failed_swap_applies_nothing(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 0)
+    resp = _set_banks(client, game_id, round1_bank_id="movies", round2_bank_id="world")
+    assert resp.status_code == 400  # type: ignore[attr-defined]
+    body = _get(client, game_id)
+    assert (body["round1_bank_id"], body["round2_bank_id"]) == ("classic", "classic")
+
+
+def test_round2_bank_swappable_until_round2_board_is_touched(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    client.patch(f"/api/overdrive/games/{game_id}/start-round2")
+    assert _get(client, game_id)["changeable_banks"] == ["round2", "final"]
+    resp = _set_banks(client, game_id, round2_bank_id="world")
+    assert resp.status_code == 200  # type: ignore[attr-defined]
+    client.patch(
+        f"/api/overdrive/games/{game_id}/category-reveal",
+        json={"category_index": 0, "revealed": True},
+    )
+    assert _get(client, game_id)["changeable_banks"] == ["final"]
+    assert _set_banks(client, game_id, round1_bank_id="movies").status_code == 400  # type: ignore[attr-defined]
+
+
+def test_nothing_changeable_once_final_has_started(client: TestClient) -> None:
+    game_id = _create_game(client)
+    client.patch(f"/api/overdrive/games/{game_id}/start-final")
+    assert _get(client, game_id)["changeable_banks"] == []
+    assert _set_banks(client, game_id, final_bank_id="shakespeare").status_code == 400  # type: ignore[attr-defined]
+
+
+def test_swap_rejects_unknown_bank(client: TestClient) -> None:
+    game_id = _create_game(client)
+    assert _set_banks(client, game_id, round1_bank_id="nope").status_code == 422  # type: ignore[attr-defined]

@@ -93,6 +93,11 @@ class BigTokensGame(SQLModel, table=True):
     # index into its board-content item array (see big_tokens_boards.py).
     board_state_json: str = Field(default_factory=_default_board_state_json)
 
+    # Cascade progress of boards swapped away from, keyed by board id (JSON
+    # dict of board_id -> the same list board_state_json holds), so
+    # switching back to a board restores where it left off.
+    stashed_board_states_json: str = Field(default="{}")
+
     current_player: Player | None = Field(default=None)
     round_number: int = Field(default=1, ge=1)
 
@@ -184,6 +189,20 @@ def board_state(game: BigTokensGame) -> list[int]:
 
 def set_board_state(game: BigTokensGame, indices: list[int]) -> None:
     game.board_state_json = json.dumps(indices)
+
+
+def switch_board(game: BigTokensGame, new_board_id: str) -> None:
+    """Make new_board_id the game's board. The outgoing board's cascade
+    progress is stashed, and the incoming board resumes its own stashed
+    progress (or starts fresh) — so A -> B -> A restores A exactly."""
+    stash: dict[str, list[int]] = json.loads(game.stashed_board_states_json)
+    stash[game.board_id] = board_state(game)
+    incoming = stash.pop(new_board_id, [0] * SQUARES_PER_BOARD)
+    game.stashed_board_states_json = json.dumps(stash)
+    game.board_id = new_board_id
+    set_board_state(game, incoming)
+    # The highlighted "last landed" square belongs to the old board.
+    game.last_landed_square_index = None
 
 
 def square_item(game: BigTokensGame, square_index: int) -> BoardItem:

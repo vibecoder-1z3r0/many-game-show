@@ -194,6 +194,12 @@ class PlayerStatusRead(SQLModel):
 class OverdriveGameRead(SQLModel):
     id: str
     current_round: RoundName
+    round1_bank_id: str
+    round2_bank_id: str
+    final_bank_id: str
+    # Which of "round1" / "round2" / "final" can still have their bank
+    # swapped — see changeable_banks().
+    changeable_banks: list[str]
     categories: list[CategoryRead]
     players: dict[str, PlayerStatusRead]
     board_control: Player | None
@@ -282,6 +288,33 @@ def reset_board_for_round(game: OverdriveGame, round_name: RoundName) -> None:
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
     game.crit_boost_wager = None
+
+
+def round_started(game: OverdriveGame) -> bool:
+    """True once anything has happened on the current round's board: a
+    category flipped, a clue selected, or a clue played."""
+    return (
+        any(categories_revealed(game))
+        or game.selected_category_index is not None
+        or any(cell.played for row in clue_cells(game) for cell in row)
+    )
+
+
+def changeable_banks(game: OverdriveGame) -> list[str]:
+    """The rounds whose bank may still be swapped: any round that hasn't
+    started. The current round counts as not started only while its board
+    is untouched (so a swap never has to throw away progress)."""
+    current = game.current_round
+    changeable: list[str] = []
+    if current == RoundName.ROUND1 and not round_started(game):
+        changeable.append("round1")
+    if current == RoundName.ROUND1 or (
+        current == RoundName.ROUND2 and not round_started(game)
+    ):
+        changeable.append("round2")
+    if current != RoundName.FINAL:
+        changeable.append("final")
+    return changeable
 
 
 def selected_clue_content(game: OverdriveGame) -> ClueContent | None:

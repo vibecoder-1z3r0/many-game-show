@@ -25,6 +25,7 @@ from manygameshow.models.overdrive import (
     buzz_remaining_ms,
     can_ring_in,
     categories_revealed,
+    changeable_banks,
     clear_answer_time_overrides,
     clear_ring_in_overrides,
     clue_cells,
@@ -48,6 +49,9 @@ from manygameshow.models.overdrive import (
     set_ring_in_override,
 )
 from manygameshow.overdrive_banks import (
+    get_final_bank,
+    get_round1_bank,
+    get_round2_bank,
     list_final_banks,
     list_round1_banks,
     list_round2_banks,
@@ -151,6 +155,10 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
     return OverdriveGameRead(
         id=game.id,
         current_round=game.current_round,
+        round1_bank_id=game.round1_bank_id,
+        round2_bank_id=game.round2_bank_id,
+        final_bank_id=game.final_bank_id,
+        changeable_banks=changeable_banks(game),
         categories=_categories_read(game, show_all=show_all),
         players={p.value: player_status(p) for p in ALL_PLAYERS},
         board_control=game.board_control,
@@ -745,6 +753,48 @@ def adjust_score(
     score = player_score(game, body.player)
     score.score = body.score
     set_player_score(game, body.player, score)
+    return _to_read(_save(game, session), show_all=True)
+
+
+class BanksBody(SQLModel):
+    round1_bank_id: str | None = None
+    round2_bank_id: str | None = None
+    final_bank_id: str | None = None
+
+
+@router.patch("/{game_id}/banks", response_model=OverdriveGameRead)
+def set_banks(game_id: str, body: BanksBody, session: SessionDep) -> OverdriveGameRead:
+    """Swap a round's content bank — only for a round that hasn't started
+    (see changeable_banks), so a swap never discards progress. All
+    requested changes are checked before any is applied."""
+    game = _get_game(game_id, session)
+    allowed = changeable_banks(game)
+    requested = (
+        ("round1", "Round 1", body.round1_bank_id, get_round1_bank),
+        ("round2", "Round 2", body.round2_bank_id, get_round2_bank),
+        ("final", "Final Exam", body.final_bank_id, get_final_bank),
+    )
+    changes: list[tuple[str, str]] = []
+    for kind, label, bank_id, getter in requested:
+        if bank_id is None or bank_id == getattr(game, f"{kind}_bank_id"):
+            continue
+        if getter(bank_id) is None:
+            raise HTTPException(status_code=422, detail=f"Unknown bank: {bank_id}")
+        if kind not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"The {label} bank can't change once that round has started",
+            )
+        changes.append((kind, bank_id))
+    for kind, bank_id in changes:
+        setattr(game, f"{kind}_bank_id", bank_id)
+    current_kind = {RoundName.ROUND1: "round1", RoundName.ROUND2: "round2"}.get(
+        game.current_round
+    )
+    if any(kind == current_kind for kind, _ in changes):
+        # The current round's board was untouched (that's what allowed the
+        # swap), so rebuilding it for the new bank loses nothing.
+        reset_board_for_round(game, game.current_round)
     return _to_read(_save(game, session), show_all=True)
 
 

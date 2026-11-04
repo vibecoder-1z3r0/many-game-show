@@ -601,3 +601,76 @@ def test_list_games(client: TestClient) -> None:
     resp = client.get("/api/big-tokens/games/")
     assert resp.status_code == 200
     assert len(resp.json()) == 2
+
+
+def _switch_board(client: TestClient, game_id: str, board_id: str) -> object:
+    return client.patch(
+        f"/api/big-tokens/games/{game_id}/board", json={"board_id": board_id}
+    )
+
+
+def test_switch_board_changes_board_and_keeps_player_state(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _adjust(client, game_id, "player1", token_total=900, hallucination_count=1)
+    resp = _switch_board(client, game_id, "chaos")
+    assert resp.status_code == 200  # type: ignore[attr-defined]
+    body = resp.json()  # type: ignore[attr-defined]
+    assert body["board_id"] == "chaos"
+    assert body["players"]["player1"]["token_total"] == 900
+    assert body["players"]["player1"]["hallucination_count"] == 1
+
+
+def test_switch_board_back_restores_that_boards_progress(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=2)
+    # Land on classic's square 1 so it cascades +500 -> +750.
+    body = _spin_and_land(client, game_id, monkeypatch, 1)
+    assert body["squares"][1]["amount"] == 750
+
+    _switch_board(client, game_id, "chaos")
+    chaos = _get(client, game_id)
+    assert chaos["board_id"] == "chaos"
+    assert chaos["last_landed_square_index"] is None
+
+    back = _switch_board(client, game_id, "classic").json()  # type: ignore[attr-defined]
+    assert back["squares"][1]["amount"] == 750  # classic remembered its progress
+
+
+def test_switch_to_a_new_board_starts_it_fresh(client: TestClient) -> None:
+    game_id = _create_game(client)
+    body = _switch_board(client, game_id, "chaos").json()  # type: ignore[attr-defined]
+    chaos_first_faces = [s["label"] for s in body["squares"]]
+    assert len(chaos_first_faces) == 18
+
+
+def test_switch_board_refused_mid_spin(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=1)
+    _start_spin(client, game_id)
+    resp = _switch_board(client, game_id, "chaos")
+    assert resp.status_code == 400  # type: ignore[attr-defined]
+    assert _get(client, game_id)["board_id"] == "classic"
+
+
+def test_switch_board_rejects_unknown_board(client: TestClient) -> None:
+    game_id = _create_game(client)
+    assert _switch_board(client, game_id, "nope").status_code == 422  # type: ignore[attr-defined]
+
+
+def test_reset_forgets_other_boards_progress(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = _create_game(client)
+    _set_active(client, game_id, "player1")
+    _adjust(client, game_id, "player1", spins_remaining=1)
+    _spin_and_land(client, game_id, monkeypatch, 1)  # classic square 1 -> +750
+    _switch_board(client, game_id, "chaos")
+    client.patch(f"/api/big-tokens/games/{game_id}/reset")
+    back = _switch_board(client, game_id, "classic").json()  # type: ignore[attr-defined]
+    assert back["squares"][1]["amount"] == 500  # fresh, not +750

@@ -312,3 +312,39 @@ def test_landed_square_stays_highlighted_until_new_spin_or_cleared(
     page.wait_for_timeout(300)
     page.click(".spin-btn")
     expect(page.locator("#player1-body .square.landed")).to_have_count(0)
+
+
+def test_control_can_switch_board_and_back_keeps_progress(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _adjust(live_server, page, game_id, "player1", spins_remaining=1)
+    _set_active(live_server, page, game_id, "player1")
+    _spin_and_land_via_api(live_server, page, game_id, 1)  # classic sq 1: +500 -> +750
+
+    _goto(live_server, page, game_id, "control")
+    select = page.locator("#board-switch-select")
+    expect(select).to_have_value("classic")
+    expect(page.locator("#control-board .square").nth(1)).to_contain_text("+750")
+
+    select.select_option("chaos")
+    page.get_by_role("button", name="Switch board").click()
+    expect(page.locator("#control-round-status")).to_contain_text("Chaos")
+    expect(page.locator("#control-board .square").nth(1)).not_to_contain_text("+750")
+
+    select.select_option("classic")
+    page.get_by_role("button", name="Switch board").click()
+    expect(page.locator("#control-board .square").nth(1)).to_contain_text("+750")
+
+
+def test_control_board_switch_is_disabled_during_a_spin(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _adjust(live_server, page, game_id, "player1", spins_remaining=1)
+    _set_active(live_server, page, game_id, "player1")
+    _goto(live_server, page, game_id, "control")
+    expect(page.locator("#board-switch-select")).to_be_enabled()
+    page.request.patch(f"{live_server}/api/big-tokens/games/{game_id}/start-spin")
+    expect(page.locator("#board-switch-select")).to_be_disabled()
+    expect(page.locator("#board-switch-note")).to_contain_text("spin")
