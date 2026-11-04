@@ -63,14 +63,25 @@ def test_lobby_create_big_tokens_button_navigates_to_control(
 ) -> None:
     page.goto(live_server)
     page.get_by_role("button", name="New Big Tokens Game").click()
+    page.get_by_role("button", name="Create game").click()
     page.wait_for_url("**/big-tokens.html?id=*&view=control")
     expect(page.locator("#tab-control")).to_have_class("active")
 
 
-def test_lobby_board_select_lists_both_boards(live_server: str, page: Page) -> None:
+def test_lobby_dialog_lists_both_boards_and_creates_the_chosen_one(
+    live_server: str, page: Page
+) -> None:
     page.goto(live_server)
-    options = page.locator("#big-tokens-board-select option")
+    page.get_by_role("button", name="New Big Tokens Game").click()
+    options = page.locator("#new-game-board_id option")
     expect(options).to_have_count(2)
+
+    page.select_option("#new-game-board_id", "chaos")
+    page.get_by_role("button", name="Create game").click()
+    page.wait_for_url("**/big-tokens.html?id=*&view=control")
+    game_id = page.url.split("id=")[1].split("&")[0]
+    game = page.request.get(f"{live_server}/api/big-tokens/games/{game_id}").json()
+    assert game["board_id"] == "chaos"
 
 
 def test_control_shows_board_and_all_three_players(

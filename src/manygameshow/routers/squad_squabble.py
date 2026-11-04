@@ -79,11 +79,29 @@ def _to_read(game: SquadSquabbleGame) -> SquadSquabbleGameRead:
 def create_game(
     body: SquadSquabbleGameCreate, session: SessionDep
 ) -> SquadSquabbleGameRead:
-    game = SquadSquabbleGame(team1_name=body.team1_name, team2_name=body.team2_name)
+    if body.question_id is not None and get_question(body.question_id) is None:
+        raise HTTPException(status_code=404, detail="Question not found")
+    game = SquadSquabbleGame(
+        team1_name=body.team1_name,
+        team2_name=body.team2_name,
+        current_question_id=body.question_id,
+        multiplier=body.multiplier,
+    )
     session.add(game)
     session.commit()
     session.refresh(game)
     return _to_read(game)
+
+
+class QuestionOptionRead(SQLModel):
+    id: str
+    prompt: str
+
+
+@router.get("/questions", response_model=list[QuestionOptionRead])
+def get_question_options() -> list[QuestionOptionRead]:
+    """Prompts only, for the lobby's new-game dialog (no answers)."""
+    return [QuestionOptionRead(id=q.id, prompt=q.prompt) for q in list_questions()]
 
 
 @router.get("/", response_model=list[SquadSquabbleGameRead])

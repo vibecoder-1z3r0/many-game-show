@@ -600,6 +600,25 @@
           <button class="primary" onclick="updatePlayerName(2)">Set name</button>
         </fieldset>
         <fieldset>
+          <legend>Game settings</legend>
+          <label for="setting-bank">Question bank</label>
+          <select id="setting-bank"></select>
+          <span id="setting-bank-note"></span>
+          <br />
+          <br />
+          <label for="setting-threshold">Win threshold</label>
+          <input type="number" id="setting-threshold" min="1" />
+          <br />
+          <br />
+          <label for="setting-p1-timer">Player 1 timer (s)</label>
+          <input type="number" id="setting-p1-timer" min="1" max="300" />
+          <label for="setting-p2-timer">Player 2 timer (s)</label>
+          <input type="number" id="setting-p2-timer" min="1" max="300" />
+          <br />
+          <br />
+          <button class="primary" onclick="applySettings()">Apply settings</button>
+        </fieldset>
+        <fieldset>
           <legend>Round control</legend>
           <div id="host-turn-status">Waiting to start</div>
           <div id="host-timer"></div>
@@ -812,6 +831,36 @@
         patch("/players", n === 1 ? { player1_name: value } : { player2_name: value });
       }
 
+      // Bank, threshold and timers are applied together. A timer length
+      // takes effect from that player's next leg; the bank can only change
+      // before a round has started (the server enforces this too).
+      function applySettings() {
+        const body = {};
+        const numeric = {
+          win_threshold: "setting-threshold",
+          player1_timer_seconds: "setting-p1-timer",
+          player2_timer_seconds: "setting-p2-timer",
+        };
+        for (const [field, id] of Object.entries(numeric)) {
+          const value = parseInt(document.getElementById(id).value, 10);
+          if (Number.isFinite(value)) body[field] = value;
+        }
+        const bankId = document.getElementById("setting-bank").value;
+        if (bankId && bankId !== state.bank_id) body.bank_id = bankId;
+        patch("/settings", body);
+      }
+
+      let bankOptions = null;
+      async function loadBankOptions() {
+        const resp = await fetch("/api/speed-points/games/banks");
+        if (!resp.ok) return;
+        bankOptions = await resp.json();
+        document.getElementById("setting-bank").innerHTML = bankOptions
+          .map((b) => `<option value="${b.id}">${b.name}</option>`)
+          .join("");
+        renderHost();
+      }
+
       function startRound(player) {
         patch("/start-round", { player });
       }
@@ -945,6 +994,22 @@
         document.getElementById("host-question-list").innerHTML = state.all_questions
           .map((q) => `<li>${q.prompt}</li>`)
           .join("");
+
+        // Fill the settings from the server, but never over a field the
+        // host is in the middle of editing.
+        const fill = (id, value) => {
+          const el = document.getElementById(id);
+          if (document.activeElement !== el) el.value = value;
+        };
+        fill("setting-threshold", state.win_threshold);
+        fill("setting-p1-timer", state.player1_timer_seconds);
+        fill("setting-p2-timer", state.player2_timer_seconds);
+        fill("setting-bank", state.bank_id);
+        const roundStarted = state.current_player !== null;
+        document.getElementById("setting-bank").disabled = roundStarted;
+        document.getElementById("setting-bank-note").textContent = roundStarted
+          ? " (reset the game to change)"
+          : "";
       }
 
       // ----- Judge: one form row per question, incrementally updated -----
@@ -1090,6 +1155,7 @@
         updateJudgeRows(activeSlots);
       }
 
+      loadBankOptions();
       poll();
       setInterval(poll, 200);
     </script>

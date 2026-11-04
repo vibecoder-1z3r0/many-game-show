@@ -84,20 +84,48 @@ SQUAD_SQUABBLE_QUESTIONS_PATH=~/my-content/questions.json \
 
 ---
 
-## Speed Points — the five-question relay
+## Speed Points — banks of five questions
 
-Exactly the same file shape as Squad Squabble, but a **separate file**
-with its own variable, because Speed Points draws from its own bank.
+A **separate file** with its own variable. Its questions use the same
+shape as Squad Squabble's, but they're grouped into named **banks**, and
+the host picks one bank per game in the lobby's new-game dialog (it can
+be changed from the Host view until the first round starts).
 
-- **Only the first five questions are used**, in file order, and both
-  players face the same five. Extra questions are ignored (handy as spares
-  — just reorder the file to swap them in).
+```json
+{
+  "banks": [
+    {
+      "id": "classic",
+      "name": "Classic Dev Life",
+      "questions": [
+        {
+          "id": "code-review-word",
+          "prompt": "Name a word you'd never want to see in a code review comment.",
+          "answers": [
+            { "text": "Actually...", "points": 34 },
+            { "text": "Nit:", "points": 26 }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- **`id`/`name`** on a bank — the id is unique, the name is what the host
+  sees in the dropdown. The first bank in the file is the default.
+- **Only the first five questions of the chosen bank are used**, in file
+  order, and both players face the same five. Extra questions are ignored
+  (handy as spares — just reorder to swap them in).
 - Each question's `answers` are the **survey answers the judge scores
   against**: the Judge view shows them as one-tap buttons ("answer
   (points)") plus "No match (0)", so a contestant's answer is scored by
   tapping the closest survey answer. List them best-first.
-- A game takes its five questions **when it is created**, so changing the
-  file means creating a new game.
+- A game takes its bank and five questions **when it is created**, so
+  changing the file means creating a new game.
+- The win threshold (default 200) and each player's timer (default 20s and
+  25s) aren't content: the host sets them in the new-game dialog or
+  later on the Host view.
 - Think "Fast Money": the best answer is worth a lot (30–40), and the
   fifth is worth very little. Aim for the five best answers to total
   roughly 100, so two players can plausibly reach the win threshold of 200
@@ -107,7 +135,11 @@ Check it loads:
 
 ```bash
 SPEED_POINTS_QUESTIONS_PATH=~/my-content/fast.json \
-  uv run python -c "from manygameshow.speed_points_questions import list_questions as q; print(len(q()), 'questions OK (first 5 are used)')"
+  uv run python -c "
+from manygameshow.speed_points_questions import list_banks
+for b in list_banks():
+    assert len(b.questions) >= 5, f'{b.id}: needs at least 5 questions'
+    print(b.id, 'OK')"
 ```
 
 ---

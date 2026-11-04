@@ -69,6 +69,9 @@ class SquadSquabbleGame(SQLModel, table=True):
 class SquadSquabbleGameCreate(SQLModel):
     team1_name: str = "Team 1"
     team2_name: str = "Team 2"
+    # Optional Round 1 question to have loaded (hidden) from the start.
+    question_id: str | None = None
+    multiplier: int = Field(default=1, ge=1, le=3)
 
 
 class AnswerRead(SQLModel):

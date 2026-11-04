@@ -447,3 +447,34 @@ def test_set_strike_animation_timing_rejects_out_of_range(client: TestClient) ->
         json={"hold_ms": -1, "duration_ms": 600},
     )
     assert resp.status_code == 422
+
+
+def test_question_options_lists_prompts_without_answers(client: TestClient) -> None:
+    resp = client.get("/api/squad-squabble/games/questions")
+    assert resp.status_code == 200
+    options = resp.json()
+    assert any(o["id"] == "desk-drawer" for o in options)
+    assert all(set(o) == {"id", "prompt"} for o in options)
+
+
+def test_create_with_round_one_question_loads_it_hidden(client: TestClient) -> None:
+    resp = client.post(
+        "/api/squad-squabble/games/",
+        json={"question_id": "desk-drawer", "multiplier": 2},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["multiplier"] == 2
+    assert body["question_visible"] is False
+    assert body["current_question"]["id"] == "desk-drawer"
+
+
+def test_create_without_question_starts_unloaded(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = client.get(f"/api/squad-squabble/games/{game_id}")
+    assert resp.json()["current_question"] is None
+
+
+def test_create_rejects_unknown_question(client: TestClient) -> None:
+    resp = client.post("/api/squad-squabble/games/", json={"question_id": "nope"})
+    assert resp.status_code == 404

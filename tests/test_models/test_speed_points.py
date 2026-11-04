@@ -48,9 +48,10 @@ def test_player_enum_values() -> None:
 
 def test_current_questions_resolves_from_sample_bank() -> None:
     game = SpeedPointsGame(
+        bank_id="classic",
         question_ids_json=json.dumps(
             ["code-review-word", "standup-word", "laptop-sticker"]
-        )
+        ),
     )
     questions = current_questions(game)
     assert [q.id for q in questions] == [

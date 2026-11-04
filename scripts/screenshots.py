@@ -33,6 +33,8 @@ ROOT = Path(__file__).parent.parent
 OUT = ROOT / "docs" / "screenshots"
 PORT = 8899
 BASE = f"http://127.0.0.1:{PORT}"
+# Speed Points calls its host-facing view "host", not "control".
+CONTROL_VIEW = {"speed-points": "host"}
 VIEWPORT: ViewportSize = {"width": 1280, "height": 800}
 
 
@@ -179,12 +181,17 @@ def main() -> None:
                         {"width": VIEWPORT["width"], "height": height}
                     )
                     shot(page, f"{game}-main", f"/{game}.html?id={ids[game]}&view=main")
+                    control_view = CONTROL_VIEW.get(game, "control")
                     shot(
                         page,
                         f"{game}-control",
-                        f"/{game}.html?id={ids[game]}&view=control",
+                        f"/{game}.html?id={ids[game]}&view={control_view}",
                     )
                 shot(page, "lobby", "/")
+                page.get_by_role("button", name="New Speed Points Game").click()
+                page.wait_for_timeout(500)
+                page.screenshot(path=str(OUT / "new-game-dialog.png"))
+                print("  new-game-dialog.png")
                 # Overdrive's clue overlay and the stage theme.
                 patch(
                     "overdrive",

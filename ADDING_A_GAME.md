@@ -136,8 +136,13 @@ Required structure, in order of how central it is:
 
 `src/manygameshow/static/index.html`
 
-- A "New {Game} Game" button that `POST`s to `/api/{game}/games/` and
-  redirects straight into that game's Control view.
+- A "New {Game} Game" button that opens the lobby's new-game dialog. Add
+  an entry to `NEW_GAME_FORMS` in `index.html` listing the game's
+  creation options (text, number or select fields — select options come
+  from an API call made when the dialog opens) and which view to land on.
+  The dialog `POST`s the values to `/api/{game}/games/` and redirects into
+  that view. A game with no options still gets a dialog with no fields,
+  so every game creates the same way.
 - Extend `loadGames()`'s per-card rendering: right now it's hardcoded to
   one game type's fields (team names/scores/round/strikes). When adding a
   second game, this needs to branch on a game-type tag per card (fetch
