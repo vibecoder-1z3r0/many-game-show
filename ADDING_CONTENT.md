@@ -27,6 +27,16 @@ each game. (For adding a whole new *game*, see
    before your edit may not reflect it. Don't rename or remove an `id`
    that a live game is using.
 
+   Content can also be swapped on a running game from its Control (or
+   Host) view, within limits that keep progress safe:
+   - **Speed Points:** the bank, until the first round starts.
+   - **Overdrive:** any round's bank until that round starts (round 2 and
+     the Final Exam can change during round 1; round 1's bank locks once a
+     category is flipped).
+   - **Big Tokens:** the board, any time between spins. Each board keeps its
+     own square progress, so switching away and back restores it; players
+     keep their tokens, spins and hallucination counts.
+
 | Game | Environment variable | Sample file |
 |---|---|---|
 | Squad Squabble | `SQUAD_SQUABBLE_QUESTIONS_PATH` | `squad_squabble_questions.sample.json` |

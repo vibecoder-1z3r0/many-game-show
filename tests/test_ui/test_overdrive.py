@@ -484,3 +484,28 @@ def test_reset_game_clears_scores_and_board(live_server: str, page: Page) -> Non
     page.get_by_role("button", name="Reset Game", exact=True).click()
     expect(page.locator("#control-players")).not_to_contain_text("777")
     expect(page.locator("#control-round-status")).to_contain_text("Board control: none")
+
+
+def test_control_can_swap_banks_until_the_round_starts(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    for select_id in ("#bank-round1", "#bank-round2", "#bank-final"):
+        expect(page.locator(select_id)).to_be_enabled()
+
+    page.select_option("#bank-round1", "movies")
+    page.select_option("#bank-final", "moon-landing")
+    page.get_by_role("button", name="Apply", exact=True).click()
+    control = page.request.get(
+        f"{live_server}/api/overdrive/games/{game_id}/control"
+    ).json()
+    assert control["categories"][0]["name"] == "Blockbusters"
+    assert control["final_bank_id"] == "moon-landing"
+
+    # Flipping a category starts round 1: its bank locks, later ones stay open.
+    page.locator("#control-board-headers .cat-header-flip").first.click()
+    expect(page.locator("#bank-round1")).to_be_disabled()
+    expect(page.locator("#bank-round2")).to_be_enabled()
+    expect(page.locator("#bank-final")).to_be_enabled()
+    expect(page.locator("#bank-note")).to_contain_text("already started")

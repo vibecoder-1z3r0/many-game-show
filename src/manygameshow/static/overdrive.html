@@ -675,6 +675,19 @@
             <button class="danger" onclick="resetGame()">Reset Game</button>
           </div>
         </fieldset>
+        <fieldset>
+          <legend>Content</legend>
+          <div class="row-line">
+            <label for="bank-round1">Round 1</label>
+            <select id="bank-round1"></select>
+            <label for="bank-round2">Round 2</label>
+            <select id="bank-round2"></select>
+            <label for="bank-final">Final Exam</label>
+            <select id="bank-final"></select>
+            <button class="primary" onclick="applyBanks()">Apply</button>
+          </div>
+          <div class="status-line" id="bank-note"></div>
+        </fieldset>
         <fieldset id="control-board-fieldset">
           <legend>Board (click a greyed category to reveal it, a clue to select it)</legend>
           <div id="control-board-headers" class="board board-headers"></div>
@@ -888,6 +901,54 @@
       }
 
       // ----- Control actions -----
+
+      // A round's bank can be swapped until that round starts (the server
+      // reports which are still changeable); a round in progress is never
+      // reset by a swap.
+      const BANK_SELECTS = {
+        round1: "bank-round1",
+        round2: "bank-round2",
+        final: "bank-final",
+      };
+
+      function applyBanks() {
+        patch("/banks", {
+          round1_bank_id: document.getElementById("bank-round1").value,
+          round2_bank_id: document.getElementById("bank-round2").value,
+          final_bank_id: document.getElementById("bank-final").value,
+        });
+      }
+
+      async function loadBankOptions() {
+        const resp = await fetch("/api/overdrive/games/banks");
+        if (!resp.ok) return;
+        const banks = await resp.json();
+        for (const [kind, id] of Object.entries(BANK_SELECTS)) {
+          document.getElementById(id).innerHTML = banks[kind]
+            .map((b) => `<option value="${b.id}">${b.name}</option>`)
+            .join("");
+        }
+        if (controlState) renderControl();
+      }
+
+      function renderBankControls(gs) {
+        const current = {
+          round1: gs.round1_bank_id,
+          round2: gs.round2_bank_id,
+          final: gs.final_bank_id,
+        };
+        let anyLocked = false;
+        for (const [kind, id] of Object.entries(BANK_SELECTS)) {
+          const select = document.getElementById(id);
+          if (document.activeElement !== select) select.value = current[kind];
+          const changeable = gs.changeable_banks.includes(kind);
+          select.disabled = !changeable;
+          if (!changeable) anyLocked = true;
+        }
+        document.getElementById("bank-note").textContent = anyLocked
+          ? "Greyed-out banks belong to a round that has already started."
+          : "Banks can be changed until their round starts.";
+      }
 
       function startRound2() {
         patch("/start-round2");
@@ -1213,6 +1274,7 @@
       function renderControl() {
         if (!controlState) return;
         const gs = controlState;
+        renderBankControls(gs);
         document.getElementById("control-round-status").textContent =
           `${roundLabel(gs.current_round)} — Board control: ` +
           (gs.board_control ? gs.players[gs.board_control].name : "none");
@@ -1460,6 +1522,7 @@
           </div>`;
       }
 
+      loadBankOptions();
       poll();
       setInterval(poll, 200);
     </script>

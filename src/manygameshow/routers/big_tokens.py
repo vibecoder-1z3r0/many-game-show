@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Field, Session, SQLModel, select
 
-from manygameshow.big_tokens_boards import list_boards
+from manygameshow.big_tokens_boards import get_board, list_boards
 from manygameshow.database import get_session
 from manygameshow.models.big_tokens import (
     ALL_PLAYERS,
@@ -30,6 +30,7 @@ from manygameshow.models.big_tokens import (
     player_states,
     set_player_state,
     square_item,
+    switch_board,
 )
 
 router = APIRouter(prefix="/api/big-tokens/games", tags=["big-tokens"])
@@ -489,6 +490,7 @@ def reset_game(game_id: str, session: SessionDep) -> BigTokensGameRead:
         set_player_state(fresh, player, PlayerState(name=names[player]))
     game.players_json = fresh.players_json
     game.board_state_json = fresh.board_state_json
+    game.stashed_board_states_json = "{}"
     game.current_player = None
     game.round_number = 1
     game.chase_started_at = None
@@ -513,6 +515,30 @@ def set_chase_speed(
     if game.chase_started_at is not None:
         raise HTTPException(status_code=400, detail="A spin is in progress")
     game.chase_step_ms = body.step_ms
+    return _to_read(_save(game, session))
+
+
+class SwitchBoardBody(SQLModel):
+    board_id: str
+
+
+@router.patch("/{game_id}/board", response_model=BigTokensGameRead)
+def switch_game_board(
+    game_id: str, body: SwitchBoardBody, session: SessionDep
+) -> BigTokensGameRead:
+    """Host: change which board the game is played on, between spins.
+    Players keep their tokens, spins and hallucination counts; each
+    board remembers its own square progress, so switching away and back
+    picks up where that board left off."""
+    game = _get_game(game_id, session)
+    if get_board(body.board_id) is None:
+        raise HTTPException(status_code=422, detail=f"Unknown board: {body.board_id}")
+    if game.chase_started_at is not None or game.pending_square_index is not None:
+        raise HTTPException(
+            status_code=400, detail="Can't change the board while a spin is in progress"
+        )
+    if body.board_id != game.board_id:
+        switch_board(game, body.board_id)
     return _to_read(_save(game, session))
 
 
