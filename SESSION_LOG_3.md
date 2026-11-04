@@ -59,22 +59,44 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 37 | Context clue technically is timed as well | 11:09:51 | 5m 16s | 2m 37s | 152 | 40,523 | 76,714 | 45,269,325 |
 | 38 | The countdown starts when the answer is revealed?  It should start whe… | 11:17:45 | 2m 48s | 2h 12m ⏳ | 56 | 14,002 | 23,936 | 17,368,664 |
 | 39 | I want to rename this from Answers to Peril and the Context Clue to St… | 13:32:41 | 8m 13s | 53s | 296 | 64,138 | 1,327,944 | 99,089,004 |
-| 40 | Ok changing to “Overdrive” as game name and then “Crit Boost” for the … | 13:41:47 | 3m 56s | — | 130 | 33,347 | 48,032 | 47,336,373 |
+| 40 | Ok changing to “Overdrive” as game name and then “Crit Boost” for the … | 13:41:47 | 4m 17s | 2h 19m ⏳ | 146 | 36,183 | 55,398 | 53,286,809 |
+| 41 | Ok there are some UI enhancements I want.  The buzz in timer should be… | 16:05:49 | 10m 7s | 24m 31s ⏳ | 254 | 63,101 | 2,333,058 | 53,131,528 |
+| 42 | The UI looks terrible now on the main view.  The categories are small … | 16:40:27 | 5h 35m ⚠ | 0s | 90 | 51,032 | 59,319 | 5,934,218 |
+| 43 | Why do we have flaky tests? | 22:15:30 | 13s | 1m 10s | 10 | 1,480 | 446,000 | 297,427 |
+| 44 | Or we could just test that it does what it says it does? | 22:16:52 | 2m 47s | 16h 54m ⏳ | 44 | 13,350 | 26,693 | 3,405,223 |
+| 45 | why is the chase moving every 150ms? | 15:13:59 | 10s | 1m 31s | 6 | 1,291 | 166,248 | 323,476 |
+| 46 | make it configurable in the control defaulting to 150ms - for the test… | 15:15:40 | 4m 10s | 7h 55m ⏳ | 48 | 22,526 | 52,891 | 4,141,003 |
+| 47 | Have we updated the README at all?  If not let’s talk about how to str… | 23:15:11 | 20s | 59m 58s ⏳ | 8 | 1,876 | 190,084 | 553,711 |
+| 48 | Audience is strangers that find the repo.  Yes update the screenshots … | 00:15:29 | 4m 37s | 2s | 112 | 44,262 | 111,155 | 11,757,950 |
+| 49 | Probably should have walk thrus for adding game content, right?  Like … | 00:20:08 | 3m 31s | 245h 10m ⏳ | 82 | 51,476 | 91,065 | 10,308,057 |
+| 50 | I don’t like how the lobby lists the drop downs for big tokens and ove… | 05:34:28 | 16s | 1m 17s | 6 | 1,062 | 545,502 | 271,903 |
+| 51 | Probably the question for round 1 and team names makes sense for squad… | 05:36:02 | 16s | 1m 41s | 18 | 3,004 | 5,886 | 1,646,071 |
+| 52 | Build it with the updates to speed points as well.  Point win threshol… | 05:37:59 | 7m 53s | 2s | 137 | 82,569 | 140,288 | 22,136,912 |
+| 53 | Can we change board, questions banks mid game for big tokens and overd… | 05:45:54 | 14s | 1h 6m ⏳ | 16 | 3,515 | 9,213 | 1,687,951 |
+| 54 | Current round swap has to be before the round starts I think.  Resetti… | 06:52:23 | 4m 10s | 9h 28m ⏳ | 76 | 46,878 | 1,105,287 | 12,601,468 |
+| 55 | I think we need to make the overdrive control - for the categories, th… | 16:24:52 | 6m 51s | 40m 29s ⏳ | 52 | 23,175 | 1,165,373 | 8,768,780 |
+| 56 | what are the defaults for the timing section?  they aren't filled out … | 17:12:12 | 12m 52s | 3h 42m ⏳ | 134 | 88,382 | 131,622 | 25,114,647 |
+| 57 | when the timer expires for ringing in we should change the color of th… | 21:07:30 | 2m 25s | 1m 8s | 26 | 11,670 | 899,513 | 4,878,030 |
+| 58 | yes | 21:11:03 | 15m 49s | 52s | 244 | 119,513 | 172,435 | 44,185,383 |
+| 59 | we should probably submit a PR and get whatever we have merged to main… | 21:27:45 | 54s | 54s | 62 | 18,732 | 33,879 | 11,990,118 |
+| 60 | you put the session in the PR description... not cool | 21:29:32 | 24s | 1m 20s | 28 | 4,553 | 11,635 | 5,307,478 |
+| 61 | ok I just merged this and deleted the branch we were working from - so… | 21:31:16 | 41s | 2m 34s | 26 | 6,469 | 7,386 | 5,366,209 |
+| 62 | have you not been updating session log? | 21:34:31 | 58s | — | 48 | 21,678 | 31,875 | 11,396,889 |
 
-**Total turns:** 40  
-**Total agent time spent (excl. flagged):** 2h 32m  
-**Total human think time (excl. outliers):** 39m 51s  
-**Average human think time (excl. outliers):** 1m 29s  
-**Think-time outliers (> 15 min):** 12  
-**Total input tokens:** 3,887  
-**Total output tokens:** 1,351,346  
-**Total cache-write tokens:** 9,976,209  
-**Total cache-read tokens:** 868,711,338  
-**Cache hit ratio (cache-read ÷ all prompt-side tokens):** 99%
+**Total turns:** 62  
+**Total agent time spent (excl. flagged):** 3h 52m  
+**Total human think time (excl. outliers):** 52m 23s  
+**Average human think time (excl. outliers):** 1m 21s  
+**Think-time outliers (> 15 min):** 22  
+**Total input tokens:** 5,430  
+**Total output tokens:** 2,035,776  
+**Total cache-write tokens:** 17,719,982  
+**Total cache-read tokens:** 1,119,866,206  
+**Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
-⚠ Turn(s) 21 had an 'agent time spent' over 30 min (total 30m 1s), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
+⚠ Turn(s) 21, 42 had an 'agent time spent' over 30 min (total 6h 5m), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
 
-⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14, 23, 29, 35, 38 had a 'human think time' over 15 min (total 1074h 58m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14, 23, 29, 35, 38, 40, 41, 44, 46, 47, 49, 53, 54, 55, 56 had a 'human think time' over 15 min (total 1363h 41m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
 ---
 
@@ -82,11 +104,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 127  
-**Combined agent time spent (excl. flagged):** 5h 37m  
-**Combined human think time (excl. outliers):** 2h 56m  
-**Combined think-time outliers:** 20  
-**Total input tokens (since tracking began, this file only):** 2,988  
-**Total output tokens (since tracking began, this file only):** 908,623  
-**Total cache-write tokens (since tracking began, this file only):** 7,429,170  
-**Total cache-read tokens (since tracking began, this file only):** 736,668,829
+**Combined total turns:** 149  
+**Combined agent time spent (excl. flagged):** 6h 57m  
+**Combined human think time (excl. outliers):** 3h 9m  
+**Combined think-time outliers:** 30  
+**Total input tokens (since tracking began, this file only):** 4,531  
+**Total output tokens (since tracking began, this file only):** 1,593,053  
+**Total cache-write tokens (since tracking began, this file only):** 15,172,943  
+**Total cache-read tokens (since tracking began, this file only):** 987,823,697
