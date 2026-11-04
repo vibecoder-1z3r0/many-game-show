@@ -235,6 +235,9 @@
       }
 
       const idName = (list) => list.map((x) => ({ value: x.id, label: x.name }));
+      // Content banks: name plus what's in them, e.g. "Classic (Git, HTTP, …)".
+      const bankLabel = (b) => `${b.name} (${b.categories.join(", ")})`;
+      const bankOptions = (list) => list.map((b) => ({ value: b.id, label: bankLabel(b) }));
 
       const NEW_GAME_FORMS = {
         "squad-squabble": {
@@ -308,19 +311,19 @@
               name: "round1_bank_id",
               label: "Round 1 bank",
               type: "select",
-              options: async () => idName((await getJson("/api/overdrive/games/banks")).round1),
+              options: async () => bankOptions((await getJson("/api/overdrive/games/banks")).round1),
             },
             {
               name: "round2_bank_id",
               label: "Round 2 bank",
               type: "select",
-              options: async () => idName((await getJson("/api/overdrive/games/banks")).round2),
+              options: async () => bankOptions((await getJson("/api/overdrive/games/banks")).round2),
             },
             {
               name: "final_bank_id",
               label: "Final Exam bank",
               type: "select",
-              options: async () => idName((await getJson("/api/overdrive/games/banks")).final),
+              options: async () => bankOptions((await getJson("/api/overdrive/games/banks")).final),
             },
           ],
         },
