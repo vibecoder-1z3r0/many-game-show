@@ -1297,6 +1297,16 @@
         if (!controlState) return;
         const gs = controlState;
         renderBankControls(gs);
+        // Show the game's current global timing, but never over a field the
+        // host is in the middle of editing.
+        for (const [id, value] of [
+          ["ring-start-input", gs.ring_in_start_delay_ms],
+          ["ring-window-input", gs.ring_in_window_ms],
+          ["answer-time-input", gs.answer_time_ms],
+        ]) {
+          const input = document.getElementById(id);
+          if (document.activeElement !== input) input.value = value;
+        }
         document.getElementById("control-round-status").textContent =
           `${roundLabel(gs.current_round)} — Board control: ` +
           (gs.board_control ? gs.players[gs.board_control].name : "none");
