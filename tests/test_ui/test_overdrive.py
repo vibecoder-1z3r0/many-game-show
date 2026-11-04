@@ -541,3 +541,18 @@ def test_bank_dropdowns_list_each_banks_categories(
     expect(page.locator("#bank-round1 option[value=classic]")).to_contain_text(
         "(Git Happens, HTTP Status Quo"
     )
+
+
+def test_control_timing_fields_show_the_current_defaults(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    expect(page.locator("#ring-start-input")).to_have_value("300")
+    expect(page.locator("#ring-window-input")).to_have_value("5000")
+    expect(page.locator("#answer-time-input")).to_have_value("8000")
+
+    page.fill("#answer-time-input", "12000")
+    page.get_by_role("button", name="Apply Global").nth(1).click()
+    page.reload()
+    expect(page.locator("#answer-time-input")).to_have_value("12000")
