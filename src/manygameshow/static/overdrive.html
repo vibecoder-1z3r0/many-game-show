@@ -513,6 +513,13 @@
         margin: 0.4rem auto;
       }
 
+      /* Ring-in window has closed with nobody in: the emptied bar turns red
+         so "time's up" reads at a glance instead of just vanishing. */
+      .countdown-track.expired {
+        background: var(--danger);
+        border-color: var(--danger);
+      }
+
       .countdown-fill {
         position: absolute;
         top: 0;
@@ -1321,13 +1328,13 @@
             )
           : 0;
         bar.hidden = false;
-        bar.innerHTML = countdownBarHtml(100 - ringPct, "");
+        bar.innerHTML = countdownBarHtml(100 - ringPct, "", gs.no_one_can_answer);
       }
 
-      function countdownBarHtml(pct, extraClass) {
+      function countdownBarHtml(pct, extraClass, expired = false) {
         const half = pct / 2;
         return `
-          <div class="countdown-track">
+          <div class="countdown-track${expired ? " expired" : ""}">
             <div class="countdown-fill ${extraClass || ""}"
                  style="left:${50 - half}%;width:${pct}%"></div>
           </div>`;
@@ -1595,7 +1602,7 @@
           <button class="buzz-btn" onclick="buzz('${player}')" ${me.can_ring_in ? "" : "disabled"}>
             BUZZ
           </button>
-          ${countdownBarHtml(100 - ringPct, "")}`;
+          ${countdownBarHtml(100 - ringPct, "", ringPct >= 100)}`;
       }
 
       function finalPlayerHtml(gs, player) {
