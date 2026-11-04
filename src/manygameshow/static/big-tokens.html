@@ -584,6 +584,18 @@
       let failCount = 0;
 
       const PLAYERS = ["player1", "player2", "player3"];
+
+      // Assigning identical markup still destroys and recreates every
+      // element in it, and a click needs mousedown and mouseup on the *same*
+      // element — so a redraw landing between the two silently swallows the
+      // press. The chase redraws the board every step, so only touch the DOM
+      // when the markup really changed, and keep buttons in regions that
+      // don't change with the chase.
+      function setHtml(el, html) {
+        if (el._lastHtml === html) return;
+        el._lastHtml = html;
+        el.innerHTML = html;
+      }
       const PLAYER_LABELS = { player1: "Player 1", player2: "Player 2", player3: "Player 3" };
 
       // Walking the 6x5 perimeter clockwise from the top-left corner —
@@ -869,17 +881,18 @@
       function renderMain() {
         document.getElementById("main-turn-status").textContent = turnStatusText();
         document.getElementById("main-awaiting").textContent = awaitingText();
-        document.getElementById("main-board").innerHTML = boardHtml();
-        document.getElementById("main-scoreboard").innerHTML = PLAYERS.map(
-          playerCardHtml
-        ).join("");
+        setHtml(document.getElementById("main-board"), boardHtml());
+        setHtml(
+          document.getElementById("main-scoreboard"),
+          PLAYERS.map(playerCardHtml).join("")
+        );
       }
 
       function renderControl() {
         document.getElementById("control-round-status").textContent =
           `Round ${state.round_number} · Board: ${state.board_name} (${state.elimination_scope}-scoped elimination)`;
         document.getElementById("control-turn-status").textContent = turnStatusText();
-        document.getElementById("control-board").innerHTML = boardHtml();
+        setHtml(document.getElementById("control-board"), boardHtml());
 
         const boardSelect = document.getElementById("board-switch-select");
         if (document.activeElement !== boardSelect) boardSelect.value = state.board_id;
@@ -894,7 +907,7 @@
         const stepInput = document.getElementById("chase-step-input");
         if (document.activeElement !== stepInput) stepInput.value = state.chase_step_ms;
 
-        document.getElementById("control-players").innerHTML = PLAYERS.map((player) => {
+        setHtml(document.getElementById("control-players"), PLAYERS.map((player) => {
           const p = state.players[player];
           return `
             <div class="control-player-row">
@@ -909,10 +922,10 @@
                 ${p.is_out ? `<button class="primary" onclick="revivePlayer('${player}')">Revive</button>` : ""}
               </div>
             </div>`;
-        }).join("");
+        }).join(""));
 
         const resolutionEl = document.getElementById("control-resolution");
-        resolutionEl.innerHTML = resolutionControlsHtml();
+        setHtml(resolutionEl, resolutionControlsHtml());
       }
 
       function resolutionControlsHtml() {
@@ -980,21 +993,29 @@
           }</div>`;
         }
 
-        body.innerHTML = `
-          <div class="my-stats">
-            <div class="p-tokens display-num">${p.token_total} tokens</div>
+        // Four regions with their own change checks: the board redraws on
+        // every chase step, but the SPIN/STOP buttons live in a region that
+        // doesn't, so they are never rebuilt under a finger.
+        if (!body.firstElementChild) {
+          body.innerHTML =
+            '<div class="my-stats"></div><div class="board"></div>' +
+            '<div class="pv-controls"></div><div class="scoreboard"></div>';
+        }
+        const [stats, board, controls, scoreboard] = body.children;
+        setHtml(
+          stats,
+          `<div class="p-tokens display-num">${p.token_total} tokens</div>
             <div class="p-spins">${p.spins_remaining} spin(s)${
               p.mandatory_spins > 0 ? ` (${p.mandatory_spins} mandatory)` : ""
             }</div>
             <div class="p-hallucinations" style="justify-content:center">${hallucinationDotsHtml(
               p.hallucination_count,
               p.max_hallucinations
-            )}</div>
-          </div>
-          <div class="board">${boardHtml()}</div>
-          <div>${controlsHtml}</div>
-          <div class="scoreboard">${PLAYERS.map(playerCardHtml).join("")}</div>
-        `;
+            )}</div>`
+        );
+        setHtml(board, boardHtml());
+        setHtml(controls, controlsHtml);
+        setHtml(scoreboard, PLAYERS.map(playerCardHtml).join(""));
       }
 
       loadBoardOptions();
