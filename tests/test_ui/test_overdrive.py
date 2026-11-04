@@ -658,3 +658,22 @@ def test_player_timing_buttons_are_named_for_what_they_do(
         page.get_by_role("button", name="Set Answer Time", exact=True)
     ).to_have_count(3)
     expect(page.get_by_role("button", name="Override Ring-in")).to_have_count(0)
+
+
+def test_ring_in_bar_turns_red_when_the_window_closes_with_no_one_in(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    page.request.patch(
+        f"{live_server}/api/overdrive/games/{game_id}/ring-in-settings",
+        data={"start_delay_ms": 0, "window_ms": 800},
+    )
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+
+    _goto(live_server, page, game_id, "main")
+    track = page.locator("#clue-status-bar .countdown-track")
+    expect(track).not_to_have_class(re.compile("expired"))
+    expect(track).to_have_class(re.compile("expired"), timeout=5000)
+    expect(track).to_have_css("background-color", "rgb(255, 77, 77)")
