@@ -348,3 +348,40 @@ def test_control_board_switch_is_disabled_during_a_spin(
     page.request.patch(f"{live_server}/api/big-tokens/games/{game_id}/start-spin")
     expect(page.locator("#board-switch-select")).to_be_disabled()
     expect(page.locator("#board-switch-note")).to_contain_text("spin")
+
+
+def test_stop_press_held_across_chase_redraws_still_registers(
+    live_server: str, page: Page
+) -> None:
+    # The chase moves the lit square every step; a press that straddles a
+    # redraw of the STOP button used to be swallowed.
+    game_id = _create_game(live_server, page)
+    _adjust(live_server, page, game_id, "player1", spins_remaining=3)
+    _set_active(live_server, page, game_id, "player1")
+    _goto(live_server, page, game_id, "player1")
+
+    page.click(".spin-btn")
+    stop = page.locator(".spin-btn.stop")
+    expect(stop).to_be_visible()
+    stop.hover()
+    page.mouse.down()
+    page.wait_for_timeout(700)  # more than two chase steps
+    page.mouse.up()
+    expect(page.locator(".spin-btn.stop")).to_have_count(0)  # the spin stopped
+
+
+def test_stop_button_is_not_rebuilt_while_the_chase_runs(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _adjust(live_server, page, game_id, "player1", spins_remaining=3)
+    _set_active(live_server, page, game_id, "player1")
+    _goto(live_server, page, game_id, "player1")
+
+    page.click(".spin-btn")
+    stop = page.locator(".spin-btn.stop")
+    expect(stop).to_be_visible()
+    stop.evaluate("el => { el.dataset.keep = '1'; }")
+    page.wait_for_timeout(900)
+    expect(stop).to_have_attribute("data-keep", "1")
+    expect(page.locator("#player1-body .square.chase-lit")).to_have_count(1)
