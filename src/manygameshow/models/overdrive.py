@@ -134,13 +134,13 @@ class OverdriveGame(SQLModel, table=True):
     # Ring-in window: a buzz only counts between start_delay and
     # start_delay+window after the clue's revealed. Global defaults, with
     # optional per-player overrides (JSON dict player -> TimingOverride).
-    ring_in_start_delay_ms: int = Field(default=300, ge=0)
-    ring_in_window_ms: int = Field(default=5000, ge=100)
+    ring_in_start_delay_ms: int = Field(default=2500, ge=0)
+    ring_in_window_ms: int = Field(default=10000, ge=100)
     ring_in_overrides_json: str = Field(default="{}")
 
     # Personal answer countdown, once a player's won the buzz-in. Same
     # global-default-plus-override shape.
-    answer_time_ms: int = Field(default=8000, ge=100)
+    answer_time_ms: int = Field(default=10000, ge=100)
     answer_time_overrides_json: str = Field(default="{}")
 
     final_entries_json: str = Field(default_factory=_default_final_entries_json)
@@ -191,6 +191,9 @@ class PlayerStatusRead(SQLModel):
     name: str
     score: int
     can_ring_in: bool
+    # Wrong on the clue in play: out of it for good (the host can't ring
+    # them in either).
+    locked_out: bool
     ring_in_start_delay_ms: int
     ring_in_window_ms: int
     answer_time_ms: int
@@ -213,6 +216,9 @@ class OverdriveGameRead(SQLModel):
     clue_phase: str | None
     buzzed_player: Player | None
     crit_boost_wager: int | None
+    # The most the board-control holder may wager on the selected Crit
+    # Boost (None when no Crit Boost is selected) — see crit_boost_max_wager.
+    crit_boost_max_wager: int | None
     auto_reveal_delay_ms: int
     auto_reveal_remaining_ms: int | None
     ring_in_elapsed_ms: int | None
@@ -295,6 +301,24 @@ def reset_board_for_round(game: OverdriveGame, round_name: RoundName) -> None:
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
     game.crit_boost_wager = None
+
+
+def crit_boost_max_wager(game: OverdriveGame) -> int | None:
+    """Jeopardy's Daily Double rule: a player may wager up to their own
+    score, or the round's highest clue value if that's more — so someone
+    with little or no score can still bet 1000 in round 1 (2000 in round
+    2). A wager of 0 is fine too. None when no Crit Boost is selected."""
+    if not is_selected_crit_boost(game):
+        return None
+    top_value = max(
+        clue.value for cat in current_bank(game).categories for clue in cat.clues
+    )
+    holder_score = (
+        player_score(game, game.board_control).score
+        if game.board_control is not None
+        else 0
+    )
+    return max(holder_score, top_value)
 
 
 def round_started(game: OverdriveGame) -> bool:

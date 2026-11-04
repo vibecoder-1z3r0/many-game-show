@@ -32,6 +32,7 @@ from manygameshow.models.overdrive import (
     clear_ring_in_overrides,
     clue_cells,
     clue_phase,
+    crit_boost_max_wager,
     current_bank,
     final_bank_content,
     final_entry,
@@ -152,6 +153,10 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
             name=score.name,
             score=score.score,
             can_ring_in=can_ring_in(game, player),
+            locked_out=(
+                (cell := selected_clue_cell(game)) is not None
+                and player in cell.locked_out
+            ),
             ring_in_start_delay_ms=start,
             ring_in_window_ms=window,
             answer_time_ms=answer_time_for(game, player),
@@ -172,6 +177,7 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
         clue_phase=clue_phase(game),
         buzzed_player=game.buzzed_player,
         crit_boost_wager=game.crit_boost_wager,
+        crit_boost_max_wager=crit_boost_max_wager(game),
         auto_reveal_delay_ms=game.auto_reveal_delay_ms,
         auto_reveal_remaining_ms=auto_reveal_remaining_ms(game),
         ring_in_elapsed_ms=ring_in_elapsed_ms(game),
@@ -377,6 +383,15 @@ def set_crit_boost_wager(
         raise HTTPException(status_code=400, detail="No Crit Boost is selected")
     if clue_phase(game) == "revealed":
         raise HTTPException(status_code=400, detail="Clue is already revealed")
+    max_wager = crit_boost_max_wager(game)
+    if max_wager is not None and body.wager > max_wager:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Wager can be at most {max_wager} (the holder's score or the "
+                "round's top clue value, whichever is higher)"
+            ),
+        )
     game.crit_boost_wager = body.wager
     return _to_read(_save(game, session), show_all=True)
 

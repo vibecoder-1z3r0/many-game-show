@@ -980,3 +980,153 @@ def test_host_ring_in_refused_on_a_crit_boost(client: TestClient) -> None:
     _reveal_clue(client, game_id)
     resp = _patch(client, game_id, "host-ring-in", {"player": "player2"})
     assert resp.status_code == 400
+
+
+def _start_crit_boost(client: TestClient, game_id: str, wager: int) -> dict:
+    _patch(client, game_id, "board-control", {"player": "player1"})
+    _select_clue(client, game_id, 0, 4)  # round 1's one Crit Boost clue
+    _patch(client, game_id, "crit-boost-wager", {"wager": wager})
+    return _reveal_clue(client, game_id)
+
+
+def test_crit_boost_wager_of_zero_is_valid(client: TestClient) -> None:
+    for correct in (True, False):
+        game_id = _create_game(client)
+        body = _start_crit_boost(client, game_id, 0)  # 0 counts as "set"
+        assert body["crit_boost_wager"] == 0
+        assert body["clue_phase"] == "revealed"
+        body = _judge(client, game_id, correct)
+        assert body["players"]["player1"]["score"] == 0  # right or wrong: no change
+
+
+def test_crit_boost_wager_up_to_the_rounds_top_value_is_valid(
+    client: TestClient,
+) -> None:
+    # A player with no score can still bet round 1's highest value (1000).
+    game_id = _create_game(client)
+    _patch(client, game_id, "board-control", {"player": "player1"})
+    body = _select_clue(client, game_id, 0, 4)
+    assert body["crit_boost_max_wager"] == 1000
+    assert (
+        _patch(client, game_id, "crit-boost-wager", {"wager": 1000}).status_code == 200
+    )
+    assert (
+        _patch(client, game_id, "crit-boost-wager", {"wager": 1001}).status_code == 400
+    )
+
+
+def test_crit_boost_max_wager_is_the_holders_score_when_higher(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "adjust-score", {"player": "player1", "score": 2500})
+    _patch(client, game_id, "board-control", {"player": "player1"})
+    body = _select_clue(client, game_id, 0, 4)
+    assert body["crit_boost_max_wager"] == 2500
+    assert (
+        _patch(client, game_id, "crit-boost-wager", {"wager": 2500}).status_code == 200
+    )
+    assert (
+        _patch(client, game_id, "crit-boost-wager", {"wager": 2501}).status_code == 400
+    )
+
+
+def test_round_two_crit_boost_can_wager_up_to_2000(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(client, game_id, "start-round2")
+    _patch(client, game_id, "board-control", {"player": "player2"})
+    body = _select_clue(client, game_id, 2, 3)  # a round-2 Crit Boost clue
+    assert body["crit_boost_max_wager"] == 2000
+    assert (
+        _patch(client, game_id, "crit-boost-wager", {"wager": 2000}).status_code == 200
+    )
+    assert (
+        _patch(client, game_id, "crit-boost-wager", {"wager": 2001}).status_code == 400
+    )
+
+
+def test_no_max_wager_for_a_regular_clue(client: TestClient) -> None:
+    game_id = _create_game(client)
+    assert _select_clue(client, game_id, 0, 0)["crit_boost_max_wager"] is None
+
+
+def test_negative_crit_boost_wager_is_rejected(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _select_clue(client, game_id, 0, 4)
+    resp = _patch(client, game_id, "crit-boost-wager", {"wager": -1})
+    assert resp.status_code == 422
+
+
+def test_wrong_answers_give_everyone_left_a_fresh_chance_to_ring_in_and_answer(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    _patch(
+        client,
+        game_id,
+        "ring-in-settings",
+        {"start_delay_ms": 0, "window_ms": 300},
+    )
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    time.sleep(0.4)  # the original ring-in window has long since closed
+    assert _get(client, game_id)["no_one_can_answer"] is True
+
+    # The host can still give anyone the floor; player 1 gets it wrong...
+    assert (
+        _patch(client, game_id, "host-ring-in", {"player": "player1"}).status_code
+        == 200
+    )
+    body = _judge(client, game_id, False)
+    # ...and the other two get a brand-new window to ring in.
+    assert body["no_one_can_answer"] is False
+    assert body["players"]["player1"]["locked_out"] is True
+    assert body["players"]["player2"]["can_ring_in"] is True
+    assert body["players"]["player3"]["can_ring_in"] is True
+    assert body["players"]["player1"]["can_ring_in"] is False
+
+    # Player 3 rings in, gets a full answer countdown, and also misses.
+    body = _buzz(client, game_id, "player3")
+    assert body["buzzed_player"] == "player3"
+    assert body["buzz_remaining_ms"] > 0
+    body = _judge(client, game_id, False)
+    # Now only player 2 is left — and they get time to ring in, then to answer.
+    assert body["players"]["player2"]["can_ring_in"] is True
+    assert body["players"]["player3"]["can_ring_in"] is False
+    body = _buzz(client, game_id, "player2")
+    assert body["buzzed_player"] == "player2"
+    assert body["buzz_remaining_ms"] > 0
+    body = _judge(client, game_id, True)
+    assert body["players"]["player2"]["score"] == 200
+    assert body["players"]["player1"]["score"] == -200
+    assert body["players"]["player3"]["score"] == -200
+    assert body["clue_phase"] is None  # solved: board moves on
+
+
+def test_a_reopened_window_closes_again_if_nobody_rings_in(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _patch(
+        client,
+        game_id,
+        "ring-in-settings",
+        {"start_delay_ms": 0, "window_ms": 250},
+    )
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    _judge(client, game_id, False)
+    assert _get(client, game_id)["no_one_can_answer"] is False
+    time.sleep(0.4)
+    assert _get(client, game_id)["no_one_can_answer"] is True
+
+
+def test_locked_out_flag_is_per_clue(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    assert _judge(client, game_id, False)["players"]["player1"]["locked_out"] is True
+    _patch(client, game_id, "no-one-answered")
+    _select_clue(client, game_id, 0, 1)
+    assert _get(client, game_id)["players"]["player1"]["locked_out"] is False

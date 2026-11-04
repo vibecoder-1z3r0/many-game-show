@@ -330,3 +330,10 @@ def test_buzz_remaining_ms_frozen_while_paused() -> None:
     )
     now = datetime(2024, 1, 1, 0, 5, 0)
     assert buzz_remaining_ms(game, now=now) == 4321
+
+
+def test_default_ring_in_start_is_2_5s_and_window_and_answer_time_are_10s() -> None:
+    game = OverdriveGame()
+    assert game.ring_in_start_delay_ms == 2500
+    assert game.ring_in_window_ms == 10000
+    assert game.answer_time_ms == 10000

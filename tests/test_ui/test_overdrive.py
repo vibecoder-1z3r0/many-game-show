@@ -3,10 +3,19 @@ import re
 from playwright.sync_api import Page, expect
 
 
-def _create_game(live_server: str, page: Page) -> str:
+def _create_game(live_server: str, page: Page, *, game_defaults: bool = False) -> str:
+    """Create a game. The ring-in window opens 2.5s after a reveal by
+    default, which would make every test that rings in wait that long, so
+    tests get a short start delay unless they ask for the real defaults."""
     resp = page.request.post(f"{live_server}/api/overdrive/games/", data={})
     assert resp.ok
     game_id: str = resp.json()["id"]
+    if not game_defaults:
+        resp = page.request.patch(
+            f"{live_server}/api/overdrive/games/{game_id}/ring-in-settings",
+            data={"start_delay_ms": 300},
+        )
+        assert resp.ok
     return game_id
 
 
@@ -546,11 +555,11 @@ def test_bank_dropdowns_list_each_banks_categories(
 def test_control_timing_fields_show_the_current_defaults(
     live_server: str, page: Page
 ) -> None:
-    game_id = _create_game(live_server, page)
+    game_id = _create_game(live_server, page, game_defaults=True)
     _goto(live_server, page, game_id, "control")
-    expect(page.locator("#ring-start-input")).to_have_value("300")
-    expect(page.locator("#ring-window-input")).to_have_value("5000")
-    expect(page.locator("#answer-time-input")).to_have_value("8000")
+    expect(page.locator("#ring-start-input")).to_have_value("2500")
+    expect(page.locator("#ring-window-input")).to_have_value("10000")
+    expect(page.locator("#answer-time-input")).to_have_value("10000")
 
     page.fill("#answer-time-input", "12000")
     page.get_by_role("button", name="Apply Global").nth(1).click()
@@ -632,20 +641,43 @@ def test_auto_reveal_setting_counts_down_and_reveals_the_clue(
     )
 
 
-def test_host_can_ring_in_for_a_player(live_server: str, page: Page) -> None:
+def test_host_ring_in_buttons_live_in_the_clue_in_play_box(
+    live_server: str, page: Page
+) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
-    ring_in = page.get_by_role("button", name="Ring In for Player 2")
-    expect(ring_in).to_be_disabled()  # nothing revealed yet
+    clue_box = page.locator("#control-clue-fieldset")
+    # Not on the per-player rows, and nowhere until a clue is revealed.
+    expect(page.get_by_role("button", name="Ring In for Player 2")).to_have_count(0)
 
     _select_clue(page, 1, 0)
+    expect(clue_box.get_by_role("button", name="Ring In for Player 2")).to_have_count(0)
     _reveal_clue(page)
-    expect(ring_in).to_be_enabled()
-    ring_in.click()
+    for n in (1, 2, 3):
+        expect(
+            clue_box.get_by_role("button", name=f"Ring In for Player {n}")
+        ).to_be_enabled()
+    clue_box.get_by_role("button", name="Ring In for Player 2").click()
     expect(page.locator("#control-clue-status")).to_contain_text(
         "Player 2 is answering"
     )
-    expect(ring_in).to_be_disabled()
+    expect(page.get_by_role("button", name="Ring In for Player 1")).to_have_count(0)
+
+
+def test_a_wrong_answer_disables_that_players_ring_in_but_not_the_others(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+    clue_box = page.locator("#control-clue-fieldset")
+    clue_box.get_by_role("button", name="Ring In for Player 1").click()
+    page.get_by_role("button", name="Incorrect").click()
+
+    expect(clue_box.get_by_role("button", name="Ring In for Player 1")).to_be_disabled()
+    expect(clue_box.get_by_role("button", name="Ring In for Player 2")).to_be_enabled()
+    expect(clue_box.get_by_role("button", name="Ring In for Player 3")).to_be_enabled()
 
 
 def test_player_timing_buttons_are_named_for_what_they_do(
@@ -677,3 +709,86 @@ def test_ring_in_bar_turns_red_when_the_window_closes_with_no_one_in(
     expect(track).not_to_have_class(re.compile("expired"))
     expect(track).to_have_class(re.compile("expired"), timeout=5000)
     expect(track).to_have_css("background-color", "rgb(255, 77, 77)")
+
+
+def test_answer_bar_turns_red_when_the_answer_time_runs_out(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    api = f"{live_server}/api/overdrive/games/{game_id}"
+    page.request.patch(f"{api}/answer-time-settings", data={"window_ms": 800})
+    page.request.patch(
+        f"{api}/select-clue", data={"category_index": 1, "clue_index": 0}
+    )
+    page.request.patch(f"{api}/reveal-clue")
+    page.request.patch(f"{api}/host-ring-in", data={"player": "player1"})
+
+    _goto(live_server, page, game_id, "main")
+    track = page.locator("#clue-status-bar .countdown-track")
+    expect(track).not_to_have_class(re.compile("expired"))
+    expect(track).to_have_class(re.compile("expired"), timeout=5000)
+
+
+def test_host_can_set_a_crit_boost_wager_of_zero(live_server: str, page: Page) -> None:
+    game_id = _create_game(live_server, page)
+    page.request.patch(
+        f"{live_server}/api/overdrive/games/{game_id}/board-control",
+        data={"player": "player1"},
+    )
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 0, 4)  # the Crit Boost clue
+
+    reveal = page.get_by_role("button", name="Reveal Clue")
+    expect(reveal).to_be_disabled()  # no wager yet
+    # The valid range is shown: up to the round's top value (1000 in round 1).
+    expect(page.locator("#crit-boost-wager-input")).to_have_attribute(
+        "placeholder", "Wager (0–1000)"
+    )
+    page.fill("#crit-boost-wager-input", "0")
+    page.get_by_role("button", name="Set Wager").click()
+    expect(reveal).to_be_enabled()
+    reveal.click()
+    expect(page.locator("#control-clue-status")).to_contain_text("Wager: 0")
+
+
+def test_a_press_held_across_several_polls_still_registers(
+    live_server: str, page: Page
+) -> None:
+    # The page polls every 200ms and a live clue changes state on every
+    # poll; a click needs mousedown and mouseup on the *same* element, so
+    # redrawing the buttons under a held press used to swallow it.
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+
+    button = page.get_by_role("button", name="Ring In for Player 1")
+    expect(button).to_be_enabled()
+    button.hover()
+    page.mouse.down()
+    page.wait_for_timeout(700)  # several poll/redraw cycles
+    page.mouse.up()
+    expect(page.locator("#control-clue-status")).to_contain_text(
+        "Player 1 is answering"
+    )
+
+
+def test_control_and_player_buttons_survive_polling_untouched(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    _select_clue(page, 1, 0)
+    _reveal_clue(page)
+    no_one = page.get_by_role("button", name="No One Answered")
+    no_one.evaluate("el => { el.dataset.keep = '1'; }")
+    page.wait_for_timeout(900)  # ring-in elapsed ticks the whole time
+    expect(no_one).to_have_attribute("data-keep", "1")
+
+    _goto(live_server, page, game_id, "player1")
+    buzz = page.locator("#player1-body .buzz-btn")
+    expect(buzz).to_be_visible()
+    buzz.evaluate("el => { el.dataset.keep = '1'; }")
+    page.wait_for_timeout(900)  # the shrinking bar ticks the whole time
+    expect(buzz).to_have_attribute("data-keep", "1")
+    expect(page.locator("#player1-body .countdown-track")).to_have_count(1)
