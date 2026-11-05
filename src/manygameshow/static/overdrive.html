@@ -260,6 +260,145 @@
         color: var(--text-dim);
       }
 
+      /* ---------- Live clue panel (Control and Host) ---------- */
+
+      .live-clue {
+        border: 2px solid var(--accent);
+        padding: 1rem;
+      }
+
+      .live-clue legend {
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .live-banner-slot {
+        min-height: 5rem;
+      }
+
+      .live-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin-bottom: 0.4rem;
+      }
+
+      .live-banner.tone-info .live-label {
+        color: var(--accent);
+      }
+
+      .live-banner.tone-wait .live-label {
+        color: var(--text);
+      }
+
+      .live-banner.tone-go .live-label {
+        color: var(--win-green);
+      }
+
+      .live-banner.tone-alert .live-label {
+        color: var(--danger);
+      }
+
+      .live-seconds {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 1.6rem;
+        color: var(--text);
+      }
+
+      .live-bar .countdown-track {
+        max-width: none;
+        height: 1.5rem;
+        margin: 0 0 0.8rem;
+      }
+
+      .live-clue-head {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-top: 0.3rem;
+      }
+
+      .live-clue-text {
+        font-size: 1.35rem;
+        line-height: 1.35;
+        margin: 0.3rem 0;
+      }
+
+      .live-clue-answer {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--win-green);
+        margin-bottom: 0.4rem;
+      }
+
+      .live-wager {
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .live-clue .row-line {
+        margin-top: 0.5rem;
+      }
+
+      .live-clue button {
+        padding: 0.6rem 1.1rem;
+        font-size: 1rem;
+      }
+
+      .live-clue button.good {
+        border-color: var(--win-green);
+      }
+
+      .live-clue button.bad {
+        border-color: var(--danger);
+      }
+
+      .setup-details {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.75rem;
+      }
+
+      .setup-details > summary {
+        cursor: pointer;
+        color: var(--text-dim);
+      }
+
+      .setup-details[open] > summary {
+        margin-bottom: 0.6rem;
+      }
+
+      .host-scoreboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .host-player {
+        flex: 1;
+        min-width: 9rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        text-align: center;
+      }
+
+      .host-player.has-control {
+        border-color: var(--accent);
+      }
+
+      .host-player .hp-name {
+        font-weight: 700;
+      }
+
+      .host-player .hp-score {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 1.4rem;
+        margin: 0.2rem 0 0.4rem;
+      }
+
       .content-fieldset {
         min-width: 0;
       }
@@ -673,6 +812,7 @@
       </h1>
       <div class="tabs">
         <button id="tab-main" onclick="switchView('main')">Main</button>
+        <button id="tab-host" onclick="switchView('host')">Host</button>
         <button id="tab-control" onclick="switchView('control')">Control</button>
         <button id="tab-player1" onclick="switchView('player1')">Player 1</button>
         <button id="tab-player2" onclick="switchView('player2')">Player 2</button>
@@ -710,31 +850,14 @@
             <button class="danger" onclick="resetGame()">Reset Game</button>
           </div>
         </fieldset>
-        <fieldset class="content-fieldset">
-          <legend>Content</legend>
-          <div class="row-line bank-row">
-            <label for="bank-round1">Round 1</label>
-            <select id="bank-round1"></select>
-          </div>
-          <div class="row-line bank-row">
-            <label for="bank-round2">Round 2</label>
-            <select id="bank-round2"></select>
-          </div>
-          <div class="row-line bank-row">
-            <label for="bank-final">Final Exam</label>
-            <select id="bank-final"></select>
-          </div>
-          <button class="primary" onclick="applyBanks()">Apply</button>
-          <div class="status-line" id="bank-note"></div>
+        <fieldset id="control-clue-fieldset" class="live-clue" hidden>
+          <legend>Clue in play</legend>
+          <div id="control-clue-status"></div>
         </fieldset>
         <fieldset id="control-board-fieldset">
           <legend>Board (click a greyed category to reveal it, a clue to select it)</legend>
           <div id="control-board-headers" class="board board-headers"></div>
           <div id="control-board" class="board"></div>
-        </fieldset>
-        <fieldset id="control-clue-fieldset" hidden>
-          <legend>Clue in play</legend>
-          <div id="control-clue-status"></div>
         </fieldset>
         <fieldset id="control-final-fieldset" hidden>
           <legend>Final Exam</legend>
@@ -750,8 +873,25 @@
           </div>
           <div id="control-players"></div>
         </fieldset>
-        <fieldset>
-          <legend>Timing</legend>
+        <details class="setup-details">
+          <summary>Content</summary>
+          <div class="row-line bank-row">
+            <label for="bank-round1">Round 1</label>
+            <select id="bank-round1"></select>
+          </div>
+          <div class="row-line bank-row">
+            <label for="bank-round2">Round 2</label>
+            <select id="bank-round2"></select>
+          </div>
+          <div class="row-line bank-row">
+            <label for="bank-final">Final Exam</label>
+            <select id="bank-final"></select>
+          </div>
+          <button class="primary" onclick="applyBanks()">Apply</button>
+          <div class="status-line" id="bank-note"></div>
+        </details>
+        <details class="setup-details">
+          <summary>Timing</summary>
           <div class="row-line">
             <span>Ring-in: start</span>
             <input type="number" id="ring-start-input" placeholder="ms" />
@@ -787,8 +927,36 @@
               Reset Answer Time to Global (all)
             </button>
           </div>
-        </fieldset>
+        </details>
         <div class="status-line" id="control-status-line"></div>
+      </section>
+      <section id="view-host">
+        <fieldset>
+          <legend>Round</legend>
+          <div class="status-line" id="host-round-status"></div>
+          <div class="row-line">
+            <button class="primary" onclick="startRound2()">Start Round 2</button>
+            <button class="primary" onclick="startFinal()">Start Final Exam</button>
+          </div>
+        </fieldset>
+        <fieldset id="host-clue-fieldset" class="live-clue" hidden>
+          <legend>Clue in play</legend>
+          <div id="host-clue-status"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Scores and board control</legend>
+          <div id="host-scoreboard" class="host-scoreboard"></div>
+        </fieldset>
+        <fieldset id="host-board-fieldset">
+          <legend>Board (click a greyed category to reveal it, a clue to select it)</legend>
+          <div id="host-board-headers" class="board board-headers"></div>
+          <div id="host-board" class="board"></div>
+        </fieldset>
+        <fieldset id="host-final-fieldset" hidden>
+          <legend>Final Exam</legend>
+          <div id="host-final"></div>
+        </fieldset>
+        <div class="status-line" id="host-status-line"></div>
       </section>
       <section id="view-player1" class="player-view">
         <div id="player1-body"></div>
@@ -845,12 +1013,14 @@
         currentView = v;
         document.getElementById("view-main").hidden = v !== "main";
         document.getElementById("view-control").hidden = v !== "control";
+        document.getElementById("view-host").hidden = v !== "host";
         for (const p of PLAYERS) {
           document.getElementById(`view-${p}`).hidden = v !== p;
           document.getElementById(`tab-${p}`).classList.toggle("active", v === p);
         }
         document.getElementById("tab-main").classList.toggle("active", v === "main");
         document.getElementById("tab-control").classList.toggle("active", v === "control");
+        document.getElementById("tab-host").classList.toggle("active", v === "host");
         const url = new URL(location.href);
         url.searchParams.set("view", v);
         history.replaceState(null, "", url);
@@ -913,7 +1083,7 @@
             method: "PATCH",
             body: JSON.stringify(body === undefined ? {} : body),
           });
-          if (currentView === "control") {
+          if (usesControlState()) {
             applyControlState(newState);
           } else {
             applyState(newState);
@@ -925,7 +1095,14 @@
       }
 
       function setStatus(msg) {
-        document.getElementById("control-status-line").textContent = msg;
+        for (const id of ["control-status-line", "host-status-line"]) {
+          document.getElementById(id).textContent = msg;
+        }
+      }
+
+      // The Control and Host views both run off the host's full state.
+      function usesControlState() {
+        return currentView === "control" || currentView === "host";
       }
 
       function applyState(newState) {
@@ -947,11 +1124,12 @@
         lastControlStateJson = json;
         controlState = newState;
         renderControl();
+        renderHost();
       }
 
       async function poll() {
         try {
-          if (currentView === "control") {
+          if (usesControlState()) {
             const newState = await api("/control", { method: "GET" });
             failCount = 0;
             setConnStatus(true);
@@ -1054,7 +1232,9 @@
       }
 
       function setCritBoostWager() {
-        const input = document.getElementById("crit-boost-wager-input");
+        const input = document.getElementById(
+          `${currentView === "host" ? "host-" : ""}crit-boost-wager-input`
+        );
         const wager = parseInt(input.value, 10);
         if (!Number.isFinite(wager) || wager < 0) return;
         patch("/crit-boost-wager", { wager });
@@ -1420,15 +1600,7 @@
         const clueFieldset = document.getElementById("control-clue-fieldset");
         if (!isFinal && gs.selected_category_index !== null) {
           clueFieldset.hidden = false;
-          setHtml(document.getElementById("control-clue-status"), controlClueHtml(gs));
-          // The one thing in this panel that ticks: updated in place so the
-          // buttons around it aren't rebuilt under the host's finger.
-          const countdown = document.getElementById("auto-reveal-countdown");
-          if (countdown && gs.auto_reveal_remaining_ms !== null) {
-            countdown.textContent = `Auto-revealing in ${(
-              gs.auto_reveal_remaining_ms / 1000
-            ).toFixed(1)}s`;
-          }
+          renderLiveClue(document.getElementById("control-clue-status"), gs);
         } else {
           clueFieldset.hidden = true;
         }
@@ -1475,49 +1647,116 @@
         patch("/answer-time-override", { player, window_ms: parseInt(input.value, 10) });
       }
 
-      function controlClueHtml(gs) {
-        const cat = gs.categories[gs.selected_category_index];
-        const clue = cat.clues[gs.selected_clue_index];
-        let html = `<div><strong>${cat.name}</strong> — ${clue.value}</div>`;
-        html += `<div class="status-line">${clue.text}</div>`;
-        html += `<div class="status-line">Answer: ${clue.answer}</div>`;
+      const fmtSecs = (ms) => `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
 
+      // The one thing the host most needs right now, as a banner: a stable
+      // label, an optional ticking seconds readout, and an optional bar. It is
+      // drawn into its own slot (see liveClueView) so that it can change and
+      // tick without ever rebuilding the buttons below it.
+      function liveBanner(gs, clue) {
+        const holder = gs.board_control ? gs.players[gs.board_control].name : "no one";
+        if (gs.clue_phase !== "revealed") {
+          if (clue.is_crit_boost) {
+            return { label: "Crit Boost — set a wager, then reveal", tone: "info" };
+          }
+          if (gs.auto_reveal_remaining_ms !== null && gs.auto_reveal_delay_ms > 0) {
+            return {
+              label: "Auto-revealing in",
+              tone: "info",
+              ms: gs.auto_reveal_remaining_ms,
+              bar: {
+                pct: (100 * gs.auto_reveal_remaining_ms) / gs.auto_reveal_delay_ms,
+                extra: "",
+                expired: false,
+              },
+            };
+          }
+          return { label: "Clue selected — reveal when ready", tone: "info" };
+        }
+        if (gs.buzzed_player) {
+          const p = gs.players[gs.buzzed_player];
+          const up = answerTimeUp(gs);
+          const who = clue.is_crit_boost ? `Crit Boost — ${p.name}` : p.name;
+          const remaining = gs.buzz_remaining_ms || 0;
+          return {
+            label: up
+              ? `Time's up — ${who}`
+              : `${who} is answering${gs.answer_timer_running ? "" : " (paused)"}`,
+            tone: up ? "alert" : "go",
+            ms: remaining,
+            bar: {
+              pct: p.answer_time_ms ? Math.min(100, (100 * remaining) / p.answer_time_ms) : 0,
+              extra: "answer",
+              expired: up,
+            },
+          };
+        }
+        if (clue.is_crit_boost) {
+          return { label: `Crit Boost — judge ${holder}`, tone: "info" };
+        }
+        if (gs.no_one_can_answer) {
+          return {
+            label: "Time's up — no one rang in",
+            tone: "alert",
+            ms: 0,
+            bar: { pct: 0, extra: "", expired: true },
+          };
+        }
+        const retry = gs.ring_in_is_retry;
+        const start = retry ? gs.ring_in_retry_start_delay_ms : gs.ring_in_start_delay_ms;
+        const window_ = retry ? gs.ring_in_retry_window_ms : gs.ring_in_window_ms;
+        const elapsed = gs.ring_in_elapsed_ms || 0;
+        if (elapsed < start) {
+          // An empty bar, so the buttons below don't jump down when it fills.
+          return {
+            label: "Ring-in opens in",
+            tone: "wait",
+            ms: start - elapsed,
+            bar: { pct: 0, extra: "", expired: false },
+          };
+        }
+        const remaining = Math.max(0, start + window_ - elapsed);
+        return {
+          label: retry ? "Waiting for a ring-in (second chance)" : "Waiting for a ring-in",
+          tone: "wait",
+          ms: remaining,
+          bar: {
+            pct: window_ ? Math.min(100, (100 * remaining) / window_) : 0,
+            extra: "",
+            expired: false,
+          },
+        };
+      }
+
+      // The buttons for whatever state the clue is in.
+      function liveActionsHtml(gs, clue, idPrefix) {
         if (clue.is_crit_boost && gs.clue_phase !== "revealed") {
-          html += `
+          return `
             <div class="row-line">
-              <input type="number" id="crit-boost-wager-input" min="0" max="${gs.crit_boost_max_wager}" placeholder="Wager (0–${gs.crit_boost_max_wager})" />
+              <input type="number" id="${idPrefix}crit-boost-wager-input" min="0" max="${gs.crit_boost_max_wager}" placeholder="Wager (0–${gs.crit_boost_max_wager})" />
               <button class="primary" onclick="setCritBoostWager()">Set Wager</button>
               <button class="primary" onclick="revealClue()" ${gs.crit_boost_wager === null ? "disabled" : ""}>
                 Reveal Clue
               </button>
               <button class="primary" onclick="deselectClue()">Deselect Clue</button>
             </div>`;
-          return html;
         }
-
         if (gs.clue_phase !== "revealed") {
-          if (gs.auto_reveal_remaining_ms !== null) {
-            html += `<div class="status-line" id="auto-reveal-countdown"></div>`;
-          }
-          html += `
+          return `
             <div class="row-line">
               <button class="primary" onclick="revealClue()">Reveal Clue</button>
               <button class="primary" onclick="deselectClue()">Deselect Clue</button>
             </div>`;
-          return html;
         }
-
-        if (clue.is_crit_boost) {
-          html += `<div class="status-line">Wager: ${gs.crit_boost_wager}</div>`;
-        }
-
-        if (gs.buzzed_player) {
-          html += `<div class="status-line">${gs.players[gs.buzzed_player].name} is answering</div>`;
-          html += `
+        const judgeRow = `
             <div class="row-line">
-              <button class="primary" onclick="judge(true)">Correct</button>
-              <button class="primary" onclick="judge(false)">Incorrect</button>
-            </div>
+              <button class="primary good" onclick="judge(true)">Correct</button>
+              <button class="primary bad" onclick="judge(false)">Incorrect</button>
+            </div>`;
+        if (gs.buzzed_player) {
+          return (
+            judgeRow +
+            `
             <div class="row-line">
               ${
                 gs.answer_timer_running
@@ -1527,30 +1766,107 @@
               <button class="primary" onclick="stopAnswerTimer()">Stop</button>
               <button class="primary" onclick="resetAnswerTimer()">Reset</button>
               <button class="primary" onclick="clearAnswerTimer()">Clear</button>
-            </div>`;
-        } else if (clue.is_crit_boost) {
-          // Timer was cleared — still judgeable via board control.
-          html += `
-            <div class="row-line">
-              <button class="primary" onclick="judge(true)">Correct</button>
-              <button class="primary" onclick="judge(false)">Incorrect</button>
-            </div>`;
-        } else {
-          html += `<div class="status-line">Waiting for a ring-in...</div>`;
-          // The host can give the floor to any player who's still in on
-          // this clue, even after the ring-in window has closed.
-          html +=
-            '<div class="row-line">' +
-            PLAYERS.map((p) => {
-              const status = gs.players[p];
-              return `<button class="primary" onclick="hostRingIn('${p}')" ${
-                status.locked_out ? 'disabled title="Already answered this clue wrong"' : ""
-              }>Ring In for ${status.name}</button>`;
-            }).join("") +
-            "</div>";
-          html += `<button class="primary" onclick="noOneAnswered()">No One Answered</button>`;
+            </div>`
+          );
         }
-        return html;
+        if (clue.is_crit_boost) return judgeRow; // timer cleared: still judgeable
+        // The host can give the floor to any player who's still in on this
+        // clue, even after the ring-in window has closed.
+        return (
+          '<div class="row-line">' +
+          PLAYERS.map((p) => {
+            const status = gs.players[p];
+            return `<button class="primary" onclick="hostRingIn('${p}')" ${
+              status.locked_out ? 'disabled title="Already answered this clue wrong"' : ""
+            }>Ring In for ${status.name}</button>`;
+          }).join("") +
+          "</div>" +
+          `<div class="row-line"><button class="primary" onclick="noOneAnswered()">No One Answered</button></div>`
+        );
+      }
+
+      // The banner (label, seconds, bar) changes state and ticks; the clue
+      // and its buttons only change when the buttons themselves do. They're
+      // drawn separately so that a state change in the banner (the ring-in
+      // window opening, say) never rebuilds a button under a press.
+      function liveClueView(gs, idPrefix) {
+        const cat = gs.categories[gs.selected_category_index];
+        const clue = cat.clues[gs.selected_clue_index];
+        const b = liveBanner(gs, clue);
+        const bannerHtml =
+          `<div class="live-banner tone-${b.tone}"><span class="live-label">${b.label}</span>` +
+          `<span class="live-seconds">${b.ms !== undefined ? fmtSecs(b.ms) : ""}</span></div>` +
+          (b.bar
+            ? `<div class="live-bar">${countdownBarHtml(b.bar.pct, b.bar.extra, b.bar.expired)}</div>`
+            : "");
+        let html = '<div class="live-banner-slot"></div>';
+        html += `<div class="live-clue-head">${cat.name} — ${clue.value}${
+          clue.is_crit_boost ? " · Crit Boost" : ""
+        }</div>`;
+        if (clue.is_crit_boost && gs.clue_phase === "revealed") {
+          html += `<div class="live-wager">Wager: ${gs.crit_boost_wager}</div>`;
+        }
+        html += `<div class="live-clue-text">${clue.text}</div>`;
+        html += `<div class="live-clue-answer">Answer: ${clue.answer}</div>`;
+        html += liveActionsHtml(gs, clue, idPrefix);
+        return { html, bannerHtml };
+      }
+
+      // idPrefix keeps element ids unique, since Control and Host each render
+      // their own copy of this panel.
+      function renderLiveClue(statusEl, gs, idPrefix = "") {
+        const view = liveClueView(gs, idPrefix);
+        setHtml(statusEl, view.html);
+        setHtml(statusEl.querySelector(".live-banner-slot"), view.bannerHtml);
+      }
+
+      // ----- Host view: the live show, without the setup -----
+
+      function renderHost() {
+        if (!controlState) return;
+        const gs = controlState;
+        const isFinal = gs.current_round === "final";
+        document.getElementById("host-round-status").textContent =
+          `${roundLabel(gs.current_round)} — Board control: ` +
+          (gs.board_control ? gs.players[gs.board_control].name : "none");
+        document.getElementById("host-board-fieldset").hidden = isFinal;
+        document.getElementById("host-final-fieldset").hidden = !isFinal;
+        if (!isFinal) {
+          renderCategoryHeaders("host-board-headers", gs, {
+            clickable: true,
+            showHiddenNames: true,
+          });
+          setHtml(
+            document.getElementById("host-board"),
+            boardHtml(gs, { clickable: true })
+          );
+        }
+        const clueFieldset = document.getElementById("host-clue-fieldset");
+        if (!isFinal && gs.selected_category_index !== null) {
+          clueFieldset.hidden = false;
+          renderLiveClue(document.getElementById("host-clue-status"), gs, "host-");
+        } else {
+          clueFieldset.hidden = true;
+        }
+        if (isFinal) {
+          setHtml(document.getElementById("host-final"), controlFinalHtml(gs));
+        }
+        setHtml(
+          document.getElementById("host-scoreboard"),
+          PLAYERS.map((p) => {
+            const status = gs.players[p];
+            const has = gs.board_control === p;
+            return `
+              <div class="host-player${has ? " has-control" : ""}">
+                <div class="hp-name">${status.name}</div>
+                <div class="hp-score ${scoreClass(status.score)}">${status.score}</div>
+                <button class="primary" onclick="setBoardControl('${p}')" ${has ? "disabled" : ""}>
+                  ${has ? "Has control" : "Give control"}
+                </button>
+              </div>`;
+          }).join("") +
+            `<div class="host-player"><button class="primary" onclick="setBoardControl(null)">Clear control</button></div>`
+        );
       }
 
       function controlFinalHtml(gs) {

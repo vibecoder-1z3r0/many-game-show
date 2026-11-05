@@ -27,7 +27,7 @@ screen can be opened, closed or refreshed at any time.
 | **Squad Squabble** | A Family-Feud-style survey game: two teams, a face-off for control, answers revealed against a survey board, strikes, and a round pot awarded to a team. | Main, Control |
 | **Speed Points** | A Fast-Money-style relay: two players answer the same five questions against a countdown, a judge types and scores each answer, and a two-step reveal checks the combined score against a win threshold. | Main, Host, Judge |
 | **Big Tokens** | A board game on a ring of 18 squares: a chase light runs around the board and each player stops it with their own button. Squares pay or steal tokens, hand out free spins, or give you a hallucination — collect too many and you're out. | Main, Control, Player 1–3 |
-| **Overdrive** | A Jeopardy-style trivia game: reveal the categories, pick a clue, and the three players race to ring in from their own devices before the window closes. Includes a wager-before-you-see-it clue (Crit Boost), a second round and a Final Exam. | Main, Control, Player 1–3 |
+| **Overdrive** | A Jeopardy-style trivia game: reveal the categories, pick a clue, and the three players race to ring in from their own devices before the window closes. Includes a wager-before-you-see-it clue (Crit Boost), a second round and a Final Exam. | Main, Host, Control, Player 1–3 |
 
 | Squad Squabble | Speed Points |
 |---|---|
@@ -40,6 +40,13 @@ screen can be opened, closed or refreshed at any time.
 | Squad Squabble Control (host) | Overdrive clue on Main |
 |---|---|
 | ![Squad Squabble Control view](./docs/screenshots/squad-squabble-control.png) | ![Overdrive clue on the Main view](./docs/screenshots/overdrive-clue.png) |
+
+Overdrive's **Host** view is where the show is run: the live clue with its
+countdown, the answer and the judge buttons sit at the top, with scores,
+board control and the board below. **Control** keeps the same live panel but
+also holds setup (content banks, timing) in collapsible sections.
+
+![Overdrive Host view during a live clue](./docs/screenshots/overdrive-host.png)
 
 Every page has a theme picker; here is Squad Squabble in the high-contrast
 **stage** theme meant for a projector:

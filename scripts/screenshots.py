@@ -206,6 +206,21 @@ def main() -> None:
                     "overdrive-clue",
                     f"/overdrive.html?id={ids['overdrive']}&view=main",
                 )
+                # The host's live view of that same clue: a short start delay
+                # and a long window, so the countdown bar is up and steady.
+                patch(
+                    "overdrive",
+                    ids["overdrive"],
+                    "ring-in-settings",
+                    {"start_delay_ms": 0, "window_ms": 60000},
+                )
+                page.set_viewport_size({"width": VIEWPORT["width"], "height": 900})
+                shot(
+                    page,
+                    "overdrive-host",
+                    f"/overdrive.html?id={ids['overdrive']}&view=host",
+                    wait_ms=1500,
+                )
                 page.goto(
                     f"{BASE}/squad-squabble.html?id={ids['squad-squabble']}&view=main"
                 )

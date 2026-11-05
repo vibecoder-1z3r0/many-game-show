@@ -23,8 +23,19 @@ def _goto(live_server: str, page: Page, game_id: str, view: str) -> None:
     page.goto(f"{live_server}/overdrive.html?id={game_id}&view={view}")
 
 
+def _open_setup(page: Page) -> None:
+    """Content and Timing are collapsed on Control; expand them to edit."""
+    page.evaluate(
+        "document.querySelectorAll('details.setup-details')"
+        ".forEach((d) => { d.open = true; })"
+    )
+
+
 def _select_clue(page: Page, category_index: int, clue_index: int) -> None:
-    page.click(f'.clue-cell[onclick="selectClue({category_index}, {clue_index})"]')
+    # Control and Host each have a board in the DOM; click the visible one.
+    page.locator(
+        f'.clue-cell[onclick="selectClue({category_index}, {clue_index})"]:visible'
+    ).first.click()
 
 
 def _reveal_clue(page: Page) -> None:
@@ -115,7 +126,7 @@ def test_board_values_show_as_plain_points_no_dollar_sign(
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
 
-    cell = page.locator('.clue-cell[onclick="selectClue(1, 0)"]')
+    cell = page.locator('#control-board .clue-cell[onclick="selectClue(1, 0)"]')
     expect(cell).to_have_text("200")
     expect(page.locator("#control-board")).not_to_contain_text("$")
 
@@ -502,6 +513,7 @@ def test_control_can_swap_banks_until_the_round_starts(
 ) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
+    _open_setup(page)
     for select_id in ("#bank-round1", "#bank-round2", "#bank-final"):
         expect(page.locator(select_id)).to_be_enabled()
 
@@ -547,6 +559,7 @@ def test_bank_dropdowns_list_each_banks_categories(
 
     page.get_by_role("button", name="Create game").click()
     page.wait_for_url("**/overdrive.html?id=*&view=control")
+    _open_setup(page)
     expect(page.locator("#bank-round1 option[value=classic]")).to_contain_text(
         "(Git Happens, HTTP Status Quo"
     )
@@ -557,6 +570,7 @@ def test_control_timing_fields_show_the_current_defaults(
 ) -> None:
     game_id = _create_game(live_server, page, game_defaults=True)
     _goto(live_server, page, game_id, "control")
+    _open_setup(page)
     expect(page.locator("#ring-start-input")).to_have_value("2500")
     expect(page.locator("#ring-window-input")).to_have_value("10000")
     expect(page.locator("#answer-time-input")).to_have_value("10000")
@@ -564,6 +578,7 @@ def test_control_timing_fields_show_the_current_defaults(
     page.fill("#answer-time-input", "12000")
     page.get_by_role("button", name="Apply Global").nth(1).click()
     page.reload()
+    _open_setup(page)
     expect(page.locator("#answer-time-input")).to_have_value("12000")
 
 
@@ -628,6 +643,7 @@ def test_auto_reveal_setting_counts_down_and_reveals_the_clue(
 ) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
+    _open_setup(page)
     expect(page.locator("#auto-reveal-input")).to_have_value("0")
 
     page.fill("#auto-reveal-input", "1500")
@@ -635,7 +651,10 @@ def test_auto_reveal_setting_counts_down_and_reveals_the_clue(
     expect(page.locator("#auto-reveal-input")).not_to_be_focused()
 
     _select_clue(page, 1, 0)
-    expect(page.locator("#auto-reveal-countdown")).to_contain_text("Auto-revealing in")
+    expect(page.locator("#control-clue-status .live-label")).to_contain_text(
+        "Auto-revealing in"
+    )
+    expect(page.locator("#control-clue-status .live-seconds")).to_contain_text("s")
     expect(page.locator("#control-clue-status")).to_contain_text(
         "Waiting for a ring-in", timeout=5000
     )
@@ -780,6 +799,11 @@ def test_control_and_player_buttons_survive_polling_untouched(
     _goto(live_server, page, game_id, "control")
     _select_clue(page, 1, 0)
     _reveal_clue(page)
+    # Let the ring-in window open first: that one state change legitimately
+    # redraws the banner; after it, polling must leave the buttons alone.
+    expect(page.locator("#control-clue-status .live-label")).to_contain_text(
+        "Waiting for a ring-in"
+    )
     no_one = page.get_by_role("button", name="No One Answered")
     no_one.evaluate("el => { el.dataset.keep = '1'; }")
     page.wait_for_timeout(900)  # ring-in elapsed ticks the whole time
@@ -799,6 +823,7 @@ def test_control_shows_and_saves_the_retry_ring_in_timing(
 ) -> None:
     game_id = _create_game(live_server, page, game_defaults=True)
     _goto(live_server, page, game_id, "control")
+    _open_setup(page)
     expect(page.locator("#retry-start-input")).to_have_value("0")
     expect(page.locator("#retry-window-input")).to_have_value("10000")
 
@@ -806,7 +831,164 @@ def test_control_shows_and_saves_the_retry_ring_in_timing(
     page.fill("#retry-window-input", "7000")
     page.get_by_role("button", name="Set Retry Ring-in").click()
     page.reload()
+    _open_setup(page)
     expect(page.locator("#retry-start-input")).to_have_value("400")
     expect(page.locator("#retry-window-input")).to_have_value("7000")
     # The first window's own settings are unchanged.
     expect(page.locator("#ring-start-input")).to_have_value("2500")
+
+
+# ----- Host view and the live clue panel -----
+
+
+def _reveal_via_api(
+    live_server: str, page: Page, game_id: str, cat: int, clue: int
+) -> None:
+    api = f"{live_server}/api/overdrive/games/{game_id}"
+    page.request.patch(
+        f"{api}/select-clue", data={"category_index": cat, "clue_index": clue}
+    )
+    page.request.patch(f"{api}/reveal-clue")
+
+
+def test_host_tab_shows_round_scores_and_a_clickable_board(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "host")
+    expect(page.locator("#tab-host")).to_have_class(re.compile("active"))
+    expect(page.locator("#host-round-status")).to_contain_text("Round 1")
+    expect(page.locator("#host-scoreboard .host-player")).to_have_count(4)  # 3 + clear
+    expect(page.locator("#host-board .clue-cell")).to_have_count(30)
+
+    # Categories flip and clues select from the Host board too.
+    flip = page.locator("#host-board-headers .cat-header-flip").nth(1)
+    flip.click()
+    expect(flip).to_have_class(re.compile("flipped"))
+    _select_clue(page, 1, 0)
+    expect(page.locator("#host-clue-fieldset")).to_be_visible()
+    expect(page.locator("#host-clue-status")).to_contain_text("HTTP Status Quo")
+
+
+def test_host_banner_counts_down_the_ring_in_window(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    _goto(live_server, page, game_id, "host")
+
+    status = page.locator("#host-clue-status")
+    expect(status.locator(".live-label")).to_contain_text("Waiting for a ring-in")
+    seconds = status.locator(".live-seconds")
+    expect(seconds).to_have_text(re.compile(r"^\d+\.\ds$"))
+    first = float(seconds.inner_text().rstrip("s"))
+    page.wait_for_timeout(1200)
+    assert float(seconds.inner_text().rstrip("s")) < first  # it ticks down
+    expect(status.locator(".live-bar .countdown-track")).to_have_count(1)
+
+
+def test_host_banner_turns_to_time_up_when_no_one_rings_in(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    page.request.patch(
+        f"{live_server}/api/overdrive/games/{game_id}/ring-in-settings",
+        data={"start_delay_ms": 0, "window_ms": 800},
+    )
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    _goto(live_server, page, game_id, "host")
+    banner = page.locator("#host-clue-status .live-banner")
+    expect(banner).to_have_class(re.compile("tone-alert"), timeout=6000)
+    expect(banner).to_contain_text("no one rang in")
+    expect(page.locator("#host-clue-status .countdown-track")).to_have_class(
+        re.compile("expired")
+    )
+
+
+def test_host_can_run_a_clue_start_to_finish(live_server: str, page: Page) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "host")
+    _select_clue(page, 1, 0)
+    page.locator("#host-clue-fieldset").get_by_role(
+        "button", name="Reveal Clue"
+    ).click()
+    ring_in = page.locator("#host-clue-fieldset").get_by_role(
+        "button", name="Ring In for Player 2"
+    )
+    ring_in.click()
+    banner = page.locator("#host-clue-status .live-banner")
+    expect(banner).to_contain_text("Player 2 is answering")
+    expect(banner).to_have_class(re.compile("tone-go"))
+    expect(page.locator("#host-clue-status .live-seconds")).to_have_text(
+        re.compile(r"^\d+\.\ds$")
+    )
+
+    page.locator("#host-clue-fieldset").get_by_role(
+        "button", name="Correct", exact=True
+    ).click()
+    expect(page.locator("#host-clue-fieldset")).to_be_hidden()
+    player2 = page.locator("#host-scoreboard .host-player").nth(1)
+    expect(player2).to_contain_text("200")
+    expect(player2).to_have_class(re.compile("has-control"))
+    expect(player2.get_by_role("button", name="Has control")).to_be_disabled()
+
+
+def test_a_wrong_answer_shows_the_second_chance_window_on_the_host_banner(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    _goto(live_server, page, game_id, "host")
+    panel = page.locator("#host-clue-fieldset")
+    panel.get_by_role("button", name="Ring In for Player 1").click()
+    panel.get_by_role("button", name="Incorrect").click()
+    expect(panel.locator(".live-label")).to_contain_text("second chance")
+    expect(panel.get_by_role("button", name="Ring In for Player 1")).to_be_disabled()
+    expect(panel.get_by_role("button", name="Ring In for Player 3")).to_be_enabled()
+
+
+def test_host_buttons_survive_a_press_held_across_polls(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    _goto(live_server, page, game_id, "host")
+    button = page.locator("#host-clue-fieldset").get_by_role(
+        "button", name="Ring In for Player 3"
+    )
+    expect(button).to_be_enabled()
+    button.hover()
+    page.mouse.down()
+    page.wait_for_timeout(700)
+    page.mouse.up()
+    expect(page.locator("#host-clue-status .live-label")).to_contain_text(
+        "Player 3 is answering"
+    )
+
+
+def test_control_puts_the_clue_in_play_above_the_board_and_collapses_setup(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _goto(live_server, page, game_id, "control")
+    details = page.locator("details.setup-details")
+    expect(details).to_have_count(2)  # Content, Timing
+    for i in range(2):
+        assert details.nth(i).evaluate("el => el.open") is False
+
+    _select_clue(page, 1, 0)
+    expect(page.locator("#control-clue-status .live-banner")).to_be_visible()
+    clue_y = page.locator("#control-clue-fieldset").bounding_box()["y"]
+    board_y = page.locator("#control-board-fieldset").bounding_box()["y"]
+    assert clue_y < board_y  # the live panel is above the board
+    expect(page.locator("#control-clue-status .live-banner")).to_be_visible()
+
+
+def test_lobby_overdrive_card_links_to_the_host_view(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    page.goto(live_server)
+    expect(
+        page.locator(f'a[href="/overdrive.html?id={game_id}&view=host"]')
+    ).to_have_text("Host")
