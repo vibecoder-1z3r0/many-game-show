@@ -1,9 +1,11 @@
 """Overdrive — /api/overdrive/games/* endpoints."""
 
+import base64
+import binascii
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlmodel import Field, Session, SQLModel, select
 
 from manygameshow.database import get_session
@@ -34,7 +36,10 @@ from manygameshow.models.overdrive import (
     clue_phase,
     crit_boost_max_wager,
     current_bank,
+    final_answer_remaining_ms,
+    final_answers_open,
     final_bank_content,
+    final_entries,
     final_entry,
     is_selected_crit_boost,
     player_score,
@@ -84,13 +89,19 @@ def _save(game: OverdriveGame, session: Session) -> OverdriveGame:
 
 
 def _final_entry_read(entry: FinalEntry) -> FinalEntryRead:
+    """What anyone may see: the wager once it's been displayed, the answer
+    once it's been revealed — never earlier, even to the host."""
     return FinalEntryRead(
         eligible=entry.eligible,
-        submitted=entry.submitted,
+        wager_submitted=entry.wager_submitted,
+        answer_submitted=entry.answer_submitted,
+        wager_revealed=entry.wager_revealed,
         revealed=entry.revealed,
-        wager=entry.wager if entry.revealed else None,
+        wager=entry.wager if entry.wager_revealed else None,
         answer=entry.answer if entry.revealed else None,
+        has_drawing=bool(entry.drawing) and entry.revealed,
         correct=entry.correct if entry.revealed else None,
+        delta=entry.delta,
     )
 
 
@@ -141,10 +152,19 @@ def _categories_read(game: OverdriveGame, *, show_all: bool) -> list[CategoryRea
 
 
 def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRead:
+    final_phase: str | None = None
     final_category: str | None = None
     final_text: str | None = None
+    final_answer: str | None = None
     if game.current_round == RoundName.FINAL:
-        final_category, final_text, _ = final_bank_content(game)
+        final_phase = game.final_phase
+        category, text, answer = final_bank_content(game)
+        if final_phase != "intro":
+            final_category = category
+        if final_phase in ("clue", "reveal", "standings"):
+            final_text = text
+            if show_all:
+                final_answer = answer
 
     def player_status(player: Player) -> PlayerStatusRead:
         score = player_score(game, player)
@@ -190,8 +210,13 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
         ring_in_retry_start_delay_ms=game.ring_in_retry_start_delay_ms,
         ring_in_retry_window_ms=game.ring_in_retry_window_ms,
         answer_time_ms=game.answer_time_ms,
+        final_phase=final_phase,
         final_category=final_category,
         final_text=final_text,
+        final_answer=final_answer,
+        final_answer_time_ms=game.final_answer_time_ms,
+        final_answer_remaining_ms=final_answer_remaining_ms(game),
+        final_display_player=game.final_display_player,
         final_entries={
             p.value: _final_entry_read(final_entry(game, p)) for p in ALL_PLAYERS
         },
@@ -679,38 +704,138 @@ def start_final(game_id: str, session: SessionDep) -> OverdriveGameRead:
     game.current_round = RoundName.FINAL
     _clear_selected(game)
     game.board_control = None
+    game.final_phase = "intro"
+    game.final_clue_revealed_at = None
+    game.final_display_player = None
     for player in ALL_PLAYERS:
         eligible = player_score(game, player).score > 0
         set_final_entry(game, player, FinalEntry(eligible=eligible))
     return _to_read(_save(game, session), show_all=True)
 
 
-class FinalSubmitBody(SQLModel):
-    player: Player
-    wager: int = Field(ge=0)
-    answer: str
-
-
-@router.patch("/{game_id}/final-submit", response_model=OverdriveGameRead)
-def final_submit(
-    game_id: str, body: FinalSubmitBody, session: SessionDep
-) -> OverdriveGameRead:
-    """Self-serve: the player's own device submits their wager+answer
-    once. Hidden from everyone — Main, Control, and the other players —
-    until the host triggers final-reveal for this player."""
-    game = _get_game(game_id, session)
+def _require_final(game: OverdriveGame, *phases: str) -> None:
     if game.current_round != RoundName.FINAL:
         raise HTTPException(status_code=400, detail="Not in Final Exam")
+    if phases and game.final_phase not in phases:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Not available right now (Final Exam is at: {game.final_phase})",
+        )
+
+
+@router.patch("/{game_id}/final-reveal-category", response_model=OverdriveGameRead)
+def final_reveal_category(game_id: str, session: SessionDep) -> OverdriveGameRead:
+    """Show the category; this is what opens the players' wagers."""
+    game = _get_game(game_id, session)
+    _require_final(game, "intro")
+    game.final_phase = "category"
+    return _to_read(_save(game, session), show_all=True)
+
+
+class FinalWagerBody(SQLModel):
+    player: Player
+    wager: int = Field(ge=0)
+
+
+@router.patch("/{game_id}/final-wager", response_model=OverdriveGameRead)
+def final_wager(
+    game_id: str, body: FinalWagerBody, session: SessionDep
+) -> OverdriveGameRead:
+    """Self-serve: a player's device locks in their wager once, after the
+    category is shown. Hidden from everyone until the host displays it."""
+    game = _get_game(game_id, session)
+    _require_final(game, "category")
     entry = final_entry(game, body.player)
     if not entry.eligible:
         raise HTTPException(status_code=400, detail="Not eligible for Final Exam")
-    if entry.submitted:
-        raise HTTPException(status_code=400, detail="Already submitted")
+    if entry.wager_submitted:
+        raise HTTPException(status_code=400, detail="Wager already submitted")
     if body.wager > player_score(game, body.player).score:
         raise HTTPException(status_code=422, detail="Wager can't exceed current score")
     entry.wager = body.wager
-    entry.answer = body.answer
-    entry.submitted = True
+    entry.wager_submitted = True
+    set_final_entry(game, body.player, entry)
+    return _to_read(_save(game, session))
+
+
+class FinalRevealClueBody(SQLModel):
+    force: bool = False
+
+
+@router.patch("/{game_id}/final-reveal-clue", response_model=OverdriveGameRead)
+def final_reveal_clue(
+    game_id: str, session: SessionDep, body: FinalRevealClueBody | None = None
+) -> OverdriveGameRead:
+    """Show the clue and start the answer timer — once every eligible
+    player has wagered. With force, anyone still missing wagers 0."""
+    game = _get_game(game_id, session)
+    _require_final(game, "category")
+    waiting = [
+        p
+        for p, e in final_entries(game).items()
+        if e.eligible and not e.wager_submitted
+    ]
+    force = body is not None and body.force
+    if waiting and not force:
+        names = ", ".join(player_score(game, p).name for p in waiting)
+        raise HTTPException(status_code=400, detail=f"Waiting for wagers from: {names}")
+    for p in waiting:
+        entry = final_entry(game, p)
+        entry.wager = 0
+        entry.wager_submitted = True
+        set_final_entry(game, p, entry)
+    game.final_phase = "clue"
+    game.final_clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
+    return _to_read(_save(game, session), show_all=True)
+
+
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+_MAX_DRAWING_CHARS = 250_000  # base64 text: roughly 180 KB of PNG
+
+
+def _clean_drawing(raw: str) -> str:
+    """Accept a PNG as a data URL or bare base64; return bare base64 or
+    raise 422. Only a real, size-capped PNG is ever stored."""
+    data = raw.removeprefix("data:image/png;base64,").strip()
+    if len(data) > _MAX_DRAWING_CHARS:
+        raise HTTPException(status_code=422, detail="Drawing is too large")
+    try:
+        decoded = base64.b64decode(data, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=422, detail="Drawing isn't valid") from None
+    if not decoded.startswith(_PNG_SIGNATURE):
+        raise HTTPException(status_code=422, detail="Drawing must be a PNG")
+    return data
+
+
+class FinalAnswerBody(SQLModel):
+    player: Player
+    text: str | None = None
+    drawing: str | None = None
+
+
+@router.patch("/{game_id}/final-answer", response_model=OverdriveGameRead)
+def final_answer(
+    game_id: str, body: FinalAnswerBody, session: SessionDep
+) -> OverdriveGameRead:
+    """Self-serve: a player's device submits their answer — typed, drawn,
+    or both — once the clue is up and until the timer runs out."""
+    game = _get_game(game_id, session)
+    _require_final(game, "clue")
+    entry = final_entry(game, body.player)
+    if not entry.eligible:
+        raise HTTPException(status_code=400, detail="Not eligible for Final Exam")
+    if entry.answer_submitted:
+        raise HTTPException(status_code=400, detail="Answer already submitted")
+    if not final_answers_open(game):
+        raise HTTPException(status_code=400, detail="Time's up — answers are locked")
+    text = (body.text or "").strip()
+    drawing = _clean_drawing(body.drawing) if body.drawing else None
+    if not text and not drawing:
+        raise HTTPException(status_code=422, detail="Type or draw an answer")
+    entry.answer = text or None
+    entry.drawing = drawing
+    entry.answer_submitted = True
     set_final_entry(game, body.player, entry)
     return _to_read(_save(game, session))
 
@@ -719,16 +844,39 @@ class FinalPlayerBody(SQLModel):
     player: Player
 
 
-@router.patch("/{game_id}/final-reveal", response_model=OverdriveGameRead)
-def final_reveal(
+@router.patch("/{game_id}/final-display", response_model=OverdriveGameRead)
+def final_display(
     game_id: str, body: FinalPlayerBody, session: SessionDep
 ) -> OverdriveGameRead:
+    """Put one player's Final Exam on Main — their wager first. Players can
+    be shown in any order; this also closes answering."""
     game = _get_game(game_id, session)
+    _require_final(game, "clue", "reveal")
     entry = final_entry(game, body.player)
-    if not entry.submitted:
-        raise HTTPException(status_code=400, detail="That player hasn't submitted yet")
+    if not entry.eligible:
+        raise HTTPException(status_code=400, detail="Not eligible for Final Exam")
+    entry.wager_revealed = True
+    set_final_entry(game, body.player, entry)
+    game.final_display_player = body.player
+    game.final_phase = "reveal"
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/final-reveal-answer", response_model=OverdriveGameRead)
+def final_reveal_answer(
+    game_id: str, body: FinalPlayerBody, session: SessionDep
+) -> OverdriveGameRead:
+    """Reveal the displayed player's answer, after their wager. A player who
+    never answered reveals as a blank answer (judged incorrect)."""
+    game = _get_game(game_id, session)
+    _require_final(game, "reveal")
+    entry = final_entry(game, body.player)
+    if not entry.eligible or not entry.wager_revealed:
+        raise HTTPException(status_code=400, detail="Display that player first")
+    entry.answer_submitted = True
     entry.revealed = True
     set_final_entry(game, body.player, entry)
+    game.final_display_player = body.player
     return _to_read(_save(game, session), show_all=True)
 
 
@@ -741,19 +889,60 @@ class FinalJudgeBody(SQLModel):
 def final_judge(
     game_id: str, body: FinalJudgeBody, session: SessionDep
 ) -> OverdriveGameRead:
+    """Correct adds the wager to that player's score, incorrect (or no
+    answer) subtracts it. Each player is judged on their own, in any order."""
     game = _get_game(game_id, session)
     entry = final_entry(game, body.player)
     if not entry.revealed:
         raise HTTPException(status_code=400, detail="Reveal before judging")
     if entry.correct is not None:
         raise HTTPException(status_code=400, detail="Already judged")
-    entry.correct = body.correct
     assert entry.wager is not None
+    entry.correct = body.correct
+    entry.delta = entry.wager if body.correct else -entry.wager
     score = player_score(game, body.player)
-    score.score += entry.wager if body.correct else -entry.wager
+    score.score += entry.delta
     set_player_score(game, body.player, score)
     set_final_entry(game, body.player, entry)
     return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/final-standings", response_model=OverdriveGameRead)
+def final_standings(game_id: str, session: SessionDep) -> OverdriveGameRead:
+    """Finish up: Main shows the winner and final standings. Needs every
+    eligible player judged."""
+    game = _get_game(game_id, session)
+    _require_final(game, "reveal")
+    if any(e.eligible and e.correct is None for e in final_entries(game).values()):
+        raise HTTPException(status_code=400, detail="Judge every player first")
+    game.final_phase = "standings"
+    game.final_display_player = None
+    return _to_read(_save(game, session), show_all=True)
+
+
+class FinalAnswerTimeBody(SQLModel):
+    window_ms: int = Field(ge=0, le=300000)
+
+
+@router.patch("/{game_id}/final-answer-time-settings", response_model=OverdriveGameRead)
+def set_final_answer_time(
+    game_id: str, body: FinalAnswerTimeBody, session: SessionDep
+) -> OverdriveGameRead:
+    """How long players get to answer once the clue is shown; 0 = no timer."""
+    game = _get_game(game_id, session)
+    game.final_answer_time_ms = body.window_ms
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.get("/{game_id}/final-drawing/{player}")
+def final_drawing(game_id: str, player: Player, session: SessionDep) -> Response:
+    """A revealed answer's drawing, as a PNG (kept out of the polled state
+    so it isn't re-sent every 200ms). 404 until the host reveals it."""
+    game = _get_game(game_id, session)
+    entry = final_entry(game, player)
+    if not entry.revealed or not entry.drawing:
+        raise HTTPException(status_code=404, detail="No drawing to show")
+    return Response(content=base64.b64decode(entry.drawing), media_type="image/png")
 
 
 class RingInSettingsBody(SQLModel):
@@ -936,4 +1125,7 @@ def reset_game(game_id: str, session: SessionDep) -> OverdriveGameRead:
     reset_board_for_round(game, RoundName.ROUND1)
     for player in ALL_PLAYERS:
         set_final_entry(game, player, FinalEntry())
+    game.final_phase = "intro"
+    game.final_clue_revealed_at = None
+    game.final_display_player = None
     return _to_read(_save(game, session), show_all=True)

@@ -448,36 +448,186 @@ def test_crit_boost_is_timed_but_starts_manually(live_server: str, page: Page) -
     expect(page.locator("#control-players")).to_contain_text("500")
 
 
-def test_final_exam_self_serve_submit_reveal_and_judge(
+def _final_game(live_server: str, page: Page, scores: dict[str, int]) -> str:
+    game_id = _create_game(live_server, page)
+    for player, score in scores.items():
+        resp = page.request.patch(
+            f"{live_server}/api/overdrive/games/{game_id}/adjust-score",
+            data={"player": player, "score": score},
+        )
+        assert resp.ok
+    return game_id
+
+
+def _pad_wager(page: Page, player: str, digits: str) -> None:
+    for d in digits:
+        page.locator(f"#{player}-body .pad-key", has_text=re.compile(f"^{d}$")).click()
+    page.get_by_role("button", name="Lock in wager").click()
+
+
+def test_final_exam_full_flow_gate_any_order_and_per_player_scoring(
     live_server: str, page: Page
 ) -> None:
-    game_id = _create_game(live_server, page)
-    resp = page.request.patch(
-        f"{live_server}/api/overdrive/games/{game_id}/adjust-score",
-        data={"player": "player1", "score": 1000},
-    )
-    assert resp.ok
+    game_id = _final_game(live_server, page, {"player1": 1000, "player2": 600})
 
     _goto(live_server, page, game_id, "control")
     page.get_by_role("button", name="Start Final Exam").click()
-    expect(page.locator("#control-final")).to_contain_text("not eligible")
+    final = page.locator("#control-final")
+    expect(final).to_contain_text("Not playing")
+    final.get_by_role("button", name="Reveal category").click()
+
+    # The clue can't go out until everyone playing has wagered.
+    expect(final).to_contain_text("waiting for wager")
+    expect(final.get_by_role("button", name="Reveal clue")).to_have_count(0)
+    expect(final.get_by_role("button", name="Reveal anyway")).to_be_visible()
 
     _goto(live_server, page, game_id, "player1")
-    page.fill("#final-wager-player1", "300")
-    page.fill("#final-answer-player1", "Who is Ada Lovelace")
-    page.get_by_role("button", name="Submit").click()
-    expect(page.locator("#player1-body")).to_contain_text("Submitted! Waiting")
+    _pad_wager(page, "player1", "300")
+    expect(page.locator("#player1-body")).to_contain_text("Wager locked in")
+    _goto(live_server, page, game_id, "player2")
+    _pad_wager(page, "player2", "9999")  # more than the score: capped at 600
+    expect(page.locator("#player2-body")).to_contain_text("Wager locked in")
 
     _goto(live_server, page, game_id, "control")
-    expect(page.locator("#control-final")).to_contain_text("Player 1: submitted")
-    page.get_by_role("button", name="Reveal", exact=True).click()
-    expect(page.locator("#control-final")).to_contain_text("Ada Lovelace")
+    final.get_by_role("button", name="Reveal clue").click()
+    expect(final).to_contain_text("Answer:")
+    expect(final.locator(".hf-timer .countdown-track")).to_be_visible()
 
-    page.get_by_role("button", name="Correct", exact=True).click()
-    expect(page.locator("#control-players")).to_contain_text("1300")
+    for player, text in (("player1", "Who is Ada"), ("player2", "Who is Grace")):
+        _goto(live_server, page, game_id, player)
+        page.fill(f"#final-answer-{player}", text)
+        page.get_by_role("button", name="Lock in answer").click()
+        expect(page.locator(f"#{player}-body")).to_contain_text("Answer locked in")
+
+    # Player 2 first, though Player 1 was first to answer.
+    _goto(live_server, page, game_id, "control")
+    final.get_by_role("button", name="Display Player 2").click()
+    _goto(live_server, page, game_id, "main")
+    card = page.locator("#main-final-top")
+    expect(card).to_contain_text("Player 2")
+    expect(card).to_contain_text("wagered 600")
+    expect(card).not_to_contain_text("Who is Grace")  # wager first, answer later
+
+    _goto(live_server, page, game_id, "control")
+    final.get_by_role("button", name="Reveal answer").click()
+    final.get_by_role("button", name="Correct", exact=True).click()
+    expect(page.locator("#control-players")).to_contain_text("1200")
+    _goto(live_server, page, game_id, "main")
+    expect(page.locator("#main-final-top")).to_contain_text("Who is Grace")
+    expect(page.locator("#main-final-scores")).to_contain_text("+600")
+
+    _goto(live_server, page, game_id, "control")
+    final.get_by_role("button", name="Display Player 1").click()
+    final.get_by_role("button", name="Reveal answer").click()
+    final.get_by_role("button", name="Incorrect / No answer").click()
+    expect(page.locator("#control-players")).to_contain_text("700")
+
+    final.get_by_role("button", name="Show final standings").click()
+    _goto(live_server, page, game_id, "main")
+    expect(page.locator("#main-final-top")).to_contain_text("Player 2")
+    expect(page.locator("#main-final-scores .is-winner")).to_contain_text("1200")
+    expect(page.locator("#main-final-scores .not-playing")).to_contain_text(
+        "not playing"
+    )
+
+
+def test_final_exam_reveal_anyway_counts_missing_wager_as_zero(
+    live_server: str, page: Page
+) -> None:
+    game_id = _final_game(live_server, page, {"player1": 1000, "player2": 600})
+    _goto(live_server, page, game_id, "control")
+    page.get_by_role("button", name="Start Final Exam").click()
+    final = page.locator("#control-final")
+    final.get_by_role("button", name="Reveal category").click()
+    final.get_by_role("button", name="Reveal anyway").click()
+    expect(final).to_contain_text("Answer:")
+    _goto(live_server, page, game_id, "main")
+    top = page.locator("#main-final-top")
+    expect(top.locator(".final-clue")).to_be_visible()
+    expect(top.locator(".final-category-small")).to_be_visible()
+
+
+def test_final_exam_wager_pad_all_in_clear_and_backspace(
+    live_server: str, page: Page
+) -> None:
+    game_id = _final_game(live_server, page, {"player1": 450, "player2": 600})
+    _goto(live_server, page, game_id, "control")
+    page.get_by_role("button", name="Start Final Exam").click()
+    page.locator("#control-final").get_by_role("button", name="Reveal category").click()
 
     _goto(live_server, page, game_id, "player1")
-    expect(page.locator("#player1-body")).to_contain_text("Correct!")
+    readout = page.locator("#wager-readout-player1")
+    expect(readout).to_have_text("0")
+    page.locator("#player1-body .pad-key", has_text=re.compile("^7$")).click()
+    page.locator("#player1-body .pad-key", has_text=re.compile("^7$")).click()
+    expect(readout).to_have_text("77")
+    page.get_by_role("button", name="⌫").click()
+    expect(readout).to_have_text("7")
+    page.get_by_role("button", name="All in").click()
+    expect(readout).to_have_text("450")
+    page.get_by_role("button", name="Clear").click()
+    expect(readout).to_have_text("0")
+
+
+def test_final_exam_player_can_draw_the_answer_and_main_shows_it(
+    live_server: str, page: Page
+) -> None:
+    game_id = _final_game(live_server, page, {"player1": 1000})
+    _goto(live_server, page, game_id, "control")
+    page.get_by_role("button", name="Start Final Exam").click()
+    final = page.locator("#control-final")
+    final.get_by_role("button", name="Reveal category").click()
+    _goto(live_server, page, game_id, "player1")
+    _pad_wager(page, "player1", "100")
+    _goto(live_server, page, game_id, "control")
+    final.get_by_role("button", name="Reveal clue").click()
+
+    _goto(live_server, page, game_id, "player1")
+    page.get_by_role("button", name="Draw", exact=True).click()
+    pad = page.locator("#draw-pad-player1")
+    expect(pad).to_be_visible()
+    box = pad.bounding_box()
+    assert box is not None
+    page.mouse.move(box["x"] + 20, box["y"] + 20)
+    page.mouse.down()
+    page.mouse.move(box["x"] + 120, box["y"] + 80, steps=5)
+    page.mouse.up()
+    page.get_by_role("button", name="Lock in answer").click()
+    expect(page.locator("#player1-body")).to_contain_text("Answer locked in")
+
+    _goto(live_server, page, game_id, "control")
+    final.get_by_role("button", name="Display Player 1").click()
+    final.get_by_role("button", name="Reveal answer").click()
+    _goto(live_server, page, game_id, "main")
+    img = page.locator("#main-final-top .fc-answer img")
+    expect(img).to_be_visible()
+    assert img.evaluate("(el) => el.complete && el.naturalWidth") == 600
+
+
+def test_final_exam_answer_timer_runs_on_player_and_main(
+    live_server: str, page: Page
+) -> None:
+    game_id = _final_game(live_server, page, {"player1": 1000})
+    resp = page.request.patch(
+        f"{live_server}/api/overdrive/games/{game_id}/final-answer-time-settings",
+        data={"window_ms": 60000},
+    )
+    assert resp.ok
+    _goto(live_server, page, game_id, "control")
+    page.get_by_role("button", name="Start Final Exam").click()
+    final = page.locator("#control-final")
+    final.get_by_role("button", name="Reveal category").click()
+    _goto(live_server, page, game_id, "player1")
+    _pad_wager(page, "player1", "50")
+    _goto(live_server, page, game_id, "control")
+    final.get_by_role("button", name="Reveal clue").click()
+
+    _goto(live_server, page, game_id, "player1")
+    expect(page.locator("#player1-body .pv-timer .countdown-track")).to_be_visible()
+    _goto(live_server, page, game_id, "main")
+    expect(
+        page.locator("#main-final-top .final-timer .countdown-track")
+    ).to_be_visible()
 
 
 def test_board_control_manual_override_visible_on_main(

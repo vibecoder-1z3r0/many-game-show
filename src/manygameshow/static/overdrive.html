@@ -768,6 +768,224 @@
         gap: 0.5rem;
       }
 
+      /* ---------- Final Exam on Main: a fixed score pane below, the
+         category / clue / reveal above ---------- */
+
+      #main-final {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        min-height: calc(100vh - 8rem);
+      }
+
+      .final-top {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+        text-align: center;
+        padding: 1rem;
+      }
+
+      .final-title {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(2.5rem, 8vw, 6rem);
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .final-label {
+        font-size: clamp(1rem, 2.4vw, 1.6rem);
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .final-category {
+        font-size: clamp(2rem, 6vw, 4.5rem);
+        font-weight: 800;
+        color: var(--accent);
+        line-height: 1.15;
+      }
+
+      .final-sub {
+        font-size: clamp(1.1rem, 2.6vw, 1.8rem);
+        color: var(--text-dim);
+      }
+
+      .final-category-small {
+        font-size: clamp(1rem, 2.2vw, 1.5rem);
+        color: var(--accent);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .final-clue {
+        font-size: clamp(1.8rem, 5vw, 3.6rem);
+        font-weight: 700;
+        line-height: 1.3;
+        max-width: 60rem;
+      }
+
+      .final-timer {
+        width: min(36rem, 90%);
+        min-height: 3rem;
+      }
+
+      .final-timer .countdown-track {
+        max-width: none;
+        height: 1.4rem;
+      }
+
+      .final-timer .ft-secs {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 1.6rem;
+      }
+
+      /* Once players are being revealed, the clue moves up into a header. */
+      .final-header {
+        font-size: clamp(1rem, 2.2vw, 1.5rem);
+        color: var(--text-dim);
+        max-width: 60rem;
+        line-height: 1.3;
+      }
+
+      .final-header .fh-cat {
+        color: var(--accent);
+        font-weight: 700;
+        margin-right: 0.5rem;
+      }
+
+      .final-card {
+        width: min(46rem, 100%);
+        border: 2px solid var(--accent);
+        border-radius: 0.8rem;
+        padding: 1rem 1.4rem;
+        background: var(--panel);
+      }
+
+      .fc-name {
+        font-size: clamp(1.4rem, 3vw, 2.2rem);
+        font-weight: 800;
+      }
+
+      .fc-wager {
+        font-size: clamp(1.2rem, 2.6vw, 2rem);
+        color: var(--text-dim);
+        margin: 0.2rem 0 0.6rem;
+      }
+
+      .fc-wager strong {
+        font-family: "Orbitron", system-ui, sans-serif;
+        color: var(--accent);
+      }
+
+      .fc-answer {
+        min-height: 7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        background: var(--panel-2);
+        font-size: clamp(1.4rem, 3.4vw, 2.6rem);
+        font-weight: 700;
+        padding: 0.6rem 1rem;
+      }
+
+      .fc-answer.hidden-answer {
+        color: var(--text-dim);
+        font-weight: 400;
+      }
+
+      .fc-answer img {
+        max-width: 100%;
+        max-height: 16rem;
+        background: #fff;
+        border-radius: 0.4rem;
+      }
+
+      .fc-result {
+        margin-top: 0.6rem;
+        font-size: clamp(1.2rem, 2.8vw, 2rem);
+        font-weight: 800;
+        min-height: 2.2rem;
+      }
+
+      .fc-result.good {
+        color: var(--win-green);
+      }
+
+      .fc-result.bad {
+        color: var(--danger);
+      }
+
+      .final-winner {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(2rem, 6vw, 4.5rem);
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .final-scores {
+        display: flex;
+        gap: 0.8rem;
+      }
+
+      .final-score {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        border: 2px solid var(--border);
+        border-radius: 0.6rem;
+        background: var(--panel);
+        padding: 0.7rem 0.5rem;
+      }
+
+      .final-score.not-playing {
+        opacity: 0.45;
+      }
+
+      .final-score.is-shown {
+        border-color: var(--accent);
+      }
+
+      .final-score.is-winner {
+        border-color: var(--win-green);
+      }
+
+      .final-score .fs-name {
+        font-size: clamp(1rem, 2.2vw, 1.5rem);
+        font-weight: 700;
+      }
+
+      .final-score .fs-score {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: clamp(1.6rem, 4.4vw, 3.2rem);
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .final-score .fs-note {
+        min-height: 1.4rem;
+        font-size: 0.95rem;
+        color: var(--text-dim);
+      }
+
+      .final-score .fs-delta {
+        font-weight: 800;
+      }
+
+      .final-score .fs-delta.good {
+        color: var(--win-green);
+      }
+
+      .final-score .fs-delta.bad {
+        color: var(--danger);
+      }
+
       #main-round-status {
         text-align: center;
         font-family: "Orbitron", system-ui, sans-serif;
@@ -848,6 +1066,65 @@
       .my-status {
         text-align: center;
       }
+
+      .pv-clue {
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+      }
+
+      .pv-timer {
+        margin: 0.4rem auto;
+        max-width: 24rem;
+        text-align: center;
+      }
+
+      .wager-readout {
+        text-align: center;
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--accent);
+        margin: 0.3rem 0;
+      }
+
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        max-width: 18rem;
+        margin: 0 auto;
+      }
+
+      .pad-key {
+        font-size: 1.6rem;
+        padding: 0.8rem 0;
+      }
+
+      .pad-actions,
+      .mode-toggle {
+        display: flex;
+        justify-content: center;
+        gap: 0.6rem;
+        margin: 0.6rem 0;
+      }
+
+      .mode-toggle button.active {
+        background: var(--accent);
+        color: var(--bg);
+      }
+
+      .draw-pad {
+        display: block;
+        width: 100%;
+        max-width: 30rem;
+        margin: 0 auto;
+        aspect-ratio: 2 / 1;
+        background: #fff;
+        border-radius: 0.4rem;
+        touch-action: none;
+      }
     </style>
   </head>
   <body>
@@ -886,6 +1163,10 @@
         <div id="main-board-headers" class="board board-headers"></div>
         <div id="main-board" class="board"></div>
         <div id="main-scoreboard" class="scoreboard"></div>
+        <div id="main-final" hidden>
+          <div id="main-final-top" class="final-top"></div>
+          <div id="main-final-scores" class="final-scores"></div>
+        </div>
       </section>
       <section id="view-control">
         <fieldset>
@@ -950,6 +1231,11 @@
             <span>Answer time</span>
             <input type="number" id="answer-time-input" placeholder="ms" />
             <button class="primary" onclick="applyAnswerTimeSettings()">Apply Global</button>
+          </div>
+          <div class="row-line">
+            <span>Final Exam answer time (0 = no timer)</span>
+            <input type="number" id="final-answer-time-input" min="0" placeholder="ms" />
+            <button class="primary" onclick="applyFinalAnswerTime()">Apply Global</button>
           </div>
           <div class="row-line">
             <span>After a wrong answer, others get ring-in: start</span>
@@ -1357,6 +1643,16 @@
         patch("/answer-time-settings", { window_ms: parseInt(window_, 10) });
       }
 
+      function applyFinalAnswerTime() {
+        const value = document.getElementById("final-answer-time-input").value;
+        if (value === "") return;
+        patch("/final-answer-time-settings", { window_ms: parseInt(value, 10) });
+      }
+
+      function finalAct(action, body) {
+        patch(`/${action}`, body);
+      }
+
       function clearRingInOverrides() {
         patch("/ring-in-override-clear");
       }
@@ -1365,26 +1661,10 @@
         patch("/answer-time-override-clear");
       }
 
-      function finalReveal(player) {
-        patch("/final-reveal", { player });
-      }
-
-      function finalJudge(player, correct) {
-        patch("/final-judge", { player, correct });
-      }
-
       // ----- Player actions -----
 
       function buzz(player) {
         patch("/buzz", { player });
-      }
-
-      function submitFinal(player) {
-        const wagerInput = document.getElementById(`final-wager-${player}`);
-        const answerInput = document.getElementById(`final-answer-${player}`);
-        const wager = parseInt(wagerInput.value, 10);
-        if (!Number.isFinite(wager) || wager < 0) return;
-        patch("/final-submit", { player, wager, answer: answerInput.value });
       }
 
       // ----- Rendering helpers -----
@@ -1496,8 +1776,131 @@
 
       // ----- Main view -----
 
+      // Players type their own answers, so anything of theirs shown to others
+      // must be escaped.
+      function esc(value) {
+        return String(value).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+        );
+      }
+
+      function finalDrawingUrl(player) {
+        return `/api/overdrive/games/${gameId}/final-drawing/${player}`;
+      }
+
+      // The highest score(s) once the Final is done; a tie shares the win.
+      function finalWinners(gs) {
+        const best = Math.max(...PLAYERS.map((p) => gs.players[p].score));
+        return PLAYERS.filter((p) => gs.players[p].score === best);
+      }
+
+      // What Main shows above the scores, by phase. The answer timer is not
+      // part of this markup: it ticks, so it's filled in place afterwards.
+      function finalTopHtml(gs) {
+        const phase = gs.final_phase;
+        if (phase === "intro") return `<div class="final-title">Final Exam</div>`;
+        if (phase === "category") {
+          return `<div class="final-label">Final Exam</div>
+            <div class="final-category">${gs.final_category}</div>
+            <div class="final-sub">Place your wagers</div>`;
+        }
+        if (phase === "clue") {
+          return `<div class="final-category-small">${gs.final_category}</div>
+            <div class="final-clue">${gs.final_text}</div>
+            ${gs.final_answer_time_ms > 0 ? '<div class="final-timer"></div>' : ""}`;
+        }
+        if (phase === "standings") {
+          const winners = finalWinners(gs);
+          const names = winners.map((p) => gs.players[p].name).join(" & ");
+          return `<div class="final-label">${winners.length > 1 ? "It's a tie" : "Winner"}</div>
+            <div class="final-winner">${names}</div>
+            <div class="final-sub">${gs.players[winners[0]].score} points</div>`;
+        }
+        // reveal: the clue becomes a header; the chosen player's card sits below.
+        let html = `<div class="final-header"><span class="fh-cat">${gs.final_category}</span>${gs.final_text}</div>`;
+        const who = gs.final_display_player;
+        if (who) {
+          const e = gs.final_entries[who];
+          let answer;
+          if (!e.revealed) {
+            answer = `<div class="fc-answer hidden-answer">…</div>`;
+          } else {
+            const typed = e.answer ? `<div>${esc(e.answer)}</div>` : "";
+            const drawn = e.has_drawing
+              ? `<img alt="${esc(gs.players[who].name)}'s drawn answer" src="${finalDrawingUrl(who)}" />`
+              : "";
+            answer = `<div class="fc-answer">${typed || drawn ? typed + drawn : "No answer"}</div>`;
+          }
+          let result = `<div class="fc-result"></div>`;
+          if (e.correct !== null) {
+            const sign = e.delta >= 0 ? "+" : "−";
+            result = `<div class="fc-result ${e.correct ? "good" : "bad"}">${
+              e.correct ? "Correct" : "Incorrect"
+            } ${sign}${Math.abs(e.delta)}</div>`;
+          }
+          html += `<div class="final-card">
+              <div class="fc-name">${gs.players[who].name}</div>
+              <div class="fc-wager">wagered <strong>${e.wager}</strong></div>
+              ${answer}
+              ${result}
+            </div>`;
+        }
+        return html;
+      }
+
+      // The fixed lower pane: always the three scores, plus the small notes
+      // that matter in the current phase.
+      function finalScoresHtml(gs) {
+        const winners = gs.final_phase === "standings" ? finalWinners(gs) : [];
+        return PLAYERS.map((p) => {
+          const status = gs.players[p];
+          const e = gs.final_entries[p];
+          const classes = ["final-score"];
+          if (!e.eligible) classes.push("not-playing");
+          if (gs.final_display_player === p) classes.push("is-shown");
+          if (winners.includes(p)) classes.push("is-winner");
+          let note = "";
+          if (!e.eligible) note = "not playing";
+          else if (e.correct !== null) {
+            const sign = e.delta >= 0 ? "+" : "−";
+            note = `<span class="fs-delta ${e.correct ? "good" : "bad"}">${sign}${Math.abs(e.delta)}</span>`;
+          } else if (gs.final_phase === "category") note = e.wager_submitted ? "wager in ✓" : "";
+          else if (gs.final_phase === "clue") note = e.answer_submitted ? "answer in ✓" : "";
+          return `<div class="${classes.join(" ")}">
+              <div class="fs-name">${status.name}</div>
+              <div class="fs-score">${status.score}</div>
+              <div class="fs-note">${note}</div>
+            </div>`;
+        }).join("");
+      }
+
+      function renderMainFinal(gs) {
+        const top = document.getElementById("main-final-top");
+        setHtml(top, finalTopHtml(gs));
+        const timer = top.querySelector(".final-timer");
+        if (timer && gs.final_answer_remaining_ms !== null) {
+          const pct = (100 * gs.final_answer_remaining_ms) / gs.final_answer_time_ms;
+          timer.innerHTML =
+            countdownBarHtml(pct, "", gs.final_answer_remaining_ms === 0) +
+            `<div class="ft-secs">${fmtSecs(gs.final_answer_remaining_ms)}</div>`;
+        }
+        setHtml(document.getElementById("main-final-scores"), finalScoresHtml(gs));
+      }
+
       function renderMain() {
         if (!state) return;
+        const isFinal = state.current_round === "final";
+        for (const id of ["main-round-status", "main-board-headers", "main-board", "main-scoreboard"]) {
+          document.getElementById(id).hidden = isFinal;
+        }
+        document.getElementById("main-final").hidden = !isFinal;
+        if (isFinal) {
+          renderMainFinal(state);
+          renderClueOverlay(state);
+          renderClueStatusBar(state);
+          return;
+        }
         document.getElementById("main-round-status").textContent = roundLabel(
           state.current_round
         );
@@ -1613,6 +2016,7 @@
           ["ring-start-input", gs.ring_in_start_delay_ms],
           ["ring-window-input", gs.ring_in_window_ms],
           ["answer-time-input", gs.answer_time_ms],
+          ["final-answer-time-input", gs.final_answer_time_ms],
           ["auto-reveal-input", gs.auto_reveal_delay_ms],
           ["retry-start-input", gs.ring_in_retry_start_delay_ms],
           ["retry-window-input", gs.ring_in_retry_window_ms],
@@ -1649,7 +2053,7 @@
         }
 
         if (isFinal) {
-          setHtml(document.getElementById("control-final"), controlFinalHtml(gs));
+          renderFinalControl(document.getElementById("control-final"), gs);
         }
 
         setHtml(document.getElementById("control-players"), PLAYERS.map((player) => {
@@ -1936,38 +2340,106 @@
           });
         }
         if (isFinal) {
-          setHtml(document.getElementById("host-final"), controlFinalHtml(gs));
+          renderFinalControl(document.getElementById("host-final"), gs);
         }
       }
 
+      // The host's Final Exam panel, shared by Host and Control. Buttons live
+      // in stable markup; only the timer (a separate slot) ticks.
       function controlFinalHtml(gs) {
-        return (
-          `<div><strong>${gs.final_category}</strong></div>` +
-          `<div class="status-line">${gs.final_text}</div>` +
-          PLAYERS.map((player) => {
-            const e = gs.final_entries[player];
-            if (!e.eligible) return `<div class="status-line">${gs.players[player].name}: not eligible</div>`;
-            if (!e.submitted) {
-              return `<div class="status-line">${gs.players[player].name}: waiting for submission...</div>`;
+        const phase = gs.final_phase;
+        const name = (p) => gs.players[p].name;
+        const eligible = PLAYERS.filter((p) => gs.final_entries[p].eligible);
+        const out = PLAYERS.filter((p) => !gs.final_entries[p].eligible);
+        const notPlaying = out.length
+          ? `<div class="status-line">Not playing (score 0 or less): ${out.map(name).join(", ")}</div>`
+          : "";
+        const header =
+          phase === "intro"
+            ? ""
+            : `<div><strong>${gs.final_category}</strong></div>` +
+              (gs.final_text ? `<div class="status-line">${gs.final_text}</div>` : "") +
+              (gs.final_answer
+                ? `<div class="status-line">Answer: <strong>${gs.final_answer}</strong></div>`
+                : "");
+
+        if (phase === "intro") {
+          return `<div class="row-line">
+            <button class="primary" onclick="finalAct('final-reveal-category')">Reveal category</button>
+          </div>${notPlaying}`;
+        }
+
+        if (phase === "category") {
+          const waiting = eligible.filter((p) => !gs.final_entries[p].wager_submitted);
+          const rows = eligible
+            .map(
+              (p) =>
+                `<div class="status-line">${name(p)}: ${
+                  gs.final_entries[p].wager_submitted ? "wager in ✓" : "waiting for wager…"
+                }</div>`
+            )
+            .join("");
+          const button = waiting.length
+            ? `<button class="danger" onclick="finalAct('final-reveal-clue', {force: true})">Reveal anyway</button>`
+            : `<button class="primary" onclick="finalAct('final-reveal-clue', {force: false})">Reveal clue</button>`;
+          return `${header}${rows}${notPlaying}<div class="row-line">${button}</div>`;
+        }
+
+        if (phase === "clue") {
+          const rows = eligible
+            .map(
+              (p) => `<div class="row-line">
+                <span>${name(p)}: ${gs.final_entries[p].answer_submitted ? "answer in ✓" : "no answer yet"}</span>
+                <button class="primary" onclick="finalAct('final-display', {player: '${p}'})">Display ${name(p)}</button>
+              </div>`
+            )
+            .join("");
+          const timer = gs.final_answer_time_ms > 0 ? '<div class="hf-timer"></div>' : "";
+          return `${header}${timer}${rows}`;
+        }
+
+        // reveal / standings: one row per eligible player, any order
+        const rows = eligible
+          .map((p) => {
+            const e = gs.final_entries[p];
+            if (e.correct !== null) {
+              const sign = e.delta >= 0 ? "+" : "−";
+              return `<div class="status-line">${name(p)}: ${e.correct ? "Correct" : "Incorrect"} ${sign}${Math.abs(e.delta)}</div>`;
+            }
+            if (!e.wager_revealed) {
+              return `<div class="row-line"><span>${name(p)}</span>
+                <button class="primary" onclick="finalAct('final-display', {player: '${p}'})">Display ${name(p)}</button></div>`;
             }
             if (!e.revealed) {
-              return `
-                <div class="row-line">
-                  <span>${gs.players[player].name}: submitted</span>
-                  <button class="primary" onclick="finalReveal('${player}')">Reveal</button>
-                </div>`;
+              return `<div class="row-line"><span>${name(p)}: wager ${e.wager} on Main</span>
+                <button class="primary" onclick="finalAct('final-reveal-answer', {player: '${p}'})">Reveal answer</button></div>`;
             }
-            if (e.correct === null) {
-              return `
-                <div class="row-line">
-                  <span>${gs.players[player].name}: wagered ${e.wager} — "${e.answer}"</span>
-                  <button class="primary" onclick="finalJudge('${player}', true)">Correct</button>
-                  <button class="primary" onclick="finalJudge('${player}', false)">Incorrect</button>
-                </div>`;
-            }
-            return `<div class="status-line">${gs.players[player].name}: ${e.correct ? "Correct" : "Incorrect"} (wagered ${e.wager})</div>`;
-          }).join("")
-        );
+            return `<div class="row-line"><span>${name(p)}: wagered ${e.wager} — ${
+              e.has_drawing ? "(drawing)" : `"${e.answer || "no answer"}"`
+            }</span>
+              <button class="primary" onclick="finalAct('final-judge', {player: '${p}', correct: true})">Correct</button>
+              <button class="danger" onclick="finalAct('final-judge', {player: '${p}', correct: false})">Incorrect / No answer</button></div>`;
+          })
+          .join("");
+        const allJudged = eligible.every((p) => gs.final_entries[p].correct !== null);
+        const standings =
+          phase === "standings"
+            ? `<div class="status-line">Final standings are on Main.</div>`
+            : `<div class="row-line"><button class="primary" ${
+                allJudged ? "" : "disabled"
+              } onclick="finalAct('final-standings')">Show final standings</button></div>`;
+        return `${header}${rows}${standings}`;
+      }
+
+      function renderFinalControl(container, gs) {
+        setHtml(container, controlFinalHtml(gs));
+        const timer = container.querySelector(".hf-timer");
+        if (timer && gs.final_answer_remaining_ms !== null) {
+          const pct = (100 * gs.final_answer_remaining_ms) / gs.final_answer_time_ms;
+          timer.innerHTML =
+            countdownBarHtml(pct, "answer", gs.final_answer_remaining_ms === 0) +
+            `<div class="status-line">${fmtSecs(gs.final_answer_remaining_ms)}</div>`;
+        }
       }
 
       // ----- Player views -----
@@ -1984,7 +2456,16 @@
 
         let bar = null;
         if (state.current_round === "final") {
-          html += finalPlayerHtml(state, player);
+          // Final screens hold state the player is building (digits, a
+          // half-drawn picture), so the body is split into a status part and
+          // a part that is only rebuilt when the screen itself changes.
+          if (!body.querySelector(".pv-final")) {
+            body.innerHTML = '<div class="pv-status"></div><div class="pv-final"></div>';
+            body._lastHtml = null;
+          }
+          setHtml(body.querySelector(".pv-status"), html);
+          renderPlayerFinal(player, body.querySelector(".pv-final"));
+          return;
         } else {
           const view = buzzPlayerHtml(state, player);
           html += view.html;
@@ -2053,29 +2534,219 @@
         };
       }
 
-      function finalPlayerHtml(gs, player) {
+      // ----- Final Exam: the player's device -----
+
+      // What the player is in the middle of, per player (the Player views
+      // can all be open in one browser during a demo).
+      const finalUi = {};
+      function ui(player) {
+        if (!finalUi[player]) finalUi[player] = { digits: "", mode: "type", strokes: [] };
+        return finalUi[player];
+      }
+
+      // Which screen this player should be looking at. The screen's markup is
+      // only rebuilt when this changes; everything that moves (the wager
+      // readout, the timer) is updated in place.
+      function finalScreen(gs, player) {
         const e = gs.final_entries[player];
-        if (!e.eligible) {
-          return `<div class="status-line" style="text-align:center">Not eligible for the Final Exam.</div>`;
+        if (!e.eligible) return "out";
+        const phase = gs.final_phase;
+        if (phase === "category") return e.wager_submitted ? "wager-done" : "wager";
+        if (phase === "clue") {
+          if (e.answer_submitted) return "answer-done";
+          if (gs.final_answer_remaining_ms === 0) return "answer-locked";
+          return "answer";
         }
-        if (e.revealed) {
-          return `
-            <div class="status-line" style="text-align:center">
-              Category: ${gs.final_category}<br />
-              You wagered ${e.wager} — "${e.answer}"<br />
-              ${e.correct === null ? "Waiting for judging..." : e.correct ? "Correct!" : "Incorrect."}
+        if (phase === "reveal" || phase === "standings") return "after";
+        return "wait";
+      }
+
+      function finalScreenHtml(gs, player, screen) {
+        const me = gs.players[player];
+        const note = (t) => `<div class="status-line" style="text-align:center">${t}</div>`;
+        const cat = `<div class="final-category-small">${gs.final_category ?? ""}</div>`;
+        if (screen === "out") return note("You're not playing the Final Exam this time.");
+        if (screen === "wait") return note("Final Exam is about to begin…");
+        if (screen === "wager-done") return cat + note("Wager locked in. Waiting for the others…");
+        if (screen === "wager") {
+          const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            .map((d) => `<button type="button" class="pad-key" onclick="padDigit('${player}','${d}')">${d}</button>`)
+            .join("");
+          return `${cat}
+            <div class="status-line" style="text-align:center">How much do you wager? (up to ${me.score})</div>
+            <div class="wager-readout" id="wager-readout-${player}">0</div>
+            <div class="pad">
+              ${keys}
+              <button type="button" class="pad-key" onclick="padClear('${player}')">Clear</button>
+              <button type="button" class="pad-key" onclick="padDigit('${player}','0')">0</button>
+              <button type="button" class="pad-key" onclick="padBack('${player}')">⌫</button>
+            </div>
+            <div class="pad-actions">
+              <button type="button" onclick="padAllIn('${player}')">All in</button>
+              <button type="button" class="primary" onclick="submitWager('${player}')">Lock in wager</button>
             </div>`;
         }
-        if (e.submitted) {
-          return `<div class="status-line" style="text-align:center">Submitted! Waiting for reveal...</div>`;
+        const clueBlock = `${cat}<div class="pv-clue">${gs.final_text ?? ""}</div>`;
+        if (screen === "answer-done") return clueBlock + note("Answer locked in. Eyes on the main screen!");
+        if (screen === "answer-locked") return clueBlock + note("Time's up.");
+        if (screen === "answer") {
+          return `${clueBlock}
+            ${gs.final_answer_time_ms > 0 ? '<div class="pv-timer"></div>' : ""}
+            <div class="mode-toggle">
+              <button type="button" id="mode-type-${player}" onclick="setAnswerMode('${player}','type')">Type</button>
+              <button type="button" id="mode-draw-${player}" onclick="setAnswerMode('${player}','draw')">Draw</button>
+            </div>
+            <div class="final-form" id="type-wrap-${player}">
+              <textarea id="final-answer-${player}" placeholder="Your answer…"></textarea>
+            </div>
+            <div class="draw-wrap" id="draw-wrap-${player}" hidden>
+              <canvas class="draw-pad" id="draw-pad-${player}" width="600" height="300"></canvas>
+              <div class="pad-actions">
+                <button type="button" onclick="drawUndo('${player}')">Undo</button>
+                <button type="button" onclick="drawClear('${player}')">Clear</button>
+              </div>
+            </div>
+            <div class="pad-actions">
+              <button type="button" class="primary" onclick="submitAnswer('${player}')">Lock in answer</button>
+            </div>`;
         }
-        return `
-          <div class="status-line" style="text-align:center">Category: ${gs.final_category}</div>
-          <div class="final-form">
-            <input type="number" id="final-wager-${player}" placeholder="Wager (max ${gs.players[player].score})" />
-            <textarea id="final-answer-${player}" placeholder="Your answer..."></textarea>
-            <button class="primary" onclick="submitFinal('${player}')">Submit</button>
-          </div>`;
+        return note("Watch the main screen…");
+      }
+
+      function renderPlayerFinal(player, host) {
+        const gs = state;
+        const screen = finalScreen(gs, player);
+        const key = [screen, gs.final_category, gs.final_text, gs.final_phase].join("|");
+        if (host._screenKey !== key) {
+          host._screenKey = key;
+          host.innerHTML = finalScreenHtml(gs, player, screen);
+          if (screen === "wager") updateWagerReadout(player);
+          if (screen === "answer") wireDrawPad(player);
+          if (screen === "answer") setAnswerMode(player, ui(player).mode);
+        }
+        const timer = host.querySelector(".pv-timer");
+        if (timer && gs.final_answer_remaining_ms !== null) {
+          const pct = (100 * gs.final_answer_remaining_ms) / gs.final_answer_time_ms;
+          timer.innerHTML =
+            countdownBarHtml(pct, "answer", gs.final_answer_remaining_ms === 0) +
+            `<div class="pv-secs">${fmtSecs(gs.final_answer_remaining_ms)}</div>`;
+        }
+      }
+
+      function updateWagerReadout(player) {
+        const el = document.getElementById(`wager-readout-${player}`);
+        if (el) el.textContent = ui(player).digits || "0";
+      }
+
+      function setDigits(player, digits) {
+        const max = state.players[player].score;
+        let n = parseInt(digits || "0", 10);
+        if (n > max) n = max;
+        ui(player).digits = n === 0 ? "" : String(n);
+        updateWagerReadout(player);
+      }
+
+      function padDigit(player, d) {
+        setDigits(player, ui(player).digits + d);
+      }
+
+      function padBack(player) {
+        setDigits(player, ui(player).digits.slice(0, -1));
+      }
+
+      function padClear(player) {
+        setDigits(player, "");
+      }
+
+      function padAllIn(player) {
+        setDigits(player, String(state.players[player].score));
+      }
+
+      function submitWager(player) {
+        patch("/final-wager", { player, wager: parseInt(ui(player).digits || "0", 10) });
+      }
+
+      function setAnswerMode(player, mode) {
+        ui(player).mode = mode;
+        const set = (id, fn) => {
+          const el = document.getElementById(id);
+          if (el) fn(el);
+        };
+        set(`type-wrap-${player}`, (el) => (el.hidden = mode !== "type"));
+        set(`draw-wrap-${player}`, (el) => (el.hidden = mode !== "draw"));
+        set(`mode-type-${player}`, (el) => el.classList.toggle("active", mode === "type"));
+        set(`mode-draw-${player}`, (el) => el.classList.toggle("active", mode === "draw"));
+      }
+
+      function redrawPad(player) {
+        const canvas = document.getElementById(`draw-pad-${player}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        for (const stroke of ui(player).strokes) {
+          ctx.beginPath();
+          stroke.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+          if (stroke.length === 1) ctx.lineTo(stroke[0][0] + 0.1, stroke[0][1]);
+          ctx.stroke();
+        }
+      }
+
+      // Called once for each freshly built canvas, so listeners never stack.
+      function wireDrawPad(player) {
+        const canvas = document.getElementById(`draw-pad-${player}`);
+        if (!canvas) return;
+        const u = ui(player);
+        let current = null;
+        const point = (ev) => {
+          const r = canvas.getBoundingClientRect();
+          return [
+            ((ev.clientX - r.left) * canvas.width) / r.width,
+            ((ev.clientY - r.top) * canvas.height) / r.height,
+          ];
+        };
+        canvas.addEventListener("pointerdown", (ev) => {
+          canvas.setPointerCapture(ev.pointerId);
+          current = [point(ev)];
+          u.strokes.push(current);
+          redrawPad(player);
+        });
+        canvas.addEventListener("pointermove", (ev) => {
+          if (!current) return;
+          current.push(point(ev));
+          redrawPad(player);
+        });
+        const end = () => (current = null);
+        canvas.addEventListener("pointerup", end);
+        canvas.addEventListener("pointercancel", end);
+        redrawPad(player);
+      }
+
+      function drawUndo(player) {
+        ui(player).strokes.pop();
+        redrawPad(player);
+      }
+
+      function drawClear(player) {
+        ui(player).strokes = [];
+        redrawPad(player);
+      }
+
+      function submitAnswer(player) {
+        const u = ui(player);
+        if (u.mode === "draw") {
+          if (!u.strokes.length) return;
+          const canvas = document.getElementById(`draw-pad-${player}`);
+          patch("/final-answer", { player, drawing: canvas.toDataURL("image/png") });
+        } else {
+          const text = document.getElementById(`final-answer-${player}`).value.trim();
+          if (!text) return;
+          patch("/final-answer", { player, text });
+        }
       }
 
       loadBankOptions();

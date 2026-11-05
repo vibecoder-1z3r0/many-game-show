@@ -514,153 +514,410 @@ def test_start_round2_resets_board_keeps_scores(client: TestClient) -> None:
     assert body["categories"][0]["clues"][0]["value"] == 400  # round2 values
 
 
+_TINY_PNG = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4"
+    "//8/AAX+Av4N70a4AAAAAElFTkSuQmCC"
+)
+
+
+def _final(client: TestClient, game_id: str, action: str, body: dict | None = None):  # type: ignore[no-untyped-def]
+    return client.patch(f"/api/overdrive/games/{game_id}/{action}", json=body)
+
+
+def _final_game(client: TestClient, scores: dict[str, int] | None = None) -> str:
+    """A game with the Final Exam started; players default to 1000/500/0."""
+    game_id = _create_game(client)
+    for player, score in (scores or {"player1": 1000, "player2": 500}).items():
+        _patch(client, game_id, "adjust-score", {"player": player, "score": score})
+    _final(client, game_id, "start-final")
+    return game_id
+
+
+def _to_clue_phase(client: TestClient, game_id: str, wagers: dict[str, int]) -> None:
+    _final(client, game_id, "final-reveal-category")
+    for player, wager in wagers.items():
+        assert (
+            _final(
+                client, game_id, "final-wager", {"player": player, "wager": wager}
+            ).status_code
+            == 200
+        )
+    assert _final(client, game_id, "final-reveal-clue").status_code == 200
+
+
 def test_start_final_marks_eligibility_by_score(client: TestClient) -> None:
     game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 500},
-    )
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player2", "score": -200},
-    )
-    resp = client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    assert resp.status_code == 200
-    body = resp.json()
+    _patch(client, game_id, "adjust-score", {"player": "player1", "score": 500})
+    _patch(client, game_id, "adjust-score", {"player": "player2", "score": -200})
+    body = _final(client, game_id, "start-final").json()
     assert body["current_round"] == "final"
     assert body["categories"] == []
-    assert body["final_category"] == "Famous Firsts in Computing"
+    assert body["final_phase"] == "intro"
     assert body["final_entries"]["player1"]["eligible"] is True
     assert body["final_entries"]["player2"]["eligible"] is False
 
 
-def test_final_submit_hidden_until_reveal(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 1000},
-    )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 500, "answer": "Who is Ada Lovelace"},
-    )
+def test_category_and_clue_are_hidden_until_their_phase(client: TestClient) -> None:
+    game_id = _final_game(client)
+    body = _get(client, game_id)
+    assert body["final_category"] is None and body["final_text"] is None
+
+    _final(client, game_id, "final-reveal-category")
+    body = _get(client, game_id)
+    assert body["final_phase"] == "category"
+    assert body["final_category"] == "Famous Firsts in Computing"
+    assert body["final_text"] is None  # the clue waits for the wagers
+
+    _final(client, game_id, "final-wager", {"player": "player1", "wager": 100})
+    _final(client, game_id, "final-wager", {"player": "player2", "wager": 100})
+    _final(client, game_id, "final-reveal-clue")
+    body = _get(client, game_id)
+    assert body["final_phase"] == "clue"
+    assert "Ada" not in body["final_text"] and "programmer" in body["final_text"]
+
+
+def test_the_answer_key_is_for_the_host_only(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    assert _get(client, game_id)["final_answer"] is None
+    assert _control(client, game_id)["final_answer"] == "Who is Ada Lovelace"
+
+
+def test_wagers_are_refused_before_the_category_is_shown(client: TestClient) -> None:
+    game_id = _final_game(client)
+    resp = _final(client, game_id, "final-wager", {"player": "player1", "wager": 100})
+    assert resp.status_code == 400
+
+
+def test_wager_is_hidden_and_validated(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-reveal-category")
+    resp = _final(client, game_id, "final-wager", {"player": "player1", "wager": 400})
     assert resp.status_code == 200
-    body = resp.json()
-    entry = body["final_entries"]["player1"]
-    assert entry["submitted"] is True
-    assert entry["wager"] is None  # hidden until revealed
-    assert entry["answer"] is None
+    entry = resp.json()["final_entries"]["player1"]
+    assert entry["wager_submitted"] is True
+    assert entry["wager"] is None  # hidden until displayed
+    # Wager 0 is fine; more than your score isn't; one wager only; not if out.
+    assert (
+        _final(
+            client, game_id, "final-wager", {"player": "player2", "wager": 0}
+        ).status_code
+        == 200
+    )
+    assert (
+        _final(
+            client, game_id, "final-wager", {"player": "player1", "wager": 5}
+        ).status_code
+        == 400
+    )
+    assert (
+        _final(
+            client, game_id, "final-wager", {"player": "player3", "wager": 0}
+        ).status_code
+        == 400
+    )
 
 
-def test_final_submit_rejects_wager_over_score(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 300},
-    )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 500, "answer": "x"},
-    )
+def test_wager_over_score_is_rejected(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-reveal-category")
+    resp = _final(client, game_id, "final-wager", {"player": "player2", "wager": 501})
     assert resp.status_code == 422
 
 
-def test_final_submit_rejects_ineligible_player(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": -100},
-    )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 0, "answer": "x"},
-    )
+def test_the_clue_waits_for_every_eligible_wager(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-reveal-category")
+    _final(client, game_id, "final-wager", {"player": "player1", "wager": 100})
+    resp = _final(client, game_id, "final-reveal-clue")
     assert resp.status_code == 400
+    assert "Grace" in resp.json()["detail"]  # names who we're waiting on
+    assert _get(client, game_id)["final_phase"] == "category"
+
+    _final(client, game_id, "final-wager", {"player": "player2", "wager": 50})
+    assert _final(client, game_id, "final-reveal-clue").status_code == 200
 
 
-def test_final_submit_rejects_double_submit(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 1000},
-    )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 100, "answer": "x"},
-    )
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 100, "answer": "y"},
-    )
-    assert resp.status_code == 400
+def test_reveal_anyway_counts_a_missing_wager_as_zero(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-reveal-category")
+    _final(client, game_id, "final-wager", {"player": "player1", "wager": 100})
+    resp = _final(client, game_id, "final-reveal-clue", {"force": True})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["final_phase"] == "clue"
+    assert body["final_entries"]["player2"]["wager_submitted"] is True
+    # ...and it really is 0 when judged.
+    _final(client, game_id, "final-display", {"player": "player2"})
+    assert _get(client, game_id)["final_entries"]["player2"]["wager"] == 0
 
 
-def test_final_reveal_and_judge_correct(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 1000},
-    )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 400, "answer": "Who is Ada Lovelace"},
-    )
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-reveal", json={"player": "player1"}
+def test_typed_answer_is_hidden_until_revealed(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 400, "player2": 100})
+    resp = _final(
+        client, game_id, "final-answer", {"player": "player1", "text": "Ada Lovelace"}
     )
     assert resp.status_code == 200
     entry = resp.json()["final_entries"]["player1"]
-    assert entry["revealed"] is True
-    assert entry["wager"] == 400
-    assert entry["answer"] == "Who is Ada Lovelace"
+    assert entry["answer_submitted"] is True
+    assert entry["answer"] is None and entry["has_drawing"] is False
 
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-judge",
-        json={"player": "player1", "correct": True},
+
+def test_answers_are_refused_before_the_clue_and_after_submitting(
+    client: TestClient,
+) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-reveal-category")
+    _final(client, game_id, "final-wager", {"player": "player1", "wager": 100})
+    early = _final(client, game_id, "final-answer", {"player": "player1", "text": "x"})
+    assert early.status_code == 400
+
+    _final(client, game_id, "final-reveal-clue", {"force": True})
+    assert (
+        _final(
+            client, game_id, "final-answer", {"player": "player1", "text": "x"}
+        ).status_code
+        == 200
+    )
+    again = _final(client, game_id, "final-answer", {"player": "player1", "text": "y"})
+    assert again.status_code == 400
+    # An answer needs something in it, and ineligible players can't answer.
+    blank = _final(
+        client, game_id, "final-answer", {"player": "player2", "text": "   "}
+    )
+    assert blank.status_code == 422
+    out = _final(client, game_id, "final-answer", {"player": "player3", "text": "x"})
+    assert out.status_code == 400
+
+
+def test_answers_lock_when_the_timer_runs_out(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-answer-time-settings", {"window_ms": 200})
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    body = _get(client, game_id)
+    assert body["final_answer_time_ms"] == 200
+    assert 0 < body["final_answer_remaining_ms"] <= 200
+    time.sleep(0.35)
+    assert _get(client, game_id)["final_answer_remaining_ms"] == 0
+    late = _final(client, game_id, "final-answer", {"player": "player1", "text": "x"})
+    assert late.status_code == 400
+    assert "Time's up" in late.json()["detail"]
+
+
+def test_no_timer_means_answers_never_lock(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _final(client, game_id, "final-answer-time-settings", {"window_ms": 0})
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    assert _get(client, game_id)["final_answer_remaining_ms"] is None
+    assert (
+        _final(
+            client, game_id, "final-answer", {"player": "player1", "text": "x"}
+        ).status_code
+        == 200
+    )
+
+
+def test_final_answer_time_setting_is_validated(client: TestClient) -> None:
+    game_id = _final_game(client)
+    for bad in (-1, 300001):
+        assert (
+            _final(
+                client, game_id, "final-answer-time-settings", {"window_ms": bad}
+            ).status_code
+            == 422
+        )
+
+
+def test_a_drawn_answer_is_stored_hidden_then_served_once_revealed(
+    client: TestClient,
+) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    drawing = "data:image/png;base64," + _TINY_PNG
+    resp = _final(
+        client, game_id, "final-answer", {"player": "player1", "drawing": drawing}
     )
     assert resp.status_code == 200
-    body = resp.json()
+    url = f"/api/overdrive/games/{game_id}/final-drawing/player1"
+    assert client.get(url).status_code == 404  # hidden until revealed
+
+    _final(client, game_id, "final-display", {"player": "player1"})
+    assert client.get(url).status_code == 404  # wager shown, answer still hidden
+    body = _final(client, game_id, "final-reveal-answer", {"player": "player1"}).json()
+    assert body["final_entries"]["player1"]["has_drawing"] is True
+    served = client.get(url)
+    assert served.status_code == 200
+    assert served.headers["content-type"] == "image/png"
+    assert served.content.startswith(b"\x89PNG")
+
+
+def test_only_real_size_capped_pngs_are_accepted(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    not_png = "data:image/png;base64," + "aGVsbG8gd29ybGQ="  # "hello world"
+    assert (
+        _final(
+            client, game_id, "final-answer", {"player": "player1", "drawing": not_png}
+        ).status_code
+        == 422
+    )
+    junk = "data:image/png;base64,!!!not base64!!!"
+    assert (
+        _final(
+            client, game_id, "final-answer", {"player": "player1", "drawing": junk}
+        ).status_code
+        == 422
+    )
+    huge = "data:image/png;base64," + "A" * 260_000
+    assert (
+        _final(
+            client, game_id, "final-answer", {"player": "player1", "drawing": huge}
+        ).status_code
+        == 422
+    )
+    # Nothing was stored by the refused attempts.
+    assert (
+        _get(client, game_id)["final_entries"]["player1"]["answer_submitted"] is False
+    )
+
+
+def test_wager_is_shown_first_then_the_answer(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 400, "player2": 100})
+    _final(
+        client, game_id, "final-answer", {"player": "player1", "text": "Ada Lovelace"}
+    )
+
+    # Revealing an answer before its wager is displayed is refused.
+    early = _final(client, game_id, "final-reveal-answer", {"player": "player1"})
+    assert early.status_code == 400
+
+    body = _final(client, game_id, "final-display", {"player": "player1"}).json()
+    assert body["final_phase"] == "reveal"
+    assert body["final_display_player"] == "player1"
+    entry = body["final_entries"]["player1"]
+    assert entry["wager"] == 400 and entry["answer"] is None
+
+    body = _final(client, game_id, "final-reveal-answer", {"player": "player1"}).json()
+    assert body["final_entries"]["player1"]["answer"] == "Ada Lovelace"
+
+
+def test_players_can_be_shown_and_judged_in_any_order_each_changing_only_their_score(
+    client: TestClient,
+) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 400, "player2": 100})
+    for player in ("player1", "player2"):
+        _final(client, game_id, "final-answer", {"player": player, "text": "x"})
+
+    # Player 2 first, then player 1.
+    _final(client, game_id, "final-display", {"player": "player2"})
+    _final(client, game_id, "final-reveal-answer", {"player": "player2"})
+    body = _final(
+        client, game_id, "final-judge", {"player": "player2", "correct": False}
+    ).json()
+    assert body["players"]["player2"]["score"] == 400  # 500 - 100
+    assert body["players"]["player1"]["score"] == 1000  # untouched so far
+    assert body["final_entries"]["player2"]["delta"] == -100
+
+    _final(client, game_id, "final-display", {"player": "player1"})
+    assert _get(client, game_id)["final_display_player"] == "player1"
+    _final(client, game_id, "final-reveal-answer", {"player": "player1"})
+    body = _final(
+        client, game_id, "final-judge", {"player": "player1", "correct": True}
+    ).json()
     assert body["players"]["player1"]["score"] == 1400
-    assert body["final_entries"]["player1"]["correct"] is True
+    assert body["final_entries"]["player1"]["delta"] == 400
 
 
-def test_final_judge_incorrect_deducts_wager(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 1000},
+def test_judging_needs_a_reveal_and_happens_once(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 400, "player2": 100})
+    _final(client, game_id, "final-display", {"player": "player1"})
+    assert (
+        _final(
+            client, game_id, "final-judge", {"player": "player1", "correct": True}
+        ).status_code
+        == 400
     )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    client.patch(
-        f"/api/overdrive/games/{game_id}/final-submit",
-        json={"player": "player1", "wager": 400, "answer": "x"},
+    _final(client, game_id, "final-reveal-answer", {"player": "player1"})
+    assert (
+        _final(
+            client, game_id, "final-judge", {"player": "player1", "correct": True}
+        ).status_code
+        == 200
     )
-    client.patch(
-        f"/api/overdrive/games/{game_id}/final-reveal", json={"player": "player1"}
+    assert (
+        _final(
+            client, game_id, "final-judge", {"player": "player1", "correct": False}
+        ).status_code
+        == 400
     )
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-judge",
-        json={"player": "player1", "correct": False},
-    )
-    assert resp.json()["players"]["player1"]["score"] == 600
 
 
-def test_final_reveal_before_submit_rejected(client: TestClient) -> None:
-    game_id = _create_game(client)
-    client.patch(
-        f"/api/overdrive/games/{game_id}/adjust-score",
-        json={"player": "player1", "score": 1000},
+def test_no_answer_reveals_blank_and_loses_the_wager(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 400, "player2": 100})
+    _final(client, game_id, "final-display", {"player": "player1"})
+    body = _final(client, game_id, "final-reveal-answer", {"player": "player1"}).json()
+    entry = body["final_entries"]["player1"]
+    assert entry["revealed"] is True and entry["answer"] is None
+    body = _final(
+        client, game_id, "final-judge", {"player": "player1", "correct": False}
+    ).json()
+    assert body["players"]["player1"]["score"] == 600
+
+
+def test_displaying_a_player_closes_answering(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    _final(client, game_id, "final-display", {"player": "player1"})
+    late = _final(client, game_id, "final-answer", {"player": "player2", "text": "x"})
+    assert late.status_code == 400
+
+
+def test_ineligible_players_cannot_be_displayed(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    assert (
+        _final(client, game_id, "final-display", {"player": "player3"}).status_code
+        == 400
     )
-    client.patch(f"/api/overdrive/games/{game_id}/start-final")
-    resp = client.patch(
-        f"/api/overdrive/games/{game_id}/final-reveal", json={"player": "player1"}
+
+
+def test_standings_need_everyone_judged(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    for player in ("player1", "player2"):
+        _final(client, game_id, "final-display", {"player": player})
+        _final(client, game_id, "final-reveal-answer", {"player": player})
+    _final(client, game_id, "final-judge", {"player": "player1", "correct": True})
+    assert _final(client, game_id, "final-standings").status_code == 400
+    _final(client, game_id, "final-judge", {"player": "player2", "correct": True})
+    body = _final(client, game_id, "final-standings").json()
+    assert body["final_phase"] == "standings"
+    assert body["final_display_player"] is None
+
+
+def test_the_phases_run_in_order(client: TestClient) -> None:
+    game_id = _final_game(client)
+    # Can't skip ahead from the intro.
+    assert _final(client, game_id, "final-reveal-clue").status_code == 400
+    assert (
+        _final(client, game_id, "final-display", {"player": "player1"}).status_code
+        == 400
     )
-    assert resp.status_code == 400
+    _final(client, game_id, "final-reveal-category")
+    assert _final(client, game_id, "final-reveal-category").status_code == 400  # once
+
+
+def test_reset_returns_the_final_to_its_start(client: TestClient) -> None:
+    game_id = _final_game(client)
+    _to_clue_phase(client, game_id, {"player1": 100, "player2": 100})
+    _patch(client, game_id, "reset")
+    _final(client, game_id, "start-final")
+    assert _get(client, game_id)["final_phase"] == "intro"
 
 
 def test_ring_in_player_override_and_clear(client: TestClient) -> None:

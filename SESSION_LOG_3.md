@@ -91,22 +91,29 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 | 69 | Yes let’s talk about it to fix it up | 03:48:23 | 17s | 2m 1s | 8 | 3,852 | 34 | 1,178,182 |
 | 70 | I think we should still fix up A and also do B at the same time. | 03:50:40 | 17m 54s | 3s | 156 | 150,476 | 217,935 | 46,601,486 |
 | 71 | No keyboard short cuts, not yet at least, no other system here has the… | 04:08:38 | 19s | 21m 48s ⏳ | 10 | 3,273 | 3,147 | 1,993,066 |
-| 72 | Incorrect / no answer - same button.  Scores are fine to stay visible.… | 04:30:45 | 7m 56s | — | 68 | 79,656 | 120,043 | 23,448,570 |
+| 72 | Incorrect / no answer - same button.  Scores are fine to stay visible.… | 04:30:45 | 8m 15s | 12h 44m ⏳ | 82 | 83,973 | 131,446 | 28,413,243 |
+| 73 | for final exam - players need to wager after they see the category - o… | 17:23:30 | 56s | 11m 55s | 16 | 9,555 | 2,151,983 | 3,580,479 |
+| 74 | Can they draw their final exam answer? | 17:36:21 | 13s | 16s | 8 | 2,440 | 28 | 1,447,048 |
+| 75 | Can they draw their wager? | 17:36:50 | 9s | 43s | 8 | 1,718 | 22 | 1,449,520 |
+| 76 | What about drawing their names ? | 17:37:42 | 27s | 1m 9s | 8 | 2,056 | 22 | 1,451,264 |
+| 77 | Do we adjust each players score individually when the player’s answer … | 17:39:18 | 7s | 2m 27s | 8 | 1,406 | 56 | 1,453,346 |
+| 78 | Main should have the 3 players scores for final exam.  When the clue c… | 17:41:53 | 18s | 1h 28m ⏳ | 4 | 3,986 | 1,436 | 1,454,812 |
+| 79 | go ahead and we can iterate as needed | 19:10:38 | 13m 25s | — | 176 | 157,855 | 6,096,832 | 31,342,680 |
 
-**Total turns:** 72  
-**Total agent time spent (excl. flagged):** 4h 25m  
-**Total human think time (excl. outliers):** 1h 0m  
-**Average human think time (excl. outliers):** 1m 19s  
-**Think-time outliers (> 15 min):** 25  
-**Total input tokens:** 5,794  
-**Total output tokens:** 2,335,488  
-**Total cache-write tokens:** 21,478,768  
-**Total cache-read tokens:** 1,218,222,872  
+**Total turns:** 79  
+**Total agent time spent (excl. flagged):** 4h 41m  
+**Total human think time (excl. outliers):** 1h 17m  
+**Average human think time (excl. outliers):** 1m 31s  
+**Think-time outliers (> 15 min):** 27  
+**Total input tokens:** 6,036  
+**Total output tokens:** 2,518,821  
+**Total cache-write tokens:** 29,740,550  
+**Total cache-read tokens:** 1,265,366,694  
 **Cache hit ratio (cache-read ÷ all prompt-side tokens):** 98%
 
 ⚠ Turn(s) 21, 42 had an 'agent time spent' over 30 min (total 6h 5m), which is implausible as real agent work — likely a transcript entry logged near session-resume time rather than when it actually ran. Excluded from the agent-time total above.
 
-⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14, 23, 29, 35, 38, 40, 41, 44, 46, 47, 49, 53, 54, 55, 56, 62, 65, 71 had a 'human think time' over 15 min (total 1370h 2m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
+⏳ Turn(s) 1, 2, 3, 4, 8, 9, 11, 14, 23, 29, 35, 38, 40, 41, 44, 46, 47, 49, 53, 54, 55, 56, 62, 65, 71, 72, 78 had a 'human think time' over 15 min (total 1384h 15m) — likely a break, a resumed session, or time reading a long response rather than active back-and-forth. Excluded from BOTH the total and the average above (still shown per-row).
 
 ---
 
@@ -114,11 +121,11 @@ Source: `/root/.claude/projects/-home-user-many-game-show/d2dbd26d-75d2-5924-bda
 
 Adds this file's turns after row 9 (the known-duplicate boundary) to SESSION_LOG_prior_totals_2.json's frozen totals. The frozen side is only as precise as that file's already-rounded footer — its raw source data no longer exists — so treat this as an approximation, not an exact recomputation.
 
-**Combined total turns:** 159  
-**Combined agent time spent (excl. flagged):** 7h 31m  
-**Combined human think time (excl. outliers):** 3h 17m  
-**Combined think-time outliers:** 33  
-**Total input tokens (since tracking began, this file only):** 4,895  
-**Total output tokens (since tracking began, this file only):** 1,892,765  
-**Total cache-write tokens (since tracking began, this file only):** 18,931,729  
-**Total cache-read tokens (since tracking began, this file only):** 1,086,180,363
+**Combined total turns:** 166  
+**Combined agent time spent (excl. flagged):** 7h 46m  
+**Combined human think time (excl. outliers):** 3h 34m  
+**Combined think-time outliers:** 35  
+**Total input tokens (since tracking began, this file only):** 5,137  
+**Total output tokens (since tracking began, this file only):** 2,076,098  
+**Total cache-write tokens (since tracking began, this file only):** 27,193,511  
+**Total cache-read tokens (since tracking began, this file only):** 1,133,324,185

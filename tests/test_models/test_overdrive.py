@@ -16,6 +16,8 @@ from manygameshow.models.overdrive import (
     clue_cells,
     clue_phase,
     current_bank,
+    final_answer_remaining_ms,
+    final_answers_open,
     final_bank_content,
     final_entry,
     is_selected_crit_boost,
@@ -271,20 +273,58 @@ def test_player_score_set_and_read_roundtrip() -> None:
 def test_final_entry_default_and_roundtrip() -> None:
     game = OverdriveGame()
     entry = final_entry(game, Player.PLAYER1)
-    assert entry.submitted is False
-    assert entry.wager is None
+    assert entry.wager_submitted is False
+    assert entry.answer_submitted is False
+    assert entry.wager_revealed is False and entry.revealed is False
+    assert entry.wager is None and entry.drawing is None
 
     entry.wager = 500
+    entry.wager_submitted = True
     entry.answer = "What is Python"
-    entry.submitted = True
+    entry.drawing = "AAAA"
+    entry.answer_submitted = True
     set_final_entry(game, Player.PLAYER1, entry)
 
     stored = final_entry(game, Player.PLAYER1)
     assert stored.wager == 500
     assert stored.answer == "What is Python"
-    assert stored.submitted is True
+    assert stored.drawing == "AAAA"
+    assert stored.wager_submitted is True and stored.answer_submitted is True
     # Other players untouched.
     assert final_entry(game, Player.PLAYER2) == FinalEntry()
+
+
+def test_final_starts_at_the_intro_with_a_30s_answer_timer() -> None:
+    game = OverdriveGame()
+    assert game.final_phase == "intro"
+    assert game.final_answer_time_ms == 30000
+    assert game.final_display_player is None
+    assert final_answer_remaining_ms(game) is None  # no timer until the clue
+
+
+def test_final_answer_timer_counts_down_from_the_clue_and_locks() -> None:
+    now = datetime.now(UTC).replace(tzinfo=None)
+    game = OverdriveGame(
+        final_phase="clue",
+        final_answer_time_ms=30000,
+        final_clue_revealed_at=now - timedelta(milliseconds=12000),
+    )
+    assert final_answer_remaining_ms(game, now=now) == 18000
+    assert final_answers_open(game, now=now) is True
+    later = now + timedelta(seconds=20)
+    assert final_answer_remaining_ms(game, now=later) == 0
+    assert final_answers_open(game, now=later) is False
+
+
+def test_final_answers_stay_open_without_a_timer_and_closed_outside_the_clue() -> None:
+    now = datetime.now(UTC).replace(tzinfo=None)
+    no_timer = OverdriveGame(
+        final_phase="clue", final_answer_time_ms=0, final_clue_revealed_at=now
+    )
+    assert final_answer_remaining_ms(no_timer, now=now) is None
+    assert final_answers_open(no_timer, now=now + timedelta(hours=1)) is True
+    assert final_answers_open(OverdriveGame(final_phase="category")) is False
+    assert final_answers_open(OverdriveGame(final_phase="reveal")) is False
 
 
 def test_final_bank_content() -> None:

@@ -56,16 +56,21 @@ class TimingOverride(SQLModel):
 
 
 class FinalEntry(SQLModel):
-    """One player's Final Exam participation. wager/answer are that
-    player's own secret until revealed is True — callers building a
-    public read must redact them until then."""
+    """One player's Final Exam participation. The wager and the answer
+    (typed text and/or a drawing, stored as base64 PNG) are that player's
+    own secret until the host reveals them — wager first, answer second —
+    so callers building a public read must redact them until then."""
 
     eligible: bool = True
     wager: int | None = None
+    wager_submitted: bool = False
+    wager_revealed: bool = False
     answer: str | None = None
-    submitted: bool = False
-    revealed: bool = False
+    drawing: str | None = None
+    answer_submitted: bool = False
+    revealed: bool = False  # the answer has been revealed
     correct: bool | None = None
+    delta: int | None = None  # the score change applied when judged
 
 
 class PlayerScore(SQLModel):
@@ -153,6 +158,14 @@ class OverdriveGame(SQLModel, table=True):
     answer_time_overrides_json: str = Field(default="{}")
 
     final_entries_json: str = Field(default_factory=_default_final_entries_json)
+    # intro -> category (wagers open) -> clue (answers open, timed) ->
+    # reveal (the host shows players one at a time) -> standings.
+    final_phase: str = Field(default="intro")
+    final_clue_revealed_at: datetime | None = Field(default=None)
+    # 0 = no timer. Answers lock when it runs out.
+    final_answer_time_ms: int = Field(default=30000, ge=0, le=300000)
+    # Whose wager/answer Main is currently showing.
+    final_display_player: Player | None = Field(default=None)
 
     status: str = Field(default="active")
 
@@ -189,11 +202,15 @@ class CategoryRead(SQLModel):
 
 class FinalEntryRead(SQLModel):
     eligible: bool
-    submitted: bool
-    revealed: bool
-    wager: int | None
-    answer: str | None
+    wager_submitted: bool
+    answer_submitted: bool
+    wager_revealed: bool
+    revealed: bool  # the answer has been revealed
+    wager: int | None  # only once wager_revealed
+    answer: str | None  # only once revealed
+    has_drawing: bool  # only once revealed; fetch it from /final-drawing/{player}
     correct: bool | None
+    delta: int | None
 
 
 class PlayerStatusRead(SQLModel):
@@ -240,8 +257,13 @@ class OverdriveGameRead(SQLModel):
     ring_in_retry_start_delay_ms: int
     ring_in_retry_window_ms: int
     answer_time_ms: int
+    final_phase: str | None
     final_category: str | None
     final_text: str | None
+    final_answer: str | None  # the answer key — host reads only
+    final_answer_time_ms: int
+    final_answer_remaining_ms: int | None
+    final_display_player: Player | None
     final_entries: dict[str, FinalEntryRead]
     status: str
     created_at: datetime
@@ -555,6 +577,29 @@ def set_final_entry(game: OverdriveGame, player: Player, entry: FinalEntry) -> N
     game.final_entries_json = json.dumps(
         {p.value: entries[p].model_dump() for p in ALL_PLAYERS}
     )
+
+
+def final_answer_remaining_ms(
+    game: OverdriveGame, now: datetime | None = None
+) -> int | None:
+    """ms left to answer the Final clue, or None when there's no running
+    timer (not in the clue phase, or the timer is off)."""
+    if (
+        game.final_phase != "clue"
+        or game.final_answer_time_ms <= 0
+        or game.final_clue_revealed_at is None
+    ):
+        return None
+    now = now if now is not None else _utcnow()
+    elapsed_ms = (now - game.final_clue_revealed_at).total_seconds() * 1000
+    return max(0, round(game.final_answer_time_ms - elapsed_ms))
+
+
+def final_answers_open(game: OverdriveGame, now: datetime | None = None) -> bool:
+    if game.final_phase != "clue":
+        return False
+    remaining = final_answer_remaining_ms(game, now)
+    return remaining is None or remaining > 0
 
 
 def final_bank_content(game: OverdriveGame) -> tuple[str, str, str]:
