@@ -217,7 +217,9 @@ def test_select_reveal_buzz_judge_correct_awards_points_and_board_control(
     expect(page.locator("#player1-body")).to_contain_text("You're up")
 
     _goto(live_server, page, game_id, "control")
-    expect(page.locator("#control-clue-status")).to_contain_text("is answering")
+    expect(page.locator("#control-clue-status .live-player.has-floor")).to_contain_text(
+        "Player 1"
+    )
     page.get_by_role("button", name="Correct", exact=True).click()
 
     expect(page.locator("#control-players")).to_contain_text("200")
@@ -300,7 +302,7 @@ def test_judge_incorrect_locks_out_player_and_reopens_ring_in(
     _buzz(page, "player1")
 
     _goto(live_server, page, game_id, "control")
-    page.get_by_role("button", name="Incorrect", exact=True).click()
+    page.get_by_role("button", name="Incorrect / No answer").click()
 
     expect(page.locator("#control-players")).to_contain_text("-200")
     # Still in play — a second player can still ring in.
@@ -660,27 +662,32 @@ def test_auto_reveal_setting_counts_down_and_reveals_the_clue(
     )
 
 
-def test_host_ring_in_buttons_live_in_the_clue_in_play_box(
+def test_ring_in_buttons_live_in_the_player_boxes_of_the_clue_in_play_box(
     live_server: str, page: Page
 ) -> None:
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "control")
     clue_box = page.locator("#control-clue-fieldset")
-    # Not on the per-player rows, and nowhere until a clue is revealed.
+    # Not on the per-player rows, and nowhere until a clue is selected.
     expect(page.get_by_role("button", name="Ring In for Player 2")).to_have_count(0)
 
     _select_clue(page, 1, 0)
-    expect(clue_box.get_by_role("button", name="Ring In for Player 2")).to_have_count(0)
+    # Selected but not revealed: the boxes are there, the buttons not yet usable.
+    expect(clue_box.locator(".live-player")).to_have_count(3)
+    expect(clue_box.get_by_role("button", name="Ring In for Player 2")).to_be_disabled()
     _reveal_clue(page)
     for n in (1, 2, 3):
         expect(
             clue_box.get_by_role("button", name=f"Ring In for Player {n}")
         ).to_be_enabled()
     clue_box.get_by_role("button", name="Ring In for Player 2").click()
-    expect(page.locator("#control-clue-status")).to_contain_text(
-        "Player 2 is answering"
-    )
-    expect(page.get_by_role("button", name="Ring In for Player 1")).to_have_count(0)
+    # The player who rang in is the one outlined, with their own timer in the box.
+    answering = clue_box.locator(".live-player.has-floor")
+    expect(answering).to_contain_text("Player 2")
+    expect(answering.locator(".countdown-track")).to_have_count(1)
+    expect(answering.locator(".lp-secs")).to_have_text(re.compile(r"\d+\.\ds"))
+    expect(clue_box.locator(".live-player.has-floor")).to_have_count(1)
+    expect(clue_box.get_by_role("button", name="Ring In for Player 1")).to_be_disabled()
 
 
 def test_a_wrong_answer_disables_that_players_ring_in_but_not_the_others(
@@ -787,8 +794,8 @@ def test_a_press_held_across_several_polls_still_registers(
     page.mouse.down()
     page.wait_for_timeout(700)  # several poll/redraw cycles
     page.mouse.up()
-    expect(page.locator("#control-clue-status")).to_contain_text(
-        "Player 1 is answering"
+    expect(page.locator("#control-clue-status .live-player.has-floor")).to_contain_text(
+        "Player 1"
     )
 
 
@@ -858,7 +865,9 @@ def test_host_tab_shows_round_scores_and_a_clickable_board(
     _goto(live_server, page, game_id, "host")
     expect(page.locator("#tab-host")).to_have_class(re.compile("active"))
     expect(page.locator("#host-round-status")).to_contain_text("Round 1")
-    expect(page.locator("#host-scoreboard .host-player")).to_have_count(4)  # 3 + clear
+    # With no clue in play the panel is just the player boxes (3 + clear).
+    expect(page.locator("#host-clue-legend")).to_have_text("Scores and board control")
+    expect(page.locator("#host-clue-status .live-player")).to_have_count(4)
     expect(page.locator("#host-board .clue-cell")).to_have_count(30)
 
     # Categories flip and clues select from the Host board too.
@@ -884,7 +893,7 @@ def test_host_banner_counts_down_the_ring_in_window(
     first = float(seconds.inner_text().rstrip("s"))
     page.wait_for_timeout(1200)
     assert float(seconds.inner_text().rstrip("s")) < first  # it ticks down
-    expect(status.locator(".live-bar .countdown-track")).to_have_count(1)
+    expect(status.locator(".live-bar-inline .countdown-track")).to_have_count(1)
 
 
 def test_host_banner_turns_to_time_up_when_no_one_rings_in(
@@ -909,27 +918,24 @@ def test_host_can_run_a_clue_start_to_finish(live_server: str, page: Page) -> No
     game_id = _create_game(live_server, page)
     _goto(live_server, page, game_id, "host")
     _select_clue(page, 1, 0)
-    page.locator("#host-clue-fieldset").get_by_role(
-        "button", name="Reveal Clue"
-    ).click()
-    ring_in = page.locator("#host-clue-fieldset").get_by_role(
-        "button", name="Ring In for Player 2"
-    )
-    ring_in.click()
-    banner = page.locator("#host-clue-status .live-banner")
-    expect(banner).to_contain_text("Player 2 is answering")
-    expect(banner).to_have_class(re.compile("tone-go"))
-    expect(page.locator("#host-clue-status .live-seconds")).to_have_text(
-        re.compile(r"^\d+\.\ds$")
-    )
+    panel = page.locator("#host-clue-fieldset")
+    expect(page.locator("#host-clue-legend")).to_have_text("Clue in play")
+    panel.get_by_role("button", name="Reveal Clue").click()
+    panel.get_by_role("button", name="Ring In for Player 2").click()
 
-    page.locator("#host-clue-fieldset").get_by_role(
-        "button", name="Correct", exact=True
-    ).click()
-    expect(page.locator("#host-clue-fieldset")).to_be_hidden()
-    player2 = page.locator("#host-scoreboard .host-player").nth(1)
+    # The player who rang in is outlined green with the countdown in their box.
+    answering = panel.locator(".live-player.has-floor")
+    expect(answering).to_contain_text("Player 2")
+    expect(answering.locator(".lp-secs")).to_have_text(re.compile(r"^\d+\.\ds$"))
+    expect(panel.locator(".live-window")).to_be_empty()  # no separate banner
+
+    panel.get_by_role("button", name="Correct", exact=True).click()
+    # Back to just the boxes, with Player 2 holding control.
+    expect(page.locator("#host-clue-legend")).to_have_text("Scores and board control")
+    player2 = panel.locator(".live-player").nth(1)
     expect(player2).to_contain_text("200")
     expect(player2).to_have_class(re.compile("has-control"))
+    expect(player2.locator(".lp-badge")).to_have_text("Control")
     expect(player2.get_by_role("button", name="Has control")).to_be_disabled()
 
 
@@ -961,8 +967,8 @@ def test_host_buttons_survive_a_press_held_across_polls(
     page.mouse.down()
     page.wait_for_timeout(700)
     page.mouse.up()
-    expect(page.locator("#host-clue-status .live-label")).to_contain_text(
-        "Player 3 is answering"
+    expect(page.locator("#host-clue-status .live-player.has-floor")).to_contain_text(
+        "Player 3"
     )
 
 
@@ -992,3 +998,48 @@ def test_lobby_overdrive_card_links_to_the_host_view(
     expect(
         page.locator(f'a[href="/overdrive.html?id={game_id}&view=host"]')
     ).to_have_text("Host")
+
+
+def test_board_control_is_a_tag_and_the_floor_is_an_outline(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    api = f"{live_server}/api/overdrive/games/{game_id}"
+    page.request.patch(f"{api}/board-control", data={"player": "player1"})
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    page.request.patch(f"{api}/host-ring-in", data={"player": "player3"})
+    _goto(live_server, page, game_id, "host")
+
+    boxes = page.locator("#host-clue-status .live-player")
+    # Player 1 holds control (gold tag, no outline); Player 3 has the floor.
+    expect(boxes.nth(0)).to_have_class(re.compile("has-control"))
+    expect(boxes.nth(0).locator(".lp-badge")).to_have_text("Control")
+    expect(boxes.nth(0)).not_to_have_class(re.compile("has-floor"))
+    expect(boxes.nth(2)).to_have_class(re.compile("has-floor"))
+    expect(boxes.nth(2).locator(".lp-badge")).to_have_count(0)
+
+
+def test_the_answering_players_box_turns_red_when_their_time_is_up(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    api = f"{live_server}/api/overdrive/games/{game_id}"
+    page.request.patch(f"{api}/answer-time-settings", data={"window_ms": 800})
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    page.request.patch(f"{api}/host-ring-in", data={"player": "player2"})
+    _goto(live_server, page, game_id, "host")
+    box = page.locator("#host-clue-status .live-player").nth(1)
+    expect(box).to_have_class(re.compile("time-up"), timeout=6000)
+    expect(box.locator(".countdown-track")).to_have_class(re.compile("expired"))
+
+
+def test_the_judge_button_covers_wrong_and_no_answer(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page)
+    _reveal_via_api(live_server, page, game_id, 1, 0)
+    _goto(live_server, page, game_id, "host")
+    panel = page.locator("#host-clue-fieldset")
+    panel.get_by_role("button", name="Ring In for Player 1").click()
+    expect(panel.get_by_role("button", name="Incorrect / No answer")).to_be_visible()
+    expect(panel.get_by_role("button", name="No answer", exact=True)).to_have_count(0)

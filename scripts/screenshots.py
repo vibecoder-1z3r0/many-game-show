@@ -214,6 +214,24 @@ def main() -> None:
                     "ring-in-settings",
                     {"start_delay_ms": 0, "window_ms": 60000},
                 )
+                patch(
+                    "overdrive",
+                    ids["overdrive"],
+                    "adjust-score",
+                    {"player": "player1", "score": 600},
+                )
+                patch(
+                    "overdrive",
+                    ids["overdrive"],
+                    "adjust-score",
+                    {"player": "player2", "score": 200},
+                )
+                patch(
+                    "overdrive",
+                    ids["overdrive"],
+                    "board-control",
+                    {"player": "player1"},
+                )
                 page.set_viewport_size({"width": VIEWPORT["width"], "height": 900})
                 shot(
                     page,

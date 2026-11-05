@@ -272,18 +272,13 @@
         font-weight: 700;
       }
 
-      .live-banner-slot {
-        min-height: 5rem;
-      }
-
       .live-banner {
         display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 1rem;
-        font-size: 1.25rem;
+        align-items: center;
+        gap: 0.9rem;
+        font-size: 1.05rem;
         font-weight: 800;
-        margin-bottom: 0.4rem;
+        padding: 0.3rem 0;
       }
 
       .live-banner.tone-info .live-label {
@@ -306,12 +301,6 @@
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: 1.6rem;
         color: var(--text);
-      }
-
-      .live-bar .countdown-track {
-        max-width: none;
-        height: 1.5rem;
-        margin: 0 0 0.8rem;
       }
 
       .live-clue-head {
@@ -370,33 +359,91 @@
         margin-bottom: 0.6rem;
       }
 
-      .host-scoreboard {
+      .live-players {
         display: flex;
-        flex-wrap: wrap;
         gap: 0.6rem;
+        margin: 0.7rem 0 0.5rem;
       }
 
-      .host-player {
+      .live-player {
         flex: 1;
-        min-width: 9rem;
-        border: 1px solid var(--border);
+        min-width: 0;
+        border: 2px solid var(--border);
         border-radius: 0.5rem;
-        padding: 0.5rem 0.75rem;
+        padding: 0.5rem 0.7rem;
         text-align: center;
       }
 
-      .host-player.has-control {
-        border-color: var(--accent);
+      /* The player answering: green outline (red once their time is up).
+         Board control is a separate gold tag, so the two never compete. */
+      .live-player.has-floor {
+        border-color: var(--win-green);
       }
 
-      .host-player .hp-name {
+      .live-player.time-up {
+        border-color: var(--danger);
+      }
+
+      .live-player.locked-out {
+        opacity: 0.55;
+      }
+
+      .lp-name {
         font-weight: 700;
       }
 
-      .host-player .hp-score {
+      .lp-badge {
+        display: inline-block;
+        margin-left: 0.4rem;
+        padding: 0.05rem 0.45rem;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #10131a;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .lp-score {
         font-family: "Orbitron", system-ui, sans-serif;
         font-size: 1.4rem;
-        margin: 0.2rem 0 0.4rem;
+        margin: 0.2rem 0 0.3rem;
+      }
+
+      .lp-timer {
+        min-height: 2.3rem;
+      }
+
+      .lp-timer .countdown-track {
+        height: 0.9rem;
+        margin: 0.2rem 0;
+        max-width: none;
+      }
+
+      .lp-secs {
+        font-family: "Orbitron", system-ui, sans-serif;
+        font-size: 0.9rem;
+      }
+
+      .live-window {
+        min-height: 2.4rem;
+      }
+
+      /* Reserved height keeps buttons from jumping during a clue; with no clue
+         in play there is nothing to reserve it for. */
+      .is-idle .live-window {
+        min-height: 0;
+      }
+
+      .live-bar-inline {
+        flex: 1;
+      }
+
+      .live-bar-inline .countdown-track {
+        max-width: none;
+        height: 1.1rem;
+        margin: 0;
       }
 
       .content-fieldset {
@@ -939,13 +986,9 @@
             <button class="primary" onclick="startFinal()">Start Final Exam</button>
           </div>
         </fieldset>
-        <fieldset id="host-clue-fieldset" class="live-clue" hidden>
-          <legend>Clue in play</legend>
+        <fieldset id="host-clue-fieldset" class="live-clue">
+          <legend id="host-clue-legend">Scores and board control</legend>
           <div id="host-clue-status"></div>
-        </fieldset>
-        <fieldset>
-          <legend>Scores and board control</legend>
-          <div id="host-scoreboard" class="host-scoreboard"></div>
         </fieldset>
         <fieldset id="host-board-fieldset">
           <legend>Board (click a greyed category to reveal it, a clue to select it)</legend>
@@ -1600,7 +1643,7 @@
         const clueFieldset = document.getElementById("control-clue-fieldset");
         if (!isFinal && gs.selected_category_index !== null) {
           clueFieldset.hidden = false;
-          renderLiveClue(document.getElementById("control-clue-status"), gs);
+          renderLive(document.getElementById("control-clue-status"), gs);
         } else {
           clueFieldset.hidden = true;
         }
@@ -1649,11 +1692,10 @@
 
       const fmtSecs = (ms) => `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
 
-      // The one thing the host most needs right now, as a banner: a stable
-      // label, an optional ticking seconds readout, and an optional bar. It is
-      // drawn into its own slot (see liveClueView) so that it can change and
-      // tick without ever rebuilding the buttons below it.
-      function liveBanner(gs, clue) {
+      // The status line under the player boxes: what the clue is waiting
+      // for (a reveal, or a ring-in) with its countdown. Returns null once
+      // someone is answering — their own box carries the timer then.
+      function liveWindow(gs, clue) {
         const holder = gs.board_control ? gs.players[gs.board_control].name : "no one";
         if (gs.clue_phase !== "revealed") {
           if (clue.is_crit_boost) {
@@ -1673,24 +1715,7 @@
           }
           return { label: "Clue selected — reveal when ready", tone: "info" };
         }
-        if (gs.buzzed_player) {
-          const p = gs.players[gs.buzzed_player];
-          const up = answerTimeUp(gs);
-          const who = clue.is_crit_boost ? `Crit Boost — ${p.name}` : p.name;
-          const remaining = gs.buzz_remaining_ms || 0;
-          return {
-            label: up
-              ? `Time's up — ${who}`
-              : `${who} is answering${gs.answer_timer_running ? "" : " (paused)"}`,
-            tone: up ? "alert" : "go",
-            ms: remaining,
-            bar: {
-              pct: p.answer_time_ms ? Math.min(100, (100 * remaining) / p.answer_time_ms) : 0,
-              extra: "answer",
-              expired: up,
-            },
-          };
-        }
+        if (gs.buzzed_player) return null;
         if (clue.is_crit_boost) {
           return { label: `Crit Boost — judge ${holder}`, tone: "info" };
         }
@@ -1707,7 +1732,7 @@
         const window_ = retry ? gs.ring_in_retry_window_ms : gs.ring_in_window_ms;
         const elapsed = gs.ring_in_elapsed_ms || 0;
         if (elapsed < start) {
-          // An empty bar, so the buttons below don't jump down when it fills.
+          // An empty bar, so nothing shifts when it fills.
           return {
             label: "Ring-in opens in",
             tone: "wait",
@@ -1726,6 +1751,71 @@
             expired: false,
           },
         };
+      }
+
+      function liveWindowHtml(w) {
+        return (
+          `<div class="live-banner tone-${w.tone}"><span class="live-label">${w.label}</span>` +
+          (w.bar
+            ? `<span class="live-bar-inline">${countdownBarHtml(w.bar.pct, w.bar.extra, w.bar.expired)}</span>`
+            : "") +
+          (w.ms !== undefined ? `<span class="live-seconds">${fmtSecs(w.ms)}</span>` : "") +
+          "</div>"
+        );
+      }
+
+      // The clue itself: what it is, its text, the answer.
+      function liveTopHtml(gs, cat, clue) {
+        let html = `<div class="live-clue-head">${cat.name} — ${clue.value}${
+          clue.is_crit_boost ? " · Crit Boost" : ""
+        }</div>`;
+        if (clue.is_crit_boost && gs.clue_phase === "revealed") {
+          html += `<div class="live-wager">Wager: ${gs.crit_boost_wager}</div>`;
+        }
+        html += `<div class="live-clue-text">${clue.text}</div>`;
+        html += `<div class="live-clue-answer">Answer: ${clue.answer}</div>`;
+        return html;
+      }
+
+      // One box per player: name, a gold tag if they hold board control,
+      // score, and their button. The player answering gets a green outline
+      // (red when their time is up) with their countdown inside the box.
+      // `clue` is null when no clue is in play (idle): the boxes then offer
+      // "Give control" instead of "Ring in".
+      function livePlayersHtml(gs, clue) {
+        const idle = clue === null;
+        const canRing =
+          !idle && gs.clue_phase === "revealed" && !clue.is_crit_boost && !gs.buzzed_player;
+        const up = answerTimeUp(gs);
+        return (
+          PLAYERS.map((p) => {
+            const status = gs.players[p];
+            const hasControl = gs.board_control === p;
+            const classes = ["live-player"];
+            if (hasControl) classes.push("has-control");
+            if (!idle && gs.buzzed_player === p) classes.push(up ? "time-up" : "has-floor");
+            if (!idle && status.locked_out) classes.push("locked-out");
+            const button = idle
+              ? `<button class="primary" onclick="setBoardControl('${p}')" ${hasControl ? "disabled" : ""}>${
+                  hasControl ? "Has control" : "Give control"
+                }</button>`
+              : `<button class="primary" aria-label="Ring In for ${status.name}" onclick="hostRingIn('${p}')" ${
+                  canRing && !status.locked_out ? "" : "disabled"
+                }${status.locked_out ? ' title="Already answered this clue wrong"' : ""}>Ring in</button>`;
+            return `
+              <div class="${classes.join(" ")}">
+                <div class="lp-head"><span class="lp-name">${status.name}</span>${
+                  hasControl ? '<span class="lp-badge">Control</span>' : ""
+                }</div>
+                <div class="lp-score ${scoreClass(status.score)}">${status.score}</div>
+                ${idle ? "" : `<div class="lp-timer" data-player="${p}"></div>`}
+                ${button}
+              </div>`;
+          }).join("") +
+          (idle
+            ? `<div class="live-player lp-clear"><button class="primary" onclick="setBoardControl(null)">Clear control</button></div>`
+            : "")
+        );
       }
 
       // The buttons for whatever state the clue is in.
@@ -1751,7 +1841,7 @@
         const judgeRow = `
             <div class="row-line">
               <button class="primary good" onclick="judge(true)">Correct</button>
-              <button class="primary bad" onclick="judge(false)">Incorrect</button>
+              <button class="primary bad" onclick="judge(false)">Incorrect / No answer</button>
             </div>`;
         if (gs.buzzed_player) {
           return (
@@ -1770,54 +1860,45 @@
           );
         }
         if (clue.is_crit_boost) return judgeRow; // timer cleared: still judgeable
-        // The host can give the floor to any player who's still in on this
-        // clue, even after the ring-in window has closed.
-        return (
-          '<div class="row-line">' +
-          PLAYERS.map((p) => {
-            const status = gs.players[p];
-            return `<button class="primary" onclick="hostRingIn('${p}')" ${
-              status.locked_out ? 'disabled title="Already answered this clue wrong"' : ""
-            }>Ring In for ${status.name}</button>`;
-          }).join("") +
-          "</div>" +
-          `<div class="row-line"><button class="primary" onclick="noOneAnswered()">No One Answered</button></div>`
-        );
+        return `<div class="row-line"><button class="primary" onclick="noOneAnswered()">No One Answered</button></div>`;
       }
 
-      // The banner (label, seconds, bar) changes state and ticks; the clue
-      // and its buttons only change when the buttons themselves do. They're
-      // drawn separately so that a state change in the banner (the ring-in
-      // window opening, say) never rebuilds a button under a press.
-      function liveClueView(gs, idPrefix) {
-        const cat = gs.categories[gs.selected_category_index];
-        const clue = cat.clues[gs.selected_clue_index];
-        const b = liveBanner(gs, clue);
-        const bannerHtml =
-          `<div class="live-banner tone-${b.tone}"><span class="live-label">${b.label}</span>` +
-          `<span class="live-seconds">${b.ms !== undefined ? fmtSecs(b.ms) : ""}</span></div>` +
-          (b.bar
-            ? `<div class="live-bar">${countdownBarHtml(b.bar.pct, b.bar.extra, b.bar.expired)}</div>`
-            : "");
-        let html = '<div class="live-banner-slot"></div>';
-        html += `<div class="live-clue-head">${cat.name} — ${clue.value}${
-          clue.is_crit_boost ? " · Crit Boost" : ""
-        }</div>`;
-        if (clue.is_crit_boost && gs.clue_phase === "revealed") {
-          html += `<div class="live-wager">Wager: ${gs.crit_boost_wager}</div>`;
+      // The live panel, as four regions that are each redrawn only when
+      // their own markup changes (so a state change in one never rebuilds a
+      // button in another), plus two in-place spots for the ticking parts:
+      // the ring-in/reveal countdown line, and the answering player's timer.
+      // idPrefix keeps ids unique, since Control and Host each render a copy.
+      // With no clue selected (`idle`) only the player boxes show.
+      function renderLive(el, gs, { prefix = "", idle = false } = {}) {
+        if (!el.firstElementChild) {
+          el.innerHTML =
+            '<div class="lv-top"></div><div class="live-players lv-players"></div>' +
+            '<div class="live-window lv-window"></div><div class="lv-actions"></div>';
         }
-        html += `<div class="live-clue-text">${clue.text}</div>`;
-        html += `<div class="live-clue-answer">Answer: ${clue.answer}</div>`;
-        html += liveActionsHtml(gs, clue, idPrefix);
-        return { html, bannerHtml };
-      }
-
-      // idPrefix keeps element ids unique, since Control and Host each render
-      // their own copy of this panel.
-      function renderLiveClue(statusEl, gs, idPrefix = "") {
-        const view = liveClueView(gs, idPrefix);
-        setHtml(statusEl, view.html);
-        setHtml(statusEl.querySelector(".live-banner-slot"), view.bannerHtml);
+        const [top, players, windowEl, actions] = el.children;
+        el.classList.toggle("is-idle", idle);
+        let cat = null;
+        let clue = null;
+        if (!idle) {
+          cat = gs.categories[gs.selected_category_index];
+          clue = cat.clues[gs.selected_clue_index];
+        }
+        setHtml(top, idle ? "" : liveTopHtml(gs, cat, clue));
+        setHtml(players, livePlayersHtml(gs, clue));
+        if (!idle && gs.buzzed_player) {
+          const slot = players.querySelector(`.lp-timer[data-player="${gs.buzzed_player}"]`);
+          if (slot) {
+            const p = gs.players[gs.buzzed_player];
+            const remaining = gs.buzz_remaining_ms || 0;
+            const pct = p.answer_time_ms ? Math.min(100, (100 * remaining) / p.answer_time_ms) : 0;
+            slot.innerHTML =
+              countdownBarHtml(pct, "answer", answerTimeUp(gs)) +
+              `<div class="lp-secs">${fmtSecs(remaining)}${gs.answer_timer_running ? "" : " · paused"}</div>`;
+          }
+        }
+        const win = idle ? null : liveWindow(gs, clue);
+        setHtml(windowEl, win ? liveWindowHtml(win) : "");
+        setHtml(actions, idle ? "" : liveActionsHtml(gs, clue, prefix));
       }
 
       // ----- Host view: the live show, without the setup -----
@@ -1841,32 +1922,22 @@
             boardHtml(gs, { clickable: true })
           );
         }
-        const clueFieldset = document.getElementById("host-clue-fieldset");
-        if (!isFinal && gs.selected_category_index !== null) {
-          clueFieldset.hidden = false;
-          renderLiveClue(document.getElementById("host-clue-status"), gs, "host-");
-        } else {
-          clueFieldset.hidden = true;
+        // The panel is always there: boxes for the players when no clue is
+        // in play (scores, board control), the whole live clue when one is.
+        const live = !isFinal && gs.selected_category_index !== null;
+        document.getElementById("host-clue-fieldset").hidden = isFinal;
+        document.getElementById("host-clue-legend").textContent = live
+          ? "Clue in play"
+          : "Scores and board control";
+        if (!isFinal) {
+          renderLive(document.getElementById("host-clue-status"), gs, {
+            prefix: "host-",
+            idle: !live,
+          });
         }
         if (isFinal) {
           setHtml(document.getElementById("host-final"), controlFinalHtml(gs));
         }
-        setHtml(
-          document.getElementById("host-scoreboard"),
-          PLAYERS.map((p) => {
-            const status = gs.players[p];
-            const has = gs.board_control === p;
-            return `
-              <div class="host-player${has ? " has-control" : ""}">
-                <div class="hp-name">${status.name}</div>
-                <div class="hp-score ${scoreClass(status.score)}">${status.score}</div>
-                <button class="primary" onclick="setBoardControl('${p}')" ${has ? "disabled" : ""}>
-                  ${has ? "Has control" : "Give control"}
-                </button>
-              </div>`;
-          }).join("") +
-            `<div class="host-player"><button class="primary" onclick="setBoardControl(null)">Clear control</button></div>`
-        );
       }
 
       function controlFinalHtml(gs) {

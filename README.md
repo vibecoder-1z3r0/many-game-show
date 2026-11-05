@@ -41,10 +41,13 @@ screen can be opened, closed or refreshed at any time.
 |---|---|
 | ![Squad Squabble Control view](./docs/screenshots/squad-squabble-control.png) | ![Overdrive clue on the Main view](./docs/screenshots/overdrive-clue.png) |
 
-Overdrive's **Host** view is where the show is run: the live clue with its
-countdown, the answer and the judge buttons sit at the top, with scores,
-board control and the board below. **Control** keeps the same live panel but
-also holds setup (content banks, timing) in collapsible sections.
+Overdrive's **Host** view is where the show is run: the clue and its answer,
+then one box per player showing their score. The player who rings in is
+outlined with their own countdown inside the box (it turns red when their
+time is up), the ring-in window counts down beneath the boxes, and a gold tag
+marks who has board control. The judge buttons and the board follow.
+**Control** keeps the same live panel but also holds setup (content banks,
+timing) in collapsible sections.
 
 ![Overdrive Host view during a live clue](./docs/screenshots/overdrive-host.png)
 
