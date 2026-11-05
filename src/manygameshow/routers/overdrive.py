@@ -186,6 +186,9 @@ def _to_read(game: OverdriveGame, *, show_all: bool = False) -> OverdriveGameRea
         no_one_can_answer=ring_in_window_expired(game),
         ring_in_start_delay_ms=game.ring_in_start_delay_ms,
         ring_in_window_ms=game.ring_in_window_ms,
+        ring_in_is_retry=game.ring_in_is_retry,
+        ring_in_retry_start_delay_ms=game.ring_in_retry_start_delay_ms,
+        ring_in_retry_window_ms=game.ring_in_retry_window_ms,
         answer_time_ms=game.answer_time_ms,
         final_category=final_category,
         final_text=final_text,
@@ -348,6 +351,7 @@ def select_clue(
     game.selected_clue_index = body.clue_index
     game.clue_selected_at = datetime.now(UTC).replace(tzinfo=None)
     game.clue_revealed_at = None
+    game.ring_in_is_retry = False
     game.buzzed_player = None
     game.buzz_answer_started_at = None
     game.buzz_timer_remaining_ms = None
@@ -549,6 +553,7 @@ def clear_answer_timer(game_id: str, session: SessionDep) -> OverdriveGameRead:
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
     game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
+    game.ring_in_is_retry = True
     return _to_read(_save(game, session), show_all=True)
 
 
@@ -608,6 +613,7 @@ def judge(game_id: str, body: JudgeBody, session: SessionDep) -> OverdriveGameRe
                 _clear_selected(game)
             else:
                 game.clue_revealed_at = datetime.now(UTC).replace(tzinfo=None)
+                game.ring_in_is_retry = True
 
     cells = clue_cells(game)
     cells[cat_idx][clue_idx] = cell
@@ -620,6 +626,7 @@ def _clear_selected(game: OverdriveGame) -> None:
     game.selected_clue_index = None
     game.clue_selected_at = None
     game.clue_revealed_at = None
+    game.ring_in_is_retry = False
     game.buzzed_player = None
     game.buzz_answer_started_at = None
     game.buzz_timer_remaining_ms = None
@@ -763,6 +770,20 @@ def set_ring_in_settings(
         game.ring_in_start_delay_ms = body.start_delay_ms
     if body.window_ms is not None:
         game.ring_in_window_ms = body.window_ms
+    return _to_read(_save(game, session), show_all=True)
+
+
+@router.patch("/{game_id}/ring-in-retry-settings", response_model=OverdriveGameRead)
+def set_ring_in_retry_settings(
+    game_id: str, body: RingInSettingsBody, session: SessionDep
+) -> OverdriveGameRead:
+    """Timing of the second-chance ring-in window that opens for the
+    remaining players after a wrong answer (separate from the first one)."""
+    game = _get_game(game_id, session)
+    if body.start_delay_ms is not None:
+        game.ring_in_retry_start_delay_ms = body.start_delay_ms
+    if body.window_ms is not None:
+        game.ring_in_retry_window_ms = body.window_ms
     return _to_read(_save(game, session), show_all=True)
 
 

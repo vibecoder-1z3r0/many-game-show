@@ -1105,10 +1105,11 @@ def test_wrong_answers_give_everyone_left_a_fresh_chance_to_ring_in_and_answer(
 
 def test_a_reopened_window_closes_again_if_nobody_rings_in(client: TestClient) -> None:
     game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
     _patch(
         client,
         game_id,
-        "ring-in-settings",
+        "ring-in-retry-settings",
         {"start_delay_ms": 0, "window_ms": 250},
     )
     _select_clue(client, game_id, 0, 0)
@@ -1118,6 +1119,95 @@ def test_a_reopened_window_closes_again_if_nobody_rings_in(client: TestClient) -
     assert _get(client, game_id)["no_one_can_answer"] is False
     time.sleep(0.4)
     assert _get(client, game_id)["no_one_can_answer"] is True
+
+
+def test_retry_ring_in_defaults_to_no_start_delay_and_ten_seconds(
+    client: TestClient,
+) -> None:
+    body = _get(client, _create_game(client))
+    assert body["ring_in_is_retry"] is False
+    assert body["ring_in_retry_start_delay_ms"] == 0
+    assert body["ring_in_retry_window_ms"] == 10000
+
+
+def test_after_a_wrong_answer_the_others_use_the_retry_timing_not_the_first(
+    client: TestClient,
+) -> None:
+    game_id = _create_game(client)
+    # First window: a long delay before anyone may ring in.
+    _patch(
+        client,
+        game_id,
+        "ring-in-settings",
+        {"start_delay_ms": 50000, "window_ms": 1000},
+    )
+    _select_clue(client, game_id, 0, 0)
+    body = _reveal_clue(client, game_id)
+    assert body["players"]["player2"]["ring_in_start_delay_ms"] == 50000
+    assert body["ring_in_is_retry"] is False
+
+    _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    body = _judge(client, game_id, False)
+    # The clue is already read, so the retry window opens straight away.
+    assert body["ring_in_is_retry"] is True
+    assert body["players"]["player2"]["ring_in_start_delay_ms"] == 0
+    assert body["players"]["player2"]["ring_in_window_ms"] == 10000
+    assert body["players"]["player2"]["can_ring_in"] is True
+
+    # A new clue goes back to the first-window timing.
+    _patch(client, game_id, "no-one-answered")
+    body = _select_clue(client, game_id, 0, 1)
+    assert body["ring_in_is_retry"] is False
+    assert body["players"]["player2"]["ring_in_start_delay_ms"] == 50000
+
+
+def test_retry_start_delay_is_honored(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    _patch(client, game_id, "ring-in-retry-settings", {"start_delay_ms": 60000})
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    body = _judge(client, game_id, False)
+    assert body["players"]["player2"]["can_ring_in"] is False  # not open yet
+    assert body["no_one_can_answer"] is False
+    # The host can still give anyone the floor.
+    assert (
+        _patch(client, game_id, "host-ring-in", {"player": "player2"}).status_code
+        == 200
+    )
+
+
+def test_clearing_a_buzz_also_opens_the_retry_window(client: TestClient) -> None:
+    game_id = _create_game(client)
+    _set_fast_ring_in(client, game_id)
+    _select_clue(client, game_id, 0, 0)
+    _reveal_clue(client, game_id)
+    _patch(client, game_id, "host-ring-in", {"player": "player1"})
+    body = _patch(client, game_id, "clear-answer-timer").json()
+    assert body["ring_in_is_retry"] is True
+    assert body["buzzed_player"] is None
+
+
+def test_retry_ring_in_settings_are_validated_and_saved(client: TestClient) -> None:
+    game_id = _create_game(client)
+    resp = _patch(
+        client,
+        game_id,
+        "ring-in-retry-settings",
+        {"start_delay_ms": 500, "window_ms": 2000},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert (body["ring_in_retry_start_delay_ms"], body["ring_in_retry_window_ms"]) == (
+        500,
+        2000,
+    )
+    # The first window's settings are a separate pair, untouched.
+    assert body["ring_in_start_delay_ms"] == 2500
+    assert body["ring_in_window_ms"] == 10000
+    for bad in ({"start_delay_ms": -1}, {"window_ms": 50}):
+        assert _patch(client, game_id, "ring-in-retry-settings", bad).status_code == 422
 
 
 def test_locked_out_flag_is_per_clue(client: TestClient) -> None:

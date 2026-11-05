@@ -138,6 +138,15 @@ class OverdriveGame(SQLModel, table=True):
     ring_in_window_ms: int = Field(default=10000, ge=100)
     ring_in_overrides_json: str = Field(default="{}")
 
+    # After a wrong answer (or a cleared buzz) the remaining players get a
+    # fresh ring-in window with its own timing: the clue has already been
+    # read, so by default there's no start delay. ring_in_is_retry marks the
+    # clue as being in that second-chance state; it applies to everyone
+    # (per-player overrides are for the first window only).
+    ring_in_retry_start_delay_ms: int = Field(default=0, ge=0)
+    ring_in_retry_window_ms: int = Field(default=10000, ge=100)
+    ring_in_is_retry: bool = Field(default=False)
+
     # Personal answer countdown, once a player's won the buzz-in. Same
     # global-default-plus-override shape.
     answer_time_ms: int = Field(default=10000, ge=100)
@@ -227,6 +236,9 @@ class OverdriveGameRead(SQLModel):
     no_one_can_answer: bool
     ring_in_start_delay_ms: int
     ring_in_window_ms: int
+    ring_in_is_retry: bool
+    ring_in_retry_start_delay_ms: int
+    ring_in_retry_window_ms: int
     answer_time_ms: int
     final_category: str | None
     final_text: str | None
@@ -301,6 +313,7 @@ def reset_board_for_round(game: OverdriveGame, round_name: RoundName) -> None:
     game.buzz_timer_remaining_ms = None
     game.buzz_timer_running = True
     game.crit_boost_wager = None
+    game.ring_in_is_retry = False
 
 
 def crit_boost_max_wager(game: OverdriveGame) -> int | None:
@@ -410,7 +423,11 @@ def apply_auto_reveal(game: OverdriveGame, now: datetime | None = None) -> bool:
 
 
 def ring_in_window_for(game: OverdriveGame, player: Player) -> tuple[int, int]:
-    """(start_delay_ms, window_ms) for one player, honoring any override."""
+    """(start_delay_ms, window_ms) for one player. In the second-chance
+    window after a wrong answer everyone gets the retry timing; otherwise
+    the global timing, honoring any per-player override."""
+    if game.ring_in_is_retry:
+        return game.ring_in_retry_start_delay_ms, game.ring_in_retry_window_ms
     overrides: dict[str, dict[str, int | None]] = json.loads(
         game.ring_in_overrides_json
     )

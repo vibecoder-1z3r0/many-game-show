@@ -792,3 +792,21 @@ def test_control_and_player_buttons_survive_polling_untouched(
     page.wait_for_timeout(900)  # the shrinking bar ticks the whole time
     expect(buzz).to_have_attribute("data-keep", "1")
     expect(page.locator("#player1-body .countdown-track")).to_have_count(1)
+
+
+def test_control_shows_and_saves_the_retry_ring_in_timing(
+    live_server: str, page: Page
+) -> None:
+    game_id = _create_game(live_server, page, game_defaults=True)
+    _goto(live_server, page, game_id, "control")
+    expect(page.locator("#retry-start-input")).to_have_value("0")
+    expect(page.locator("#retry-window-input")).to_have_value("10000")
+
+    page.fill("#retry-start-input", "400")
+    page.fill("#retry-window-input", "7000")
+    page.get_by_role("button", name="Set Retry Ring-in").click()
+    page.reload()
+    expect(page.locator("#retry-start-input")).to_have_value("400")
+    expect(page.locator("#retry-window-input")).to_have_value("7000")
+    # The first window's own settings are unchanged.
+    expect(page.locator("#ring-start-input")).to_have_value("2500")

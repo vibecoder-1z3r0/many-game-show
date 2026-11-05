@@ -765,6 +765,13 @@
             <button class="primary" onclick="applyAnswerTimeSettings()">Apply Global</button>
           </div>
           <div class="row-line">
+            <span>After a wrong answer, others get ring-in: start</span>
+            <input type="number" id="retry-start-input" min="0" placeholder="ms" />
+            <span>window</span>
+            <input type="number" id="retry-window-input" min="100" placeholder="ms" />
+            <button class="primary" onclick="applyRetryRingInSettings()">Set Retry Ring-in</button>
+          </div>
+          <div class="row-line">
             <span>Auto-reveal clue after</span>
             <input type="number"
                    id="auto-reveal-input"
@@ -1112,6 +1119,15 @@
         patch("/ring-in-settings", body);
       }
 
+      function applyRetryRingInSettings() {
+        const start = document.getElementById("retry-start-input").value;
+        const window_ = document.getElementById("retry-window-input").value;
+        const body = {};
+        if (start !== "") body.start_delay_ms = parseInt(start, 10);
+        if (window_ !== "") body.window_ms = parseInt(window_, 10);
+        patch("/ring-in-retry-settings", body);
+      }
+
       function applyAnswerTimeSettings() {
         const window_ = document.getElementById("answer-time-input").value;
         if (window_ === "") return;
@@ -1331,14 +1347,17 @@
         }
         // No one's buzzed in yet — show the ring-in window itself, no
         // name/caption since it's shared, not any one player's.
-        const ringPct = gs.ring_in_window_ms
+        // After a wrong answer the second-chance window has its own timing.
+        const ringStart = gs.ring_in_is_retry
+          ? gs.ring_in_retry_start_delay_ms
+          : gs.ring_in_start_delay_ms;
+        const ringWindow = gs.ring_in_is_retry
+          ? gs.ring_in_retry_window_ms
+          : gs.ring_in_window_ms;
+        const ringPct = ringWindow
           ? Math.min(
               100,
-              Math.max(
-                0,
-                (100 * ((gs.ring_in_elapsed_ms || 0) - gs.ring_in_start_delay_ms)) /
-                  gs.ring_in_window_ms
-              )
+              Math.max(0, (100 * ((gs.ring_in_elapsed_ms || 0) - ringStart)) / ringWindow)
             )
           : 0;
         bar.hidden = false;
@@ -1372,6 +1391,8 @@
           ["ring-window-input", gs.ring_in_window_ms],
           ["answer-time-input", gs.answer_time_ms],
           ["auto-reveal-input", gs.auto_reveal_delay_ms],
+          ["retry-start-input", gs.ring_in_retry_start_delay_ms],
+          ["retry-window-input", gs.ring_in_retry_window_ms],
         ]) {
           const input = document.getElementById(id);
           if (document.activeElement !== input) input.value = value;
